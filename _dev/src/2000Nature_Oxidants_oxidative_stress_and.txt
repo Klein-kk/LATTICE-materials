@@ -1,0 +1,1136 @@
+
+<<<PAGE 1>>>
+insight review articles
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+239
+N
+early a century ago it was noted that animals
+with higher metabolic rates often have shorter
+life spans. These observations led to the
+formulation of ‘the rate-of-living hypothesis’,
+which states that the metabolic rate of a
+species ultimately determines its life expectancy. Initially,
+the mechanistic link between metabolism and ageing was
+unknown. In the mid-1950s, Denham Harman articulated
+a ‘free-radical theory’ of ageing, speculating that
+endogenous oxygen radicals were generated in cells and
+resulted in a pattern of cumulative damage1. Although the
+concept of endogenous oxidants was at first controversial,
+the identification a decade later of superoxide dismutase
+(SOD)2, an enzyme whose sole function seemed to be the
+removal of superoxide anions, provided mechanistic
+support for Harman’s hypothesis. Given that the
+mitochondria produce most of the energy in the cell, and
+correspondingly consume the bulk of intracellular oxygen,
+the free-radical theory of ageing is now often thought of
+synonymously with the rate-of-living hypothesis; the
+higher the metabolic rate of an organism, the greater the
+production of reactive oxygen species (ROS) and hence the
+shorter the life span. However, in some species the strict
+correlation between metabolic rate and life span is not
+maintained. This is particularly true for birds and
+primates, which tend to live longer than would be
+predicted by their metabolic rates. Careful analysis of
+oxidant production demonstrated that at a given
+metabolic rate, mitochondria from these species tend to
+produce fewer ROS3. This indicates that ROS production
+rather then metabolic rate provides the strongest
+correlation with overall longevity.
+The free-radical theory of ageing originally implied that
+the targets of ROS were random, indiscriminate and 
+cumulative. However, although oxidants may certainly
+function stochastically, accumulating evidence implicates
+ROS as specific signalling molecules under both physiologi-
+cal and pathophysiological conditions. This more complex
+view of the importance of oxidants in biological processes is
+depicted in Fig. 1. As indicated, the generation of ROS, with-
+in certain boundaries, is essential to maintain homeostasis.
+For example, ROS generation by phagocytic cells constitutes
+an essential host defence mechanism necessary to combat
+infection. Likewise, cytosolic ROS produced in response to
+stimulation by growth factors are involved in regulating the
+proliferative response4. Under certain situations of 
+metabolic stress, even mitochondrial-derived oxidants
+seem to function as signalling molecules5,6. Regardless of
+how or where they are generated, a rise in intracellular 
+oxidant levels has two potentially important effects: damage
+to various cell components and triggering of the activation
+of specific signalling pathways. Both of these effects can
+influence numerous cellular processes linked to ageing and
+the development of age-related diseases. In this review, we
+address how ROS are generated, how the cell responds to
+oxidative stress and how these responses change with age. In
+addition, we describe the mounting genetic evidence that
+links oxidants and oxidative stress responsiveness to ageing
+and discuss the challenges associated with the potential
+development of anti-ageing therapies.
+Oxidant production and antioxidant defences
+For the purpose of this discussion, ROS encompass a variety
+of diverse chemical species including superoxide anions,
+hydroxyl radicals and hydrogen peroxide. Some of these
+species, such as superoxide or hydroxyl radicals, are
+extremely unstable, whereas others, like hydrogen peroxide,
+are freely diffusible and relatively long-lived. These various
+radical species can either be generated exogenously or 
+produced intracellularly from several different sources.
+Cytosolic enzyme systems contributing to oxidative stress
+include, among others, the expanding family of NADPH
+oxidases, a superoxide-generating system that was first
+described in the neutrophil. The newly described non-
+phagocytic NADPH oxidases also generate superoxide
+anions, but depending on the specific NADPH oxidase
+expressed, can either trigger cellular transformation or
+replicative senescence7,8. The observation that different
+members of the NADPH oxidase family can have such 
+widely differing biological outcomes reinforces the 
+complexity in determining the cellular response to oxidants.
+Contributing factors may include the cell type, the absolute
+level and duration of oxidant production, the species of ROS
+generated, and the specific intracellular site of ROS 
+production. Nonetheless, the NADPH oxidase family of
+enzymes, like the widely characterized nitric oxide synthase
+(NOS) family, illustrates the apparent purposeful and 
+deliberate use of oxidant generation in normal cellular 
+signalling and homeostasis.
+Most estimates suggest that the majority of intracellular
+ROS production is derived from the mitochondria. The 
+production of mitochondrial superoxide radicals occurs
+primarily at two discrete points in the electron transport
+chain, namely at complex I (NADH dehydrogenase) and at
+Oxidants, oxidative stress and the 
+biology of ageing
+Toren Finkel* & Nikki J. Holbrook†
+*Laboratory of Molecular Biology, National Heart, Lung, and Blood Institute/National Institutes of Health, Building 10/6N-240, 10 Center Drive,
+Bethesda, Maryland 20892-1622, USA (e-mail: finkelt@nih.gov)
+†Laboratory of Biological Chemistry, National Institute on Aging/National Institutes of Health, 5600 Nathan Shock Drive, Baltimore, Maryland
+21224, USA (e-mail: nikki-holbrook@nih.gov)
+Living in an oxygenated environment has required the evolution of effective cellular strategies to detect and
+detoxify metabolites of molecular oxygen known as reactive oxygen species. Here we review evidence that
+the appropriate and inappropriate production of oxidants, together with the ability of organisms to respond to
+oxidative stress, is intricately connected to ageing and life span.
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 2>>>
+insight review articles
+240
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+complex III (ubiquinone–cytochrome c reductase). Under normal
+metabolic conditions, complex III is the main site of ROS 
+production9. With respect to human ageing, the Achilles’ heel of this
+elegant system lies in the formation of the free radical semiquinone
+anion species (üQ1) that occurs as an intermediate in the 
+regeneration of coenzyme Q (Fig. 2). Once formed, üQ1 can readily
+and non-enzymatically transfer electrons to molecular oxygen with
+the subsequent generation of a superoxide radical. The generation of
+ROS therefore becomes predominantly a function of metabolic rate
+and, as such, the rate of living can be indirectly translated to a 
+corresponding rate of oxidative stress. In addition to generating 
+oxidants, metabolism can produce a host of other by-products
+including glyoxal and methylglyoxal, both of which can contribute to
+advanced glycation end-product (AGE) formation that, in turn,
+seems to contribute to the ageing phenotype10. 
+Evidence indicates that, in vitro, mitochondria convert 1–2% of the
+oxygen molecules consumed into superoxide anions11. Given that
+these initial estimates were made on isolated mitochondria in the 
+presence of high, non-physiological concentrations of oxygen, the in
+vivo rate of mitochondrial superoxide production is undoubtedly 
+considerably less. Whatever the absolute amount of mitochondrial
+ROS, given their potentially harmful effects, it is likely that numerous
+protective mechanisms have evolved to limit oxidant production and
+release. A further understanding of such regulatory mechanisms may
+reveal potential targets for therapeutic intervention. One postulated
+mechanism to reduce mitochondrial oxidant production is to increase
+the rate of metabolic uncoupling12. When oxygen consumption is
+uncoupled from ATP generation, heat is produced. This thermogene-
+sis is mediated by an expanding family of uncoupling proteins (UCP-1,
+-2 and -3). However, the consumption of oxygen without ATP 
+production would also reduce the level of free molecular oxygen poten-
+tially available for superoxide anion formation (Fig. 2). Consistent
+with the hypothesis that metabolic uncoupling might regulate ROS
+release is the recent evidence indicating that an increase in uncoupling
+reduces mitochondrial ROS release5, whereas levels of mitochondrial
+oxidants rise in mice with a targeted deletion of UCP-3 (ref. 13).
+The burden of ROS production is largely counteracted by an 
+intricate antioxidant defence system that includes the enzymatic
+scavengers SOD, catalase and glutathione peroxidase. SOD speeds
+the conversion of superoxide to hydrogen peroxide, whereas catalase
+and glutathione peroxidase convert hydrogen peroxide to water. In
+addition to these well characterized antioxidant enzymes, at least 
+five members of a new family of peroxide scavengers termed 
+peroxiredoxins have recently been isolated14. A variety of other 
+non-enzymatic, low molecular mass molecules are important in
+scavenging ROS. These include ascorbate, pyruvate, flavonoids,
+carotenoids and perhaps most importantly, glutathione, which is
+present in millimolar concentrations within cells. 
+The balance between ROS production and antioxidant defences
+determines the degree of oxidative stress. Consequences of this stress
+include modification to cellular proteins, lipids and DNA. The most
+widely studied oxidative stress-induced modification to proteins is
+the formation of carbonyl derivatives15. Carbonyl formation can
+occur through a variety of mechanisms including direct oxidation of
+certain amino-acid side chains and oxidation-induced peptide 
+cleavage. Although all organs and all proteins can potentially be
+modified by oxidative stress, certain tissues and specific protein 
+targets may be especially sensitive16,17. A recent report indicated that
+protein misfolding, independent of the cellular redox state, increases
+protein carbonylation18. As such, the notion that the rate of carbonyl
+formation is always directly proportional to the degree of oxidative
+stress may need to be re-examined. 
+Several studies have shown that ageing cells and organisms 
+accumulate increased levels of oxidant-damaged nuclear DNA19.
+Perhaps because of its proximity to the main source of oxidant 
+generation, or because of a limited DNA repair system, mitochondri-
+al DNA is generally considered to be even more sensitive then nuclear
+DNA to oxidative damage. Two recent studies provided direct proof
+that oxidative stress can induce mitochondrial DNA damage. In these
+studies, oxidative stress was genetically engineered by targeted 
+deletions in either Mn-SOD or the adenine nuclear transporter.
+These knockout mice had a respective defect in mitochondrial 
+Homeostasis
+Exogenous
+sources
+Ultraviolet light
+Ionizing radiation
+Chemotherapeutics
+Inflammatory cytokines
+Environmental toxins  
+more
+less
+ROS
+ONOO-    .O2-
+.RO
+.RO
+H2O2
+ 
+  
+.NO2
+.NO       
+.O2
+O2
+.OH
+Normal growth
+and metabolism
+Impaired physiological
+function
+Impaired physiological
+function
+Ageing Disease Cell death 
+Decreased proliferative
+response
+Defective host defences 
+Random 
+cellular
+damage
+Specific
+signalling
+pathways
+Antioxidant
+defences
+Enzymatic systems
+   CAT, SOD, GPx
+Non-enzymatic systems
+   Glutathione
+   Vitamins (A,C and E)  
+   
+Mitochondria
+Peroxisomes
+Lipoxygenases
+NADPH oxidase
+Cytochrome P450  
+Endogenous
+sources
+Figure 1 The sources and cellular responses to reactive oxygen
+species (ROS). Oxidants are generated as a result of normal
+intracellular metabolism in mitochondria and peroxisomes, as
+well as from a variety of cytosolic enzyme systems. In addition, a
+number of external agents can trigger ROS production. A
+sophisticated enzymatic and non-enzymatic antioxidant defence
+system including catalase (CAT), superoxide dismutase (SOD)
+and glutathione peroxidase (GPx) counteracts and regulates
+overall ROS levels to maintain physiological homeostasis.
+Lowering ROS levels below the homeostatic set point may
+interrupt the physiological role of oxidants in cellular proliferation
+and host defence. Similarly, increased ROS may also be
+detrimental and lead to cell death or to an acceleration in ageing
+and age-related diseases. Traditionally, the impairment caused
+by increased ROS is thought to result from random damage to
+proteins, lipids and DNA. In addition to these effects, a rise in
+ROS levels may also constitute a stress signal that activates
+specific redox-sensitive signalling pathways. Once activated,
+these diverse signalling pathways may have either damaging or
+potentially protective functions.
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 3>>>
+insight review articles
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+241
+superoxide scavenging capacity or overall aerobic metabolism. 
+Subsequent analysis of these animals showed significant increase in
+the level of mitochondrial DNA rearrangements20,21. Increasing 
+damage to mitochondrial DNA inevitably leads to compromised
+mitochondrial function and integrity. Damaged mitochondria are
+thought to release more ROS and set in motion a vicious cycle of
+increasing DNA damage leading to increased ROS production that in
+turn leads to more DNA damage.
+Cellular senescence and oxidative stress
+After a finite number of divisions, primary cell cultures enter a state
+of replicative senescence in which they are growth-arrested and
+refractory to further mitogenic stimulation. Although the relevance
+of in vitro senescence to organismal ageing remains controversial,
+several studies indicate that oxidants are important in the develop-
+ment of the senescent phenotype. Early studies with human diploid
+fibroblasts revealed that cells grown in low oxygen tension exhibit a
+prolonged life span22. In contrast, cells grown in the presence of high
+oxygen concentrations have a reduced life span and show an 
+accelerated rate of telomere shortening per population doubling23.
+Similarly, treatment of cultures of primary fibroblasts with 
+moderate, non-lethal doses of exogenous hydrogen peroxide 
+activates a rapid, senescence-like growth arrest24. 
+The role of oxidants in cellular senescence was further under-
+scored by recent observations that overexpression of an activated 
+Ras gene can also induce a senescence-like state in human diploid
+fibroblasts25. Subsequent analysis demonstrated that expression of
+activated Ras in diploid fibroblasts resulted in an increase in oxidant
+levels26. In addition, although expression of activated Ras in human
+diploid fibroblasts produced growth arrest, this arrest could be
+reversed either by reducing ambient oxygen or by treatment with a
+cell-permeable antioxidant. As such, these results raise the possibility
+that a moderate, sustained rise in oxidants may function as a 
+common trigger for activation of the senescence programme.
+Oxidants in cellular signalling
+Although the preceding discussions have focused mainly on 
+the endogenous generation of ROS as a consequence of metabolic
+activities, many environmental stimuli including cytokines, 
+ultraviolet  (UV) radiation, chemotherapeutic agents, hyperthermia
+and even growth factors generate high levels of ROS that can perturb
+the normal redox balance and shift cells into a state of oxidative stress.
+When the stress is severe, survival is dependent on the ability of the
+cell to adapt to or resist the stress, and to repair or replace the 
+damaged molecules. Alternatively, cells may respond to the insult by
+undergoing apoptosis, a process whereby severely damaged cells are
+removed from the multicellular host, and which, within limits, 
+preserves the organism. A number of stress response mechanisms
+have evolved to help the cell and organism adapt to acute stress, and
+acting in either a cooperative or antagonistic fashion they serve to
+coordinate the acute cellular stress response and ultimately 
+determine the outcome. Many of these pathways have been faithfully
+preserved throughout evolution. Thus, both the stresses and the
+response mechanisms represent players in an ancient battle. As will
+be discussed later, many mutations that prolong life seem to provide a
+global increase in stress resistance. Therefore, a more complete
+understanding of the cellular response to stress should provide 
+significant insight into ageing.
+Among the main stress signalling pathways and/or central 
+mediators activated in response to oxidant injury are the extracellular
+signal-regulated kinase (ERK), c-Jun amino-terminal kinase (JNK)
+and p38 mitogen-activated protein kinase (MAPK) signalling 
+cascades, the phosphoinositide 3-kinase (PI(3)K)/Akt pathway, the
+nuclear factor (NF)-kB signalling system, p53 activation, and the
+heat shock response (Fig. 3). Activation of these pathways is not
+unique to oxidative stress, as they are known to have central roles in
+regulating cellular responses to other stresses as well as regulating
+normal growth and metabolism. Indeed, in some situations the
+response to oxidants may involve overstimulation of normal ROS-
+regulated signalling pathways. In general, the heat shock response,
+ERK, PI(3)K/Akt and NF-kB signalling pathways exert a pro-survival
+influence during oxidant injury, whereas activation of p53, JNK and
+p38 are more commonly linked to apoptosis. However, numerous
+exceptions to these generalities can be found. 
+The initiating events leading to activation of pathways in response
+to oxidants are incompletely understood. In the case of p53 activa-
+tion, oxidative stress may be sensed as a consequence of the DNA
+damage it causes. However, in some cells, elevated p53 expression
+results in increased oxidative stress27,28, suggesting that an important
+consequence of oxidant-induced p53 activation is a further increase
+in the level of oxidative stress. This positive feedback loop may be
+important in committing to an apoptotic response. 
+Oxidants seem to activate the ERK and the PI(3)K/Akt pathways
+largely through stimulation of growth-factor receptors, mimicking
+02 +H20
+H202
+CAT
+GPx
+SOD
+Q
+Q
+.Q-
+QH2
+.O2
+O2
+Dehydrogenases
+H+
+ATP
+ATP + Pi
+Q
+ll
+lll
+l
+lV
+V
+Cyt c
+Figure 2 Complex III is the major source of
+mitochondrial ROS production. Electrons from
+complex I or II dehydrogenases are transfered
+to coenzyme Q (Q), also called ubiquinone.
+The resulting reduced form (QH2) of coenzyme
+Q subsequently undergoes two sequential
+one-electron reductions (the Q cycle) using
+oxidized and reduced forms of cytochrome b
+and cytochrome c (Cyt c). The unstable
+intermediate in the Q cycle (üQ1) can lead to
+superoxide formation by transferring electrons
+directly to molecular oxygen. Once generated,
+the superoxide can be enzymatically
+dismutated by SOD to form hydrogen peroxide
+that in turn is metabolized by enzymes such as
+catalase (CAT) and glutathione reductase
+(GPx) regenerating water and molecular
+oxygen. The generation of superoxide is non-
+enzymatic and hence the higher the rate of
+metabolism, the greater the production of
+ROS.
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 4>>>
+insight review articles
+242
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+the actions of natural ligands. Many growth-factor receptors have
+been shown to undergo enhanced phosphorylation in response to
+direct treatment with oxidants, and agents or conditions that prevent
+receptor phosphorylation likewise inhibit the activation of ERK and
+Akt by oxidants29–31. One mechanism proposed to explain this effect
+is oxidant-mediated inactivation of critical phosphatases necessary
+for dephosphorylation (turning off) of the growth-factor
+receptors31. Support for such a mechanism has come from the finding
+that hydrogen peroxide, either derived exogenously or produced
+endogenously after growth-factor stimulation, can reversibly 
+inactivate protein-tyrosine phosphatase 1B in cells32. The activation
+of growth-factor-receptor signalling pathways by oxidants is consis-
+tent with the demonstration that low concentrations of exogenous
+hydrogen peroxide are mitogenic33. 
+Oxidative stress might induce activation of the JNK and p38
+kinase pathways by an additional mechanism. The redox regulatory
+protein thioredoxin (Trx) has been shown to bind to apoptosis 
+signal-regulating kinase (ASK1), an upstream activator of both JNK
+and p38, and under normal conditions inhibit its activity34. However,
+oxidative stress causes dissociation of the Trx–ASK1 complex and
+subsequent activation of the downstream JNK and p38 kinase34. 
+Similarly, biochemical evidence indicates that under non-stressed
+conditions glutathione S-transferase binds to JNK to inhibit its 
+activation, but that this interaction is also disrupted by 
+oxidative stress35. These results show an intimate coupling between
+alterations in the intracellular redox state and the activity of 
+downstream stress-activated pathways. The observation that 
+multiple pathways are sensitive to a rise in ROS levels indicates 
+that these pathways may have evolved, in part, to allow organisms to
+survive within an aerobic environment. In addition, it suggests that a
+rise in ROS might represent a common, if not universal, signal of 
+cellular stress.
+A common effect of the activation of these pathways is a change in
+pattern of gene expression mediated largely through modulation of
+the activities of transcription factors. Accordingly, a large number of
+oxidative stress-responsive transcription factors and genes have been
+identified36 and some of these have been implicated in influencing
+ageing processes. The effect of ROS on expression and activity of
+transcription factors is complex and occurs at multiple levels, often in
+a seemingly antagonistic or paradoxical fashion. For example,
+although ROS generally cause an increase in AP-1 levels and
+increased nuclear translocation of NF-kB, oxidant stress can at the
+same time reduce the transcriptional activity of these molecules
+through the direct oxidation of critical cysteine residues contained
+within the DNA-binding domain36. 
+Analysis of the integrated cellular response to oxidative stress is an
+area that is particularly suited for analysis using a genomic or pro-
+teomic approach. Initial characterization using the latter technique
+in peroxide-challenged yeast revealed over a 100 proteins whose 
+levels changed after oxidative stress37. As might be expected, included
+among these were proteins involved in scavenging ROS, as well as
+heat shock proteins and chaperones. Nearly a quarter of the proteins
+identified were involved in carbohydrate metabolism. In general,
+oxidative stress repressed a number of proteins involved in glycolysis
+and the tricarboxylic acid cycle. This was interpreted as an attempt to
+restore levels of reducing equivalents such as NADPH at the expense
+of ATP generation. If these results are confirmed in higher eukaryotes
+it would imply that ROS may not only be by-products of metabolism
+but also be regulators of metabolic rates. Such a concept further blurs
+the distinction between the rate-of-living hypothesis and the free-
+radical theory of ageing and raises the possibility that the rate of living
+may determine the level of oxidant generation and that oxidant 
+generation may in turn modulate the rate of living.
+Several of the pathways activated by acute oxidative stress show
+diminished activity as a function of ageing. In a variety of model sys-
+tems and stress paradigms including oxidative stress, the magnitude
+of induction of heat-shock proteins, and Hsp70 in particular, is
+attenuated with age38. The heat-shock protein family encompasses
+many chaperones involved in regulating the folding, transport and
+degradation of other cellular proteins. The relationship between 
+ageing and a decline in the robustness of this stress response is
+unclear, but evidence indicates that elevating levels of Hsp70
+enhances the survival of stressed cells and/or animals, whereas
+inhibiting this stress response reduces survival39. 
+In contrast to the age-related attenuation in heat-shock protein
+induction in response to acute stress, two recent studies using 
+complementary DNA microarray analysis to examine global age-
+associated changes in gene expression in mouse tissues provided 
+evidence that basal expression (that seen in the absence of overt
+stress) of certain heat-shock proteins actually increases with age-
+ing40,41. This elevated expression (which involves members other than
+Hsp70) was interpreted to occur as a response to the age-associated
+accumulation of oxidatively damaged proteins. Age-associated ele-
+vations in expression of heat-shock proteins have also been observed
+in Drosophila42 and Caenorhabditis elegans (T. Johnson, personal
+communication). In some systems, stress-induced activation of the
+Table 1 Mutations revealing links between longevity and stress resistance in multicellular organisms
+Phenotypic influence*
+Species/mutations
+Gene description
+Life span†
+Stress resistance
+C. elegans
+age-1
+Human PI(3)K homologue 
+65% increase
+Enhanced (UV, paraquat, heat)
+daf-2
+Human insulin-receptor homologue 
+100% increase
+Enhanced (UV, paraquat, heat)
+daf-16 
+Forkhead transcription factor
+Suppresses longevity conferred by
+Suppresses stress resistance of age-1 and daf-2 mutants
+age-1 and daf-2 mutations
+clk-1
+Homologue of yeast gene associated with
+40% increase
+Enhanced increased (UVC)
+coenzyme Q biosynthesis
+spe-10
+Unknown (sperm defective)
+40% increase
+Enhanced (UV, paraquat, but not heat)
+spe-26
+Unknown (sperm defective)
+65% increase
+Enhanced (UV, paraquat, heat)
+old-1
+Putative receptor tyrosine kinase
+65% increase
+Enhanced (UV, heat)
+ctl-1
+Cytosolic catalase
+25% decrease; suppresses longevity 
+Not determined
+conferred by daf-2, age-1 and clk-1
+mev-1
+Cytochrome b subunit of succinate 
+37% decrease
+Hypersensitive to oxygen
+dehydrogenase
+Drosophila
+mth
+Putative G-protein-coupled receptor
+35% increase
+Enhanced (UV, paraquat, heat)
+Mouse
+shc66
+Cytoplasmic signal-transduction adaptor protein
+30% increase
+Enhanced (UV, H2O2)
+*See ref. 83 for original references describing the phenotypes of the daf-2, daf-16, clk-1 and spe-26 mutants. References for other mutants are as follows: age-1 (refs 49, 50, 83); spe-10 (ref. 84); old-1
+(ref. 85); ctl-1 (ref. 56); mev-1 (ref. 55); mth (ref. 60); and shc66 (ref. 68).
+†Numbers reflect changes in mean life span of the mutants relative to wild-type animals.
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 5>>>
+insight review articles
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+243
+ERK signalling pathway is also attenuated with ageing43. Like the
+heat-shock response, ERK activation exerts a pro-survival signal 
+during oxidative stress44; thus, reduced ERK activity in aged cells may
+have a negative impact on survival. It is also worth noting that activa-
+tion of ERK in response to mitogenic stimulation is also reduced as a
+function of ageing45, again emphasizing the intimate link between
+proliferative and oxidative stress-response pathways. Basal DNA-
+binding activity of NF-kB has been shown to increase with age, which
+again has been suggested to reflect increased oxidative stress in aged
+cells and tissues46,47. However, as with heat-shock protein expression,
+evidence indicates that acute activation of this transcription factor by
+extracellular signals in T cells is diminished with ageing48.
+Genetics, oxidative phenomena and longevity
+If oxidative stress and the ability to respond appropriately to it is
+important in ageing, then it follows that factors that increase 
+resistance to stress should have anti-ageing benefits and lead to
+enhanced life span. In support of this claim, genetic links between
+stress responsiveness and longevity have been established in C. ele-
+gans, Drosophilaand mice (Table 1). In C. elegans, such a relationship
+between life span and stress resistance was first demonstrated for 
+age-1 mutants which also displayed age-dependent elevations in
+CuZn-SOD and catalase activities49,50. A variety of other life-
+extending mutations that are likewise correlated with enhanced
+stress tolerance have since been described (see Table 1 for references). 
+To the extent that their functions are known, many of the mutat-
+ed genes encode proteins involved in regulating energy use, and
+therefore potentially the level of ROS. For example, the age-1, daf-2
+and daf-16 genes in C. elegans are associated with an insulin-like 
+signalling pathway that regulates dauer larval formation allowing
+the worm to survive periods of food scarcity. age-1 and daf-2seem to 
+suppress the activity of the downstream target daf-16, a forkhead
+transcription factor51. Hence, loss of function of either of these
+upstream regulators enhances daf-16 function and leads to
+increased life span. Importantly, loss-of-function mutations in 
+daf-16 not only prevent longevity conferred by the age-1 and daf-2
+mutations, but also abolish stress resistance52, thus strengthening
+the intimate link between longevity and stress responsiveness 
+associated with this pathway. What remains to be determined is how
+the dauer mutations  influence stress responsiveness and longevity.
+Identification of the transcriptional targets of daf-16 should 
+provide insight into this process. Another C. elegans gene whose
+mutation confers both increased longevity and enhanced stress
+responsiveness is clk-1 (ref. 53). clk-1 encodes a mitochondrial 
+protein homologous to a yeast protein involved in the synthesis of
+coenzyme Q, an electron carrier required for respiration (Fig. 2).
+Although its biological function in the nematode is unclear, clk-1
+mutants are believed to enhance life span by reducing the rate of
+metabolism, which in turn might lead to slower accumulation of
+damage resulting from metabolic by-products such as ROS. 
+Consistent with this hypothesis, overexpression of clk-1 leads to a
+reduction in life span54.
+Gene mutations resulting in reduced life span in C. elegans have
+also been described. Although a life-shortening phenotype is 
+generally considered to be less reliable than a life-lengthening trait for
+the assessment of ageing-associated genes, two such mutations, 
+mev-1 and ctl-1, are worth special mention as they seem to be linked
+to oxidative stress. mev-1 encodes a subunit of the enzyme succinate
+dehydrogenase cytochrome b, a component of complex II of the
+mitochondrial electron transport chain55. These animals have 
+compromised mitochondrial function, reduced cytoplasmic SOD
+activity and show hypersensitivity to oxygen. ctl-1 encodes a unique
+catalase localized in the cytosol56. It is likely to contribute to the cell’s
+antioxidant defences, but ctl-1 mutants have not been examined
+directly for responsiveness to oxidative stress. Interestingly, loss of
+ctl-1 function also eliminates longevity conferred by both the dauer
+pathway mutants and clk-1. Additional evidence for a link between
+longevity and oxidative stress resistance in the nematode has recently
+been obtained using a pharmacological approach to boost antioxi-
+dant defences57. Treatment of wild-type C. elegans with synthetic
+SOD/catalase mimetics was shown to extend the mean life span by
+44%. Moreover, the agent was also effective in restoring normal life
+span to mev-1mutants.
+A similar link between longevity and stress resistance also exists in
+Drosophila. Various strains of flies selected for extended life span 
+display increased resistance to oxidative stress that in some cases is
+also correlated with enhanced activity of antioxidant enzymes58,59. In
+addition, at least one gene, methuselah (mth), has been identified
+whose mutation not only enhances longevity but also increases 
+resistance to heat stress and paraquat (an intracellular ROS 
+generator)60. Further support for the relationship between stress 
+tolerance and life span in Drosophila has been obtained using a 
+transgenic approach to overexpress antioxidant genes. Overexpres-
+sion of glutathione reductase, an enzyme involved in the generation
+of reduced glutathione, increases the resistance of flies exposed to
+hyperoxic conditions and extends life span under such conditions,
+although it does not affect life span of flies maintained in normal air61.
+Several studies have shown that elevated expression of CuZn-SOD
+alone or in combination with catalase likewise results in enhanced
+stress tolerance and increased life span62–64. However, other studies
+have reported little or no extension in longevity or enhanced stress
+Environmental insults
+Heat   Cytokines   H2O2  Radiation
+Consequences
+ Apoptosis   Proliferation   Growth arrest   Senescence
+p38
+PI(3)K
+Akt
+NF-kB
+HSF1
+p53
+Target genes
+Transcription
+ROS
+Erk
+JNK
+Figure 3 Major signalling pathways activated in response to oxidative stress. ROS
+can originate outside the cell, or may be generated intracellularly in response to
+external stimuli. Heat-shock transcription factor 1 (HSF1), NF-kB and p53 are
+themselves transcription factors, while the PI(3)K/Akt and MAPK pathways regulate
+transcription factors through phosphorylation. The degree to which a given pathway is
+activated is highly dependent on the nature and duration of the stress, as well as the
+cell type. The consequences of the response vary widely, with the ultimate outcome
+being dependent on the balance between these stress-activated pathways. HSF1 is
+responsible for activation of the heat-shock response. Factors depicted in pink
+represent those pathways whose activities are altered with ageing.
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 6>>>
+insight review articles
+244
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+resistance with overexpression of CuZn-SOD (refs 65, 66), and the
+basis for these discrepancies is presently unclear.
+The effect of elevated SOD expression on stress resistance and life
+span has also been examined in mice. Although several reports have
+produced evidence to indicate that elevated CuZn-SOD levels afford
+protection against acute oxidative stress, a recent study showed that
+such acute protection did not correlate with increased longevity67.
+However, another study found an unexpected correlation between
+life span and control of the oxidative stress response: targeted muta-
+tion of the shc gene locus, which caused ablation of a splice variant of
+relative molecular mass 66,000 (p66shc), resulted in selective 
+resistance to oxidative stress and extended life span68. p66shc is one of
+three splice variants derived from the shc locus. p52shc and p46shc are
+important adaptor proteins that are regulated by tyrosine phospho-
+rylation and participate in growth-factor- and stress-induced ERK
+activation. p66shc also undergoes tyrosine phosphorylation in
+response to extracellular signals, but its role in regulating ERK activa-
+tion is less clear. However, the p66shc variant is unique in that it also
+becomes phosphorylated on serine residues in response to certain
+extracellular signals and, in the case of oxidative stress, this leads to
+apoptosis. Serine phosphorylation of p66shc is also stimulated by
+insulin69. This observation could provide another link to stress 
+resistance and longevity, as an insulin-like pathway is clearly involved
+in regulating longevity and stress resistance in C. elegans (see above).
+Although better understanding of the mechanisms involved in
+p66shc-mediated apoptosis and its importance to ageing await further
+investigation, these studies provide the first evidence for a genetic
+link between longevity and oxidative stress resistance in mammals.
+Caloric restriction and oxidative stress
+Limiting food intake, or caloric restriction, has been shown to extend
+life span in a wide range of species and in rodents it also slows the 
+progression of a variety of age-associated diseases70. Although several
+theories have been advanced over the years to explain the anti-ageing
+effects of caloric restriction, one favoured hypothesis proposes that it
+acts by decreasing oxidative stress71. In support of this hypothesis, 
+the rate of oxidant generation of mitochondria from calorically
+restricted mice is significantly lower than from their ad libitum-fed
+counterparts, and caloric restriction reduces the age-associated 
+accumulation of oxidatively damaged proteins, lipids and DNA70.
+Caloric restriction also prevents many of the changes in gene expres-
+sion and transcription-factor activity that normally occur with ageing,
+Although maximum life span is the most relevant and defined
+endpoint with regard to ageing, it seems likely that in large
+multicellular organisms ageing need not proceed uniformly. This
+concept of non-uniform or focal ageing, or what has been termed
+segmental progeria by others83, may be particularly important in a
+variety of age-related human diseases. Certainly the incidence of a
+host of diseases, including both cardiovascular and
+neurodegenerative disorders, increases exponentially with age. The
+basis for this steep rise in disease incidence is unexplained, but one
+possibility is that such diseases may share common mechanisms
+with ageing. In this regard, increasing evidence indicates that reactive
+oxygen species (ROS) may participate in the pathogenesis of these
+diseases. In support of this notion is the experimental evidence that
+the vessel wall of patients with atherosclerotic risk factors, but no
+overt disease, is characterized by a significant increase in vascular
+ROS production86. In addition, many ophthalmological and
+neurodegenerative diseases seem to be mediated, at least in part, by
+oxidative stress.
+One common feature to many of these conditions is the
+recruitment of inflammatory cells. These cells contribute to oxidative
+stress in large part because they contain the potent NADPH oxidase
+system. Once activated, the NADPH oxidase complex, which is
+present in neutrophils, macrophages, microglia and vascular cells,
+produces large amounts of superoxide. In both the brain and the
+vessel wall the interaction of superoxide with endogenously
+generated nitric oxide can lead to the formation of peroxynitrite and
+other damaging radical species. Although the relative contribution of
+these various radical species is unknown, the link between
+inflammation and ROS seems to provide a useful framework for
+understanding disease progression.
+Although laboratory data clearly suggest a role for oxidants in the
+pathogenesis of many age-related diseases, the clinical use of
+antioxidant therapy has been at best equivocal. Indeed, most of the
+large randomized trials of antioxidant vitamins such as vitamin A and
+vitamin E have shown, at best, marginal results and occasionally,
+potentially harmful outcomes (see Table below). Nonetheless,
+antioxidant therapy is in its infancy and issues of dosing and duration
+remain largely unexplored. It therefore is interesting to speculate that,
+in contrast to the relatively rare progerias that are characterized by
+accelerated global ageing, the clinical manifestations of these more
+common diseases, namely an atherosclerotic plaque or an Alzheimer
+tangle, may represent the fingerprint of accelerated but focal ageing.
+Box 1
+Oxidants and diseases of ageing
+Box 1 Table Oxidants, antioxidants and diseases of ageing
+Disease system
+Laboratory/animal studies
+Clinical data
+Cardiovascular
+Pre-atherosclerotic blood vessels have increased levels of ROS86
+PHS I: no overall benefit of beta-carotene on CVD? Benefit in high-risk 
+subgroup99
+Vitamin E protects against development of atherosclerosis87
+CHAOS trail: vitamin E reduces rate of non-fatal myocardial infarct100
+Disruption of SOD leads to heart failure88,89 and overexpression protects 
+against injury90
+ATBC study: no overall benefit on CVD rate with vitamin E or beta-carotene? 1
+Increase in CVD deaths with beta-carotene10
+Ophthalmological
+Offspring of pregnant mice depleted of glutathione develop cataracts91
+PHS I: non-significant reduction in cataracts and macular degeneration with 
+vitamin E and multivitamins102
+Retinal pigments produce ROS after light exposure92
+NHS: carotenoids intake may decrease risk of cataracts103
+Retinal degeneration in primates with vitamin A or E deficiencies93
+Neurological
+Mutations in SOD1 result in human ALS94 and transgenic animal 
+Vitamin E not protective in early Parkinson’s disease104
+models rescued by antioxidants95,96
+Vitamin E beneficial in Alzheimer’s disease105
+NMDA-receptor stimulation produces superoxide97
+N-acetylcysteine does not effect survival in ALS106
+Defects in the function of complex 1 seen in Parkinson’s disease98
+The references cited above should be viewed as only representative examples derived from a much larger, relevant body of literature, which owing to space constraints cannot be fully presented.
+Acronyms and abbreviations: PHS I, Physicians’ Health Study I; CHAOS, Cambridge Heart Antioxidant Study; ATBC, Alpha-Tocopherol, Beta-Carotene Cancer Prevention Study; NHS, Nurses’
+Health Study; CVD, cardiovascular disease; ALS, amyotrophic lateral sclerosis; NMDA, N-methyl-D-aspartate glutamate receptors.
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 7>>>
+including basal elevations in expression of heat-shock proteins40,41and
+attenuation of stress-induced Hsp70 expression72. Finally, caloric
+restriction increases the ability of rodents to withstand a wide range of
+physiological stresses, improves thermotolerance and reduces heat-
+induced cellular damage in aged rats73. 
+Therapeutic strategies against ageing
+Understandably, there is tremendous public interest in the 
+development of anti-ageing therapies. If one accepts the evidence
+that oxidative stress has a significant role in ageing processes, and that
+the ability to resist or prevent oxidative stress is a key determinant of
+longevity, then it is likely that strategies aimed either at reducing the
+oxidative burden or boosting host defence mechanisms involved in
+coping with the damage would have significant anti-ageing effects
+(see Box 1). Two key issues will then arise. First, can effective 
+therapeutics be designed to combat oxidant damage? Second, would
+such approaches be effective in retarding ageing and/or preventing
+diseases associated with ageing? It is already known that caloric
+restriction fulfils both of these criteria in lower organisms, and exper-
+iments in non-human primates have produced encouraging results
+to suggest that reducing food intake might also delay ageing in
+humans74. However, the possible application of caloric restriction to
+the human population would surely face insurmountable ethical and
+practical difficulties that would prevent its use. On the other hand,
+better understanding of the specific mechanisms responsible for the
+anti-ageing influences of caloric restriction could lead to the 
+development of pharmacological agents (that is, caloric restriction
+mimetics) that would be effective in slowing ageing or delaying the
+onset of age-associated diseases.
+Enhancement of antioxidant defences through dietary 
+supplementation would seem to provide a more reasonable and
+practical approach to reduce the level of oxidative stress and there is a
+wealth of evidence to support the effectiveness of such a strategy in
+vitro. However, although some success has been achieved using
+antioxidant therapy in mammalian models of disorders induced by
+oxidative stress, so far these strategies have had little or no effect in
+enhancing longevity75,76. Successful application of this approach will
+probably require much greater understanding of the pharmacologi-
+cal properties of many of the agents being used, including their rates
+of absorption, tissue distribution, metabolism and the microenvi-
+ronment in which they must act. Indeed, the problem is clearly more
+complicated than simply adding a pharmacological agent, as most
+free-radical scavengers act in oxidation-reduction reactions that are
+reversible, and some, such as ascorbate, can act both as antioxidants
+and pro-oxidants, depending on the conditions77. In addition, given
+the role of ROS as mediators of normal signalling processes, determi-
+nation of the optimal dosage of supplements may require fine tuning
+to avoid overshooting the desired effects to the point of perturbing
+the delicate redox balance required for the maintenance of 
+normal cell functions (Fig. 1). However, the development of new 
+synthetic compounds that act as mimetics of SOD and catalase has
+offered an alternative approach with some promise78,79. Use of such
+compounds in mouse models has been effective in attenuating 
+oxidative stress-associated disease processes, and leads to extension
+of longevity in C. elegans 57. 
+Finally, consideration should be given to strategies to boost the
+host defence mechanisms that are known to be activated in response
+to oxidative stress. So far, the best mechanism for boosting such
+responses seems to be stress itself. That is, a sublethal or conditioning
+stress can lead to enhanced survival and reduced tissue damage fol-
+lowing a subsequent, more severe stress. This concept, termed
+hormesis39,70,71, is in many ways the physiological equivalent of the
+philosophical notion that ‘what won’t kill you, will make you strong’.
+Although the basis for this stress tolerance phenomenon is poorly
+understood, elevations in heat-shock proteins may be one important
+factor. Interestingly, such conditioning stress can also lead to life
+extension in both C. elegans80,81and Drosophila82.In humans as well as
+lower mammals, exercise is believed to have many anti-ageing 
+benefits. Because even in conditioned athletes exercise results in
+acute stress, it is possible that some of its benefits are derived through
+such a stress-tolerance mechanism.
+Conclusions
+In summary, although ageing is likely to be a multifactorial process,
+there is now significant evidence implicating the generation of ROS
+and the corresponding response to oxidative stress as key factors in
+determining longevity. Much of the early evidence was correlative,
+such as the relationship between metabolic rate and life span, and the
+observed increase in oxidative damage as a function of age. However,
+the more recent identification of longevity-influencing genes, first in
+lower organisms and subsequently in mammals, significantly
+strengthens the mechanistic connection between oxidants, stress and
+ageing. Many questions remain including how these various longevi-
+ty-associated genes actually function to influence stress resistance
+and ageing, and how applicable they are to human ageing. If oxidative
+stress does indeed contribute to ageing in the manner described, do
+ROS act purely as random, destructive agents or — as we have 
+intimated in this review — as regulators of discrete pathways linked
+to stress responsiveness and ageing? Similarly, it remains unclear
+whether it is the absolute level of oxidative stress encountered or the
+subsequent appropriate or inappropriate response to oxidative
+stress, or perhaps some combination of both, that ultimately 
+determines life expectancy. Finally, and very importantly, in what
+fashion does oxidative stress intersect, if at all, with other proposed
+determinants of ageing such as telomere length and telomerase 
+activity, or gene products such as the Werner’s helicase that are linked
+to accelerated ageing syndromes? Nearly a century after the rate-of-
+living hypothesis was first proposed, the answers to these and related
+questions remain largely unknown. However, given the rapid rate at
+which our knowledge in this area has increased over the past few
+years, it is likely that answers to many of these questions will be 
+forthcoming within this first decade of the new century. These
+answers will undoubtedly help determine whether ROS are merely
+peripheral targets that correlate with longevity, or instead, are finally
+established as a central regulator of human ageing.
+I
+1. Harman, D. Aging: a theory based on free radical and radiation chemistry. J. Gerontol. 2, 298–300
+(1957).
+2. McCord, J. M. &Fridovich, I. Superoxide dismutase. An enzymatic function for erythrocuperin
+(hemocuperin). J. Biol. Chem. 244, 6049–6055 (1969).
+3. Ku, H. H., Brunk, U. T. & Sohal, R. S. Relationship between mitochondrial superoxide and
+hydrogen peroxide production and longevity of mammalian species. Free Radical Biol. Med. 15,
+621–627 (1993).
+4. Finkel, T. Oxygen radicals and signaling. Curr. Opin. Cell Biol. 10, 248–253 (1998).
+5. Nishikawa, T. et al. Normalizing mitochondrial superoxide production blocks three pathways of
+hyperglycaemic damage. Nature 404, 787–790 (2000).
+6. Nemoto, S., Takeda, K., Yu, Z. X., Ferrans, V. J. & Finkel, T. A role for mitochondrial oxidants as
+regulators of cellular metabolism. Mol. Cell. Biol. 20, 7311–7318 (2000).
+7. Suh, Y. A. et al. Cell transformation by the superoxide-generating oxidase Mox1. Nature 401,
+79–82 (1999).
+8. Geiszt, M., Kopp, J. B., Varnai, P., & Leto, T. L. Identification of Renox, an NAD(P)H oxidase in
+kidney. Proc. Natl Acad. Sci. USA 97, 8010–8014 (2000).
+9. Turrens, J. F. Superoxide production by the mitochondrial respiratory chain. Biosci. Rep. 17, 3–8
+(1997).
+10.Golubev, A. G. The other side of metabolism: a review. Biochemistry 61, 1443–1460 (1996).
+11.Boveris, A. & Chance, B. The mitochondrial generation of hydrogen peroxide. General properties and
+effect of hyperbaric oxygen. Biochem. J. 134, 707–716 (1973).
+12.Skulachev, V. P. Role of uncoupled and non-coupled oxidations in maintenance of safely low levels of
+oxygen and its one-electron reductants. Q. Rev. Biophys. 29, 169–202 (1996).
+13.Vidal-Puig, A. J. et al. Energy metabolism in uncoupling protein 3 gene knockout mice. J. Biol. Chem.
+275, 16258–16266 (2000).
+14.Chae, H. Z., Kang, S. W. & Rhee, S. G. Isoforms of mammalian peroxiredoxin that reduce peroxides in
+presence of thioredoxin. Methods Enzymol. 300, 219–226 (1999).
+15.Stadtman, E. R. Protein oxidation and aging. Science 257, 1220–1224 (1992).
+16.Yan, L. J., Levine, R. L. & Sohal, R. S. Oxidative damage during aging targets mitochondrial aconitase.
+Proc. Natl Acad. Sci. USA 94, 11168–11172 (1997).
+17.Goto, S. et al. Carbonylated proteins in aging and exercise: immunoblot approaches. Mech. Age.Dev.
+107, 245–253 (1999).
+18.Dukan, S. et al. Protein oxidation in response to increased transcriptional or translational errors.
+Proc. Natl Acad. Sci. USA 97, 5746–5749 (2000).
+19.Beckman, K. B. & Ames, B. N. The free radical theory of aging matures. Physiol. Rev. 78,
+547–581 (1998).
+insight review articles
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+245
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 8>>>
+20.Esposito, L. A., Melov, S., Panov, A., Cottrell, B. A. & Wallace, D. C. Mitochondrial disease in mouse
+results in increased oxidative stress. Proc. Natl Acad. Sci. USA 96, 4820–4825 (1999).
+21.Melov, S. et al. Mitochondrial disease in superoxide dismutase 2 mutant mice. Proc. Natl Acad. Sci.
+USA 96, 846–851 (1999).
+22.Packer, L. & Fuehr, K. Low oxygen concentration extends the lifespan of cultured human diploid cells.
+Nature 267, 423–425 (1977).
+23.von Zglinicki, T., Saretzki, G., Docke, W. & Lotze, C. Mild hyperoxia shortens telomeres and inhibits
+proliferation of fibroblasts: a model for senescence? Exp. Cell Res. 220, 186–193 (1995).
+24.Chen, Q. & Ames, B. N. Senescence-like growth arrest induced by hydrogen peroxide in human
+diploid fibroblast F65 cells. Proc. Natl Acad. Sci. USA 91, 4130–4134 (1994).
+25.Serrano, M., Lin, A. W., McCurrach, M. E., Beach, D. & Lowe, S. W. Oncogenic ras provokes
+premature cell senescence associated with accumulation of p53 and p16INK4a. Cell 88, 593–602
+(1997).
+26.Lee, A. C. et al. Ras proteins induce senescence by altering the intracellular levels of reactive oxygen
+species. J. Biol. Chem. 274, 7936–7940 (1999).
+27.Johnson, T. M., Yu, Z. X., Ferrans, V. J., Lowenstein, R. A. & Finkel, T. Reactive oxygen species are
+downstream mediators of p53-dependent apoptosis. Proc. Natl Acad. Sci. USA 93, 11848–11852
+(1996).
+28.Polyak, K., Xia, Y., Zweier, J. L., Kinzler, K. W. & Vogelstein, B. A model for p53-induced apoptosis.
+Nature 389, 300–305 (1997).
+29.Sachsenmaier, C. et al. Involvement of growth factor receptors in the mammalian UVC response. Cell
+78, 963–972 (1994).
+30.Wang, X., McCullough, K. D., Franke, T. F. & Holbrook, N. J. Epidermal growth factor receptor-
+dependent Akt activation by oxidative stress enhances cell survival. J. Biol. Chem. 275,
+14624–14631 (2000).
+31.Knebel, A., Rahmsdorf, H. J., Ullrich, A. & Herrlich, P. Dephosphorylation of receptor tyrosine
+kinases as target of regulation by radiation, oxidants or alkylating agents. EMBO J. 15,
+5314–5325 (1996).
+32.Lee, S. R., Kwon, K. S., Kim, S. R. & Rhee, S. G. Reversible inactivation of protein-tyrosine
+phosphatase 1B in A431 cells stimulated with epidermal growth factor. J. Biol. Chem. 273,
+15366–15372 (1998).
+33.Burdon, R. H. Superoxide and hydrogen peroxide in relation to mammalian cell proliferation. Free
+Radical Biol. Med. 18, 775–794 (1995). 
+34.Saitoh, M. et al. Mammalian thioredoxin is a direct inhibitor of apoptosis signal-regulating kinase
+(ASK) 1. EMBO J. 17, 2596–2606 (1998).
+35.Adler, V. et al. Regulation of JNK signaling by GSTp. EMBO J. 18, 1321–1334 (1999).
+36.Allen, R. G. & Tresini, M. Oxidative stress and gene regulation. Free Radical Biol. Med. 28,
+463–499 (2000).
+37.Godon, C. et al. The H2O2 stimulon in Saccharomyces cerevisiae. J. Biol. Chem. 273, 22480–22489
+(1998).
+38.Richardson, A. & Holbrook, N. J. in Cellular Aging and Cell Death (eds Holbrook, N. J., Martin, G. R.
+& Lockshin, R. A.) 67–89 (Wiley, New York, 1996).
+39.Morimoto, R. I. & Santoro, M. G. Stress-inducible responses and heat shock proteins: new
+pharmacologic targets for cytoprotection. Nature Biotechnol. 16, 833–838 (1998).
+40.Lee, C. K., Klopp, R. G., Weindruch, R. & Prolla, T. A. Gene expression profile of aging and its
+retardation by caloric restriction. Science 285, 1390–1393 (1999).
+41.Lee, C. K., Weindruch, R. & Prolla, T. A. Gene-expression profile of the ageing brain in mice. Nature
+Genet. 25, 294–297 (2000).
+42.Wheeler, J. C., Bieschke, E. T. & Tower, J. Muscle-specific expression of Drosophila hsp70 in response
+to aging and oxidative stress. Proc. Natl Acad. Sci. USA 92, 10408–10412 (1995).
+43.Guyton, K. Z. et al. Age-related changes in activation of mitogen-activated protein kinase cascades by
+oxidative stress. J. Invest. Dermatol. Symp. Proc. 3, 23–27 (1998).
+44.Guyton, K. Z. et al. Activation of mitogen-activated protein kinase by hydrogen peroxide: role in cell
+survival following oxidant injury. J. Biol. Chem. 271, 4138–4142 (1996).
+45.Liu et. al. Age-related decline in MAP kinase activity in EGF-stimulated rat hepatocytes. J. Biol. Chem.
+271, 3604–3607 (1996)
+46.Poynter, M. E. & Daynes, R. A. Peroxisome proliferator-activated receptor alpha activation modulates
+cellular redox status, represses nuclear factor-kappaB signaling, and reduces inflammatory cytokine
+production in aging. J. Biol. Chem. 273, 32833–32841 (1998).
+47.Supakar, P. C., Jung, M. H., Song, C. S., Chatterjee, B. & Roy, A. K. Nuclear factor kappa B functions as
+a negative regulator for the rat androgen receptor gene and NF-kappa B activity increases during the
+age-dependent desensitization of the liver. J. Biol. Chem. 270, 837–842 (1995).
+48.Ponnappan, U. Regulation of transcription factor NFkappa B in immune senescence. Front. Biosci. 1,
+D152–D168 (1998).
+49.Larsen, P. L. Aging and resistance to oxidative damage in Caenorhabditis elegans. Proc. Natl Acad. Sci.
+USA 90, 8905–8909 (1993). 
+50.Vanfleteren, J. R. Oxidative stress and ageing in Caenorhabditis elegans. Biochem. J. 292, 605–608
+(1993). 
+51.Ogg, S. et al. The Fork head transcription factor DAF-16 transduces insulin-like metabolic and
+longevity signals in C. elegans. Nature 389, 994–999 (1997).
+52.Murakami, S. & Johnson, T. E. A genetic pathway conferring life extension and resistance to UV stress
+in Caenorhabditis elegans. Genetics 143, 1207–1218 (1996).
+53.Wong, A., Boutis, P. & Hekimi, S. Mutations in the clk-1 gene of Caenorhabditis elegans affect
+developmental and behavioral timing. Genetics 139, 1247–1259 (1995).
+54.Branicky, R., Benard, C. & Hekimi, S. clk-1, mitochondria, and physiological rates. Bioessays 22,
+48–56 (2000).
+55.Ishii, N. et al. A mutation in succinate dehydrogenase cytochrome b causes oxidative stress and ageing
+in nematodes. Nature 394, 694–697 (1998).
+56.Taub, J. et al. A cytosolic catalase is needed to extend adult lifespan in C. elegans daf-C and clk-1
+mutants. Nature 399, 162–166 (1999).
+57.Melov, S. et al. Extension of lifespan with superoxide dismutase/catalase mimetics. Science 289,
+1567–1569 (2000).
+58.Dudas S. et al. A coordinate upregulation of antioxidant gene activities is associated with the delayed
+onset of senescence in a long-lived strain of Drosophila. J. Gerontol. A 50, B117–B127 (1995).
+59.Harshman, L. G. & Haberer, B. A. Oxidative stress resistance: a robust correlated response to selection
+in extended longevity lines of Drosophila melanogaster. J. Gerontol. A 55, B415–B417 (2000). 
+60.Lin, Y. J., Seroude, L. & Benzer, S. Extended life-span and stress resistance in the Drosophila mutant
+methuselah. Science 282, 943–946 (1998).
+61.Mockett, R. J., Sohal, R. S. & Orr, W. C. Overexpression of glutathione reductase extends survival
+in transgenic Drosophila melanogaster under hyperoxia but not normoxia. FASEB J. 13,
+1733–1742 (1999).
+62.Orr, W. C. & Sohal, R. S. Extension of life-span by overexpression of superoxide dismutase and
+catalase in Drosophila melanogaster. Science 263, 1128–1130 (1994).
+63.Sun, J. & Tower, J. FLP recombinase-mediated induction of Cu/Zn-superoxide dismutase transgene
+expression can extend the life span of adult Drosophila melanogaster flies. Mol. Cell Biol. 19,
+216–228 (1999).
+64.Parkes, T. L. et al. Extension of Drosophila lifespan by overexpression of human SOD1 in
+motorneurons. Nature Genet. 19, 171–174 (1998).
+65.Seto, N. O., Hayashi, S. & Tener, G. M. Overexpression of Cu-Zn superoxide dismutase in Drosophila
+does not affect life-span. Proc. Natl Acad. Sci. USA 87, 4270–4274 (1990).
+66.Orr, W. C. & Sohal, R. S. Effects of Cu-Zn superoxide dismutase overexpression on life span and
+resistance to oxidative stress in transgenic Drosophila melanogaster. Arch. Biochem. Biophys. 301,
+34–40 (1993).
+67.Huang, T. et al. Ubiquitous overexpression of CuZn superoxide dismutase does not extend life span in
+mice. J. Gerontol. Biol. Sci. A 55, B5–B9 (2000). 
+68.Migliaccio, E. et al. The p66shc adaptor protein controls oxidative stress response and life span in
+mammals. Nature 402, 309–313 (1999).
+69.Kao, A. W. et al. Insulin stimulates the phosphorylation of the 66- and 52-kilodalton Shc isoforms by
+distinct pathways. Endocrinology 138, 2474–2480 (1997). 
+70.Masoro, E. J. Caloric restriction and aging: an update. Exp. Gerontol. 35, 299–305 (2000).
+71.Sohal, R. S. & Weindruch, R. Oxidative stress, caloric restriction, and aging. Science 273, 59–63
+(1996).
+72.Heydari, A. R., Wu, B., Takahashi, R., Strong, R. & Richardson, A. Expression of heat shock protein 70
+is altered by age and diet at the level of transcription. Mol. Cell Biol. 13, 2909–2918 (1993).
+73.Hall, D. M. et al. Caloric restriction improves thermotolerance and reduces hyperthermia-induced
+cellular damage in old rats. FASEB J. 14, 78–86 (2000).
+74.Roth, G. S., Ingram, D. K. & Lane, M. A. Calorie restriction in primates: will it work and how will we
+know? J. Am. Geriatr. Soc. 47, 896–903 (1999).
+75.McCall, M. R. & Frei, B. Can antioxidant vitamins maternally reduce oxidative damage in humans?
+Free Radical Biol. Med. 26, 1034–1053 (1999).
+76.Yu, B. P. Approaches to anti-aging intervention: the promises and the uncertainties. Mech. Ageing Dev.
+111, 73–87 (1999).
+77.Podmore, I. D. et al. Vitamin C exhibits pro-oxidant properties. Nature 392, 559–559 (1998).
+78.Melov, S. et al. A novel neurological phenotype in mice lacking mitochondrial manganese superoxide
+dismutase. Nature Genet. 18, 159–163 (1998).
+79.Rong, Y. et al. EUK-134, a synthetic superoxide dismutse and catalase mimetic, prevents
+oxidative stress and attenuates kainate-induced neuropathology. Proc. Natl Acad. Sci. USA 96,
+9897–9902 (1999).
+80.Lithgow, G. J. et al. Thermotolerance and extended life-span conferred by single-gene mutations and
+induced by thermal stress. Proc. Natl Acad. Sci. USA 92, 7540–7544 (1995).
+81.Johnson, T. E. & Hartman, P. S. Radiation effects on life span in Caenorhabditis elegans. J. Gerontol.
+Biol. Sci. 43, B137–B141 (1988).
+82.Tatar, M., Khazaeli, A. A. & Curtsinger, J. W. Chaperoning extended life. Nature 390, 30 (1997).
+83.Martin, G. M., Austad, S. N. & Johnson, T. E. Genetic analysis of ageing: role of oxidative damage and
+environmental stresses. Nature Genet. 13, 25–34 (1996).
+84.Cypser, J. R. & Johnson, T. E. The spe-10 mutant has longer life and increased stress resistance.
+Neurobiol. Aging 20, 503–512 (1999).
+85.Murakami, S. & Johnson, T. E. Life extension and stress resistance in Caenorhabditis elegans
+modulated by the tkr-1 gene. Curr. Biol. 8, 1091–1094 (1998).
+86.Abe, J. & Berk, B. C. Reactive oxygen species as mediators of signal transduction in cardiovascular
+disease. Trends Cardiovasc. Med. 8, 59–64 (1998).
+87.Wojcicki, J. et al. Effect of selenium and vitamin E on the development of experimental
+atherosclerosis in rabbits. Atherosclerosis 87, 9–16 (1991).
+88.Lebovitz, R. M. et al. Neurodegeneration, myocardial injury, and perinatal death in mitochondrial
+superoxide dismutase-deficient mice. Proc. Natl Acad. Sci. USA 93, 9782–9787 (1996).
+89.Li, Y. B. et al. Dilated cardiomyopathy and neonatal lethality in mutant mice lacking manganese
+superoxide-dismutase. Nature Genet. 11, 376–381 (1995). 
+90.Wang, P. H. et al. Overexpression of human copper, zinc-superoxide dismutase (SOD1) prevents
+postischemic injury. Proc. Natl Acad. Sci. USA 95, 4556–4560 (1998).
+91.Martensson, J., Steinherz, R., Jain, A. & Meister, A. Glutathione ester prevents buthionine
+sulfoximine-induced cataracts and lens epithelial cell damage. Proc. Natl Acad. Sci. USA 86,
+8727–8731 (1989).
+92.Rozanowska, M. et al. Blue light-induced reactivity of retinal age pigment. In vitro generation of
+oxygen-reactive species. J. Biol. Chem. 270, 18825–18830 (1995).
+93.Hayes, K. C. Retinal degeneration in monkeys induced by deficiencies of vitamin E or A. Invest.
+Ophthalmol. 13, 499–510 (1974).
+94.Rosen, D. R. et al. Mutations in Cu/Zn superoxide dismutase gene are associated with familial
+amyotrophic lateral sclerosis. Nature 362, 59–62 (1993).
+95.Andreassen, O. A., Dedeoglu, A., Klivenyi, P., Beal, M. F., & Bush, A. I. N-acetyl-L-cysteine improves
+survival and preserves motor performance in an animal model of familiar amyotrophic lateral
+sclerosis. Neuroreport 11, 2491–2493 (2000).
+96.Nagano, S., Ogawa, Y., Yanagihara, T., & Sakoda, S. Benefit of a combined treatment with trientine
+and ascorbate in familiar amyotrophic lateral sclerosis model mice. Neurosci. Lett. 265, 159–162
+(1999).
+97.Lafon-Cazal, M., Pietri, S., Culcasi, M. & Bockaert, J. NMDA-dependent superoxide production and
+neurotoxicity. Nature 364, 535–537 (1993).
+98.Parker, W. D. Jr, Boyson, S. J. & Parks, J. K. Abnormalities of the electron transport chain in idiopathic
+Parkinson’s disease. Ann. Neurol. 26, 719–723 (1989).
+99.Hennekens, C. H. et al. Lack of effect of long-term supplementation with beta carotene on the
+incidence of malignant neoplasms and cardiovascular disease. N. Engl. J. Med. 334, 1145–1149 (1996).
+insight review articles
+246
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+© 2000 Macmillan Magazines Ltd
+
+<<<PAGE 9>>>
+100.Stephens, N. G. et al. Randomised controlled trial of vitamin E in patients with coronary disease.
+Cambridge Heart Antioxidant Study (CHAOS). Lancet 347, 781–786 (1996).
+101.The Alpha-Tocopherol Beta Carotene Study Group. The effect of vitamin E and beta carotene on the
+incidence of lung cancer and other cancers in male smokers. N. Engl. J. Med. 330, 1029–1035 (1994).
+102.Seddon, J. M. et al. The use of vitamin supplements and the risk of cataract among US male
+physicians. Am. J. Public Health 84, 788–792 (1994).
+103.Hankinson, S. E. et al. Nutrient intake and cataract extraction in women: a prospective study. Br.
+Med. J 305, 335–339 (1992).
+104.The Parkinson Study Group. Effects of tocopherol and deprenyl on the progression of disability in
+early Parkinson’s disease. N. Engl. J. Med. 328, 176–183 (1993).
+105.Sano, M. et al. A controlled trial of selegiline, alpha-tocopherol, or both as treatment for Alzheimer’s
+disease. The Alzheimer’s Disease Cooperative Study. N. Engl. J. Med. 336, 1216–1222 (1997).
+106.Louwerse, E. S., Weverling, G. J., Bossuyt, P. M., Meyjes, F. E. & de Jong, J. M. Randomized,
+double-blind, controlled trial of acetylcysteine in amyotrophic lateral sclerosis. Arch. Neurol. 52,
+559–564 (1995).
+Acknowledgements
+We thank I. Rovira and R. Wange for their help in the design of illustrations, and T.
+Johnson, D. Longo, B. Howard, R. Levine, M. Gorospe and N. Epstein for thoughtful
+comments and discussions.
+insight review articles
+NATURE | VOL 408 | 9 NOVEMBER 2000 | www.nature.com
+247
+© 2000 Macmillan Magazines Ltd

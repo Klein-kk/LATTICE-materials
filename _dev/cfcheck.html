@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>概念图版式复核</title>
+<link rel="stylesheet" href="../lattice-platform/assets/css/app.css">
+<style>
+  body{padding:22px;background:var(--paper)}
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px}
+  h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="box"><h2>元信息</h2><div id="meta" class="mono-xs"></div></div>
+<div class="box"><h2>概念路线图</h2><div id="r"></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="box"><h2>概念对比矩阵</h2><div id="m"></div></div>
+  <div class="box"><h2>年份演进时间线</h2><div id="t"></div></div>
+</div>
+<script src="../lattice-platform/assets/js/library.js"></script>
+<script src="../lattice-platform/assets/js/papers.js"></script>
+<script src="../lattice-platform/assets/js/domain.js"></script>
+<script src="../lattice-platform/assets/js/extract.js"></script>
+<script src="../lattice-platform/assets/js/paper.js"></script>
+<script src="../lattice-platform/assets/js/charts.js"></script>
+<script src="../lattice-platform/assets/js/data.js"></script>
+<script src="../lattice-platform/assets/js/app.js"></script>
+<script src="../lattice-platform/assets/js/views2-core.js"></script>
+<script src="../lattice-platform/assets/js/views2-stages.js"></script>
+<script src="cftext.js"></script>
+<script>
+(function () {
+  var an = MR.extract.analyze(window.__CFTEXT.text, { name: window.__CFTEXT.name });
+  MR.state.analysis = an;
+  MR.state.profile = MR.paper.build(an, window.__CFTEXT.text);
+  document.getElementById('meta').textContent =
+    '类型=' + an.paperType + ' · 概念类别=' + an.concepts.length + ' · 时间线=' + an.timeline.length +
+    ' · 标题=' + an.title;
+  var C = MR.views2.concept;
+  document.getElementById('r').innerHTML = C.route(900);
+  document.getElementById('m').innerHTML = C.matrix(430);
+  document.getElementById('t').innerHTML = C.time(430);
+})();
+</script>
+</body>
+</html>

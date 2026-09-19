@@ -1,0 +1,24 @@
+[
+  {
+    "file": "2023 Polym Eng Sci--A focused review on recycling and hydrol",
+    "chars": 97910,
+    "charsNoWs": 95651,
+    "letters": 77676,
+    "spaces": 873,
+    "spaceRatio": 0.0112,
+    "tokens": 5619,
+    "avgWordLen": 40.35,
+    "longTokenPct": 20.13,
+    "sentEndPer1k": 35,
+    "lines": 1387,
+    "abstractLen": 0,
+    "sections": 1,
+    "materials": 0,
+    "instruments": 0,
+    "variables": 0,
+    "indicators": 4,
+    "steps": 1,
+    "refs": 36,
+    "confidence": 38
+  }
+]

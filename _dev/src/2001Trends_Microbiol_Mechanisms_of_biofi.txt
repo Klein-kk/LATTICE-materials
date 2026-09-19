@@ -1,0 +1,866 @@
+
+<<<PAGE 1>>>
+TRENDS in Microbiology  Vol.9 No.1  January 2001
+34
+Review
+Review
+Review
+Review
+Review
+http://tim.trends.com 0966-842X/01/$ – see front matter © 2001 Elsevier Science Ltd. All rights reserved.   PII: S0966-842X(00)01913-2
+Review
+Thien-Fah C. Mah
+George A. O’Toole*
+Dept of Microbiology and
+Immunology,
+Dartmouth Medical
+School,
+Hanover, NH 03755, USA.
+*e-mail:
+georgeo@dartmouth.edu
+Bacterial biofilms are formed when unicellular
+organisms come together to form a community that is
+attached to a solid surface and encased in an
+exopolysaccharide matrix. Biofilms can be made up of
+single or multiple bacterial species. For example, it has
+been estimated that dental biofilms contain
+>500 different bacterial taxa1; conversely, in the latter
+stages of the disease, the primary bacterium in the
+lungs of cystic fibrosis (CF) patients is Pseudomonas
+aeruginosa. It has been observed that the resistance of
+biofilms to antibiotics is increased compared with what
+is normally seen with planktonic cells. In fact, when
+cells exist in a biofilm, they can become 10–1000 times
+more resistant to the effects of antimicrobial agents2–5.
+It is becoming increasingly clear that biofilms have
+an enormous impact on medicine. Biofilms can form
+on many medical implants such as catheters,
+artificial hips and contact lenses and, owing to their
+increased resistance to antimicrobial agents, these
+infections can often only be treated by removal of the
+implant, thus increasing the trauma to the patient
+and the cost of treatment. It has been estimated that
+biofilms are associated with 65% of nosocomial
+infections6 and that treatment of these biofilm-based
+infections costs >$1 billion annually7–9.
+The development of biocide resistance is not
+understood, but recent studies have used a variety of
+model systems to determine how and why biofilms are
+so resistant to antimicrobial agents. As the
+importance of biofilms in nosocomial infections has
+increased, much energy has been directed towards the
+study of the effects of antimicrobial agents on these
+surface-attached communities. The key question we
+ask in this review is: what are the mechanisms of
+biofilm resistance to antimicrobial compounds? What
+we will emphasize is that there are multiple
+mechanisms, which vary with the bacteria present in
+the biofilm and the drug or biocide being applied.
+These mechanisms include physical or chemical
+diffusion barriers to antimicrobial penetration into the
+biofilm, slow growth of the biofilm owing to nutrient
+limitation, activation of the general stress response
+and the emergence of a biofilm-specific phenotype. In
+this review, we will focus our attention on in vitro-
+derived single-species biofilms, although some dual-
+species biofilm work will be highlighted.
+Failure of the antimicrobial to penetrate the biofilm
+The production of an exopolysaccharide matrix, or
+glycocalyx, is one of the distinguishing characteristics
+of biofilms. It has been suggested that this matrix,
+among other functions, prevents the access of
+antibiotics to the bacterial cells embedded in the
+community. We will highlight a few of the more recent
+studies on the subject of antibiotic diffusion through a
+biofilm. For a more comprehensive review of this
+subject, the reader is directed to a review by Stewart10.
+Either reaction of the compound with, or sorption
+to, the components of the biofilm can limit the
+transport of antimicrobial agents to the cells within
+the biofilm. Although mathematical models suggest
+that, for many antibiotics, there should be no barrier
+to their diffusion into a biofilm, some studies have
+shown an apparent failure of certain antimicrobial
+agents to penetrate the biofilm. Chlorine, a commonly
+used disinfectant, did not reach >20% of the bulk
+media’s concentration within a mixed Klebsiella
+pneumoniae and P. aeruginosa biofilm, as measured
+by a chlorine-detecting microelectrode11. In fact, the
+penetration profile was suggestive of a substrate being
+consumed within the matrix. Suci et al. used infrared
+spectroscopy to show that the rate of transport of the
+antibiotic ciprofloxacin to the surface of a colonized
+surface was reduced compared with transport to a
+sterile surface12. These authors suggested that the
+ciprofloxacin was binding to the biofilm components.
+Other groups have taken different approaches to
+address the question of whether the biofilm acts as a
+barrier to antimicrobial agents. On the one hand,
+P.aeruginosabiofilms were formed on one side of a
+dialysis membrane and the amount of piperacillin that
+penetrated the biofilm was measured. Consistent with
+the results discussed above, the P.aeruginosabiofilm
+prevented diffusion of this antibiotic13. On the other
+hand, Staphylococcus epidermidis biofilms formed in a
+similar manner allowed for the diffusion of rifampicin
+Biofilms are communities of microorganisms attached to a surface. It has
+become clear that biofilm-grown cells express properties distinct from
+planktonic cells, one of which is an increased resistance to antimicrobial
+agents. Recent work has indicated that slow growth and/or induction of an
+rpoS-mediated stress response could contribute to biocide resistance. The
+physical and/or chemical structure of exopolysaccharides or other aspects of
+biofilm architecture could also confer resistance by exclusion of biocides from
+the bacterial community. Finally, biofilm-grown bacteria might develop a
+biofilm-specific biocide-resistant phenotype. Owing to the heterogeneous
+nature of the biofilm, it is likely that there are multiple resistance mechanisms
+at work within a single community. Recent research has begun to shed light
+on how and why surface-attached microbial communities develop resistance
+to antimicrobial agents.
+Mechanisms of biofilm resistance to
+antimicrobial agents
+Thien-Fah C. Mah and George A. O’Toole
+
+<<<PAGE 2>>>
+TRENDS in Microbiology  Vol.9 No.1  January 2001
+http://tim.trends.com
+35
+Review
+Review
+Review
+Review
+Review
+Review
+and vancomycin across the membrane14, implying that
+these antibiotics could efficiently penetrate this biofilm.
+These results suggest that inhibition of diffusion cannot
+always explain resistance to antimicrobial compounds.
+A difference between thick and thin biofilms and
+their resistance to antibiotics has been observed.
+Penetration of a thin biofilm-covered bead [average
+cell density ~3.5 log colony-forming units (cfu) cm−2]
+by hydrogen peroxide was observed directly, even
+though the cells within the biofilm were more
+resistant to the compound compared with planktonic
+cells15. By contrast, thicker biofilms, grown on glass
+slides (average cell density ~7.6 log cfu cm−2),
+presented a barrier to the penetration of hydrogen
+peroxide. Interestingly, hydrogen peroxide was able
+to penetrate a thick biofilm formed by a mutant strain
+of P. aeruginosa that lacked one of the major catalase
+genes, katA (Ref. 16). As catalases are enzymes that
+neutralize hydrogen peroxide, this result suggested
+that, in thick biofilms, cells were protected from
+hydrogen peroxide penetration by the catalase-
+mediated destruction of this compound.
+Anderl et al. formed K. pneumoniae colony biofilms
+on agar plates with or without antibiotic17. By placing
+a filter at the top of the colony, essentially
+sandwiching the colony, they were able to assay
+directly for antibiotic diffusion from the agar plate
+through the colony by performing a standard zone of
+inhibition assay with the filter. This breakthrough
+study showed that ampicillin was unable to penetrate
+the biofilm and that the production of the ampicillin-
+degrading enzyme β-lactamase was responsible for
+this phenomenon, as the ampicillin was able to
+penetrate a biofilm formed by a β-lactamase mutant.
+Surprisingly, the β-lactamase mutants grown in a
+biofilm were still resistant to ampicillin, suggesting
+that other mechanisms contribute to the resistance of
+these cells. Furthermore, ciprofloxacin was able to
+penetrate the biofilm, yet, as was the case with
+ampicillin, it was unable to kill the biofilm bacteria17.
+This simple method allowed for the differentiation
+between transport effects and other mechanisms and
+thus provides a powerful tool for the further analysis
+of the molecular mechanism of biofilm resistance to
+antimicrobial agents.
+From these studies, and others, it is clear that the
+exopolysaccharide matrix (or other components of
+biofilms) does not form an impenetrable barrier to the
+diffusion of antimicrobial agents, and other
+mechanisms must be in place to promote biofilm cell
+survival. However, for certain compounds, the
+exopolysaccharide matrix does represent an initial
+barrier that can delay penetration of the
+antimicrobial agent. The experiments described
+above strongly suggest that multiple mechanisms are
+required for overall antimicrobial resistance.
+Slow growth and the stress response
+When a bacterial cell culture becomes starved for a
+particular nutrient, it slows its growth. Transition
+from exponential to slow or no growth is generally
+accompanied by an increase in resistance to
+antibiotics18,19. Slow growth of the bacteria has been
+observed in mature biofilms20,21. Because cells
+growing in biofilms are expected to experience some
+form of nutrient limitation, it has been suggested that
+this physiological change can account for the
+resistance of biofilms to antimicrobial agents.
+By paying close attention to the growth phase of
+planktonic cells and biofilm cells, recent studies have
+been able to examine specifically the contribution of a
+slow growth rate to biofilm cell survival against
+antibiotics. Gilbert and colleagues examined
+growth-rate-related effects under controlled growth
+conditions for planktonic cultures and biofilms of
+P. aeruginosa, Escherichia coli and
+S. epidermidis22–24. They made the general
+observation that the sensitivities of both the
+planktonic and biofilm cells to either tobramycin or
+ciprofloxacin increased with increasing growth rate,
+thus supporting the suggestion that the slow growth
+rate of biofilm cells protects the cells from
+antimicrobial action. For P. aeruginosa at slow
+growth rates, both the planktonic and intact biofilm
+cells were equally resistant to ciprofloxacin. However,
+as the growth rate was increased, the planktonic cells
+became more susceptible to ciprofloxacin than the
+biofilm cells. This result supports the idea that some
+other property of the biofilm, and not just growing
+slowly, was important for the observed recalcitrance
+of biofilms to antimicrobial treatment22. The same
+group reached a similar conclusion while working
+with Burkholderia cepacia. Desai et al. compared the
+resistance of planktonic and biofilm cells at different
+stages during exponential growth up to the entry into
+stationary phase25. They found that resistance
+increased as the planktonic cultures and the biofilm
+cells approached stationary phase. The maximal
+resistance of both cultures occurred in stationary
+phase where the biofilm cells were 15-times more
+resistant than the planktonic cells. These results
+suggested that some determinant other than growth
+rate is responsible for a certain level of resistance, and
+slow growth adds additional protection. This
+determinant could be related to the fact that cell
+density increases during this late stage of exponential
+growth (see below). Other studies have suggested that
+mechanisms differ for different antibiotics. For
+example, although the slow growth rate in a
+P. aeruginosa biofilm seemed to account for biofilm
+resistance to tetracycline, it did not seem to affect
+resistance to tobramycin26.
+Heterogeneity
+The experimental conditions resulting in the tight
+control of growth described in the studies
+summarized above allowed investigators to focus on
+the effect of a specific growth rate on bacterial
+susceptibility to antimicrobial agents. However, when
+thinking about biofilms, a logical assumption is that
+
+<<<PAGE 3>>>
+TRENDS in Microbiology  Vol.9 No.1  January 2001
+http://tim.trends.com
+36
+Review
+Review
+Review
+Review
+Review
+Review
+any given cell within the biofilm will experience a
+slightly different environment compared with other
+cells within the same biofilm, and thus be growing at
+a different rate. Gradients of nutrients, waste
+products and signaling factors form to allow for this
+heterogeneity within the biofilm.
+Recent advances in technology have resulted in the
+ability to visualize the heterogeneity within a biofilm.
+A staining method utilizing acridine orange was
+employed to identify regions of biofilms that contain
+rapidly or slowly growing cells based on their relative
+RNA–DNA content21. The method was first used on
+bacterial colonies and the regions of the colonies that
+turned orange (high relative RNA content) were
+correlated to fast growth rates, whereas regions that
+were stained yellow/green (low relative RNA content)
+represented slowly growing cells. When this method
+was used on seven-day-old biofilms, orange marked
+the biofilm–bulk-liquid interface and yellow/green
+marked the center of the biofilm (Fig. 1). This
+heterogeneity within biofilms has also been shown for
+protein synthesis and respiratory activity, whereas
+DNA content remained relatively constant
+throughout the biofilm27,28.
+There is also evidence for gradients of
+physiological activity in response to antimicrobial
+treatment. For example, the pattern of respiratory
+activity of a K. pneumoniae biofilm in response to
+monochloramine (an oxidatively active biocide)
+treatment showed that cells closest to the
+biofilm–bulk-liquid interface lost activity first29
+(Fig. 2). Similarly, when biofilm cells were treated
+with the antibiotic fleroxocin, cell elongation was
+observed and was most extreme in cells located close
+to the exposed side of the biofilm30. These studies
+reveal that the response to antimicrobial agents can
+greatly vary, depending on the location of a particular
+cell within a biofilm community.
+General stress response
+Recently, it has been suggested that the slow growth
+rate of some cells within the biofilm is not owing to
+nutrient limitation per se, but to a general stress
+response initiated by growth within a biofilm31. This
+idea is an attractive possibility because the stress
+response results in physiological changes that act to
+protect the cell from various environmental stresses.
+Thus, the cells are protected from the detrimental
+effects of heat shock, cold shock, changes in pH and
+many chemical agents32. The central regulator of this
+response is the alternate σ factor, RpoS, originally
+thought to be expressed only in stationary phase32.
+However, recent studies suggest that RpoS is induced
+by high cell density and that cells growing at these
+high densities seem to have undergone the general
+stress response, as judged by the production of
+trehalose (an osmoprotectant) and catalase33. As cells
+in a biofilm experience high cell density, it is logical to
+propose that these cells would express RpoS.
+Accordingly, it has been shown by RT-PCR that
+rpoS mRNA is present in sputum from CF patients
+with chronic P. aeruginosa biofilm infections34.
+Another link between RpoS and biofilms was
+recently identified: E. coli cells that lack rpoS are
+unable to form normal biofilms whereas planktonic
+cells are apparently unaffected by the absence of this
+σ factor35. In P. aeruginosa, it has been suggested that
+an additional σ factor, AlgT, acts in concert with RpoS
+to control the stress response31,34. Cochran et al. found
+that thin biofilms formed by null mutants of rpoS and
+algT on alginate gel beads were susceptible to
+hydrogen peroxide but not to monochloramine36.
+However, when these mutants formed thick biofilms on
+glass slides, they were as resistant to both oxidative
+biocides as the wild-type cells. Thus, although there is
+some evidence to suggest that rpoS and algT have a
+Fig. 1. Physiological heterogeneity in biofilms. The spatial pattern of
+growth rate within a Klebsiella pneumoniae biofilm, as judged by
+acridine orange staining. In this figure, areas of red–orange staining
+correspond to a high relative RNA content and thus rapid growth. Cells
+staining yellow/green have low relative RNA content and a slower
+growth rate. There are clearly distinct regions of faster and slower
+growth throughout the biofilm. The bottom of the image is the portion
+of the biofilm attached to the substratum and the top of the image is the
+portion of the biofilm exposed to the bulk medium. Reproduced, with
+permission, from Ref. 21.
+Fig. 2. Susceptibility to biocide treatment. A two-species biofilm treated
+with the oxidatively active biocide monochloramine. This figure illustrates
+that there is heterogeneity within the biofilm in terms of the response of
+individual cells to biocide treatment. Areas of red–orange staining
+correspond to respiratory activity. Green cells have no respiratory activity.
+Yellow regions represent a mixture of respiring and non-respiring
+bacteria. The bottom of the image is the portion of the biofilm attached to
+the substratum and the top of the image is the portion of the biofilm
+exposed to the bulk medium. Reproduced, with permission, from Ref. 29.
+
+<<<PAGE 4>>>
+TRENDS in Microbiology  Vol.9 No.1  January 2001
+http://tim.trends.com
+37
+Review
+Review
+Review
+Review
+Review
+Review
+role in biofilm resistance to oxidative biocides, it is clear
+that other factors must contribute to this resistance.
+Quorum sensing
+The role of quorum sensing in biocide resistance is not
+yet clear. Previous work by Davies and colleagues
+showed that a mutant in the lasR–lasI quorum-sensing
+system in P. aeruginosa was unable to form a biofilm
+with normal architecture37. Moreover, these authors
+presented data showing that lasI mutant biofilms were
+abnormally sensitive to treatment with SDS, although
+the question of whether these mutant biofilms had
+altered antibiotic resistance was not addressed37.
+However, a recent study by Brooun and co-workers
+showed that mutants defective in quorum sensing were
+unaffected in their resistance to detergents and
+antibiotics26. Further complicating the interpretation
+of these studies is a report suggesting a role for RpoS in
+regulation of quorum sensing38. Additional
+experimentation is required to elucidate the role (direct
+or indirect) of quorum sensing in biocide resistance.
+Induction of a biofilm phenotype
+Thus far, the mechanisms discussed have been based
+on general strategies to slow the effect of
+antimicrobial agents on cells in the biofilm. An
+emerging idea in the field is that a biofilm-specific
+phenotype is induced in a subpopulation of the
+community that results in the expression of active
+mechanisms to combat the detrimental effects of
+antimicrobial agents15,39–41.
+When cells attach to a surface, they will express a
+general biofilm phenotype and work has begun to try
+to identify genes that are activated or repressed in
+biofilms compared with planktonic cells42.
+Furthermore, it is possible that all or just a subset of
+these biofilm cells could express increased resistance
+to antimicrobial agents. This resistant phenotype
+might be induced by nutrient limitation, certain types
+of stress, high cell density or a combination of these
+phenomena. As summarized below, recent work has
+focused on the identification of genes that could
+contribute to this increased-resistance phenotype.
+Multidrug efflux pumps can extrude chemically
+unrelated antimicrobial agents from the cell. In
+E. coli, upregulation of the mar operon results in a
+multidrug-resistant phenotype. The efflux pump
+thought to be responsible for this resistance is AcrAB.
+To address the question of whether this known
+multidrug-resistance system is involved in biofilm
+resistance to antimicrobial agents, expression of mar
+was monitored in batch, chemostat and biofilm
+cultures by lacZ fusion41. Overall, the results did not
+support the idea that the mar operon is upregulated
+in biofilms, as the level of mar was lower in biofilms
+compared with the level seen in equivalent
+stationary-phase culture grown in batch.
+Furthermore, this same group made use of mar- and
+acrAB-deleted strains to determine if the resistance of
+E. coli to ciprofloxacin was affected by loss of these
+loci40. Loss of mar and acrAB did not adversely affect
+the E. coli biofilms, but constitutive expression of
+acrAB did provide a certain level of protection against
+ciprofloxacin. Although these results suggest that
+upregulation of the mar operon specifically does not
+account for E. coli biofilm resistance to antimicrobial
+agents, they do not discount the possibility of other
+multidrug-resistance pumps being induced in
+response to life in a biofilm.
+There are three known multidrug-efflux pumps in
+P. aeruginosa and there are several other putative
+pumps that have been identified by the P. aeruginosa
+genome project. One study has suggested the
+importance of one of these pumps in the resistance to
+the antibiotic ofloxacin26. Using strains of
+P. aeruginosa that either lacked or overexpressed the
+MexAB–OprM pump, it was shown that, at low
+concentrations of ofloxacin, biofilms lacking the pump
+were more susceptible to this drug than biofilms that
+overexpressed the pump. However, for a different
+quinolone, ciprofloxacin, there was no difference.
+Therefore, as was the case with the E. coli studies, the
+question of whether induction of pumps is one of the
+key alterations conferring resistance to biofilm cells
+awaits further experimentation.
+Another resistance mechanism that can be
+induced in biofilm cells is the alteration of the
+membrane-protein composition in response to
+antimicrobial agents. This change could result in
+decreased permeability of the cell to these
+compounds. Mutations in ompB (a regulator of the
+Fig. 3. Drug resistance in
+biofilms. A schematic of
+mechanisms that can
+contribute to the
+resistance of biofilm-
+grown bacteria to
+antimicrobial agents. The
+extracellular
+polysaccharide is
+represented in yellow and
+the bacteria as blue ovals.
+Biofilms are marked by
+their heterogeneity and
+this heterogeneity can
+include gradients of
+nutrients, waste products
+and oxygen (illustrated by
+colored starbursts).
+Mechanisms of resistance
+in the biofilm include
+increased cell density and
+physical exclusion of the
+antibiotic. The individual
+bacteria in a biofilm can
+also undergo
+physiological changes
+that improve resistance to
+biocides. Various authors
+have speculated that the
+following changes can
+occur in biofilm-grown
+bacteria: (1) induction of
+the general stress
+response (an rpoS-
+dependent process in
+Gram-negative bacteria);
+(2) increasing expression
+of multiple drug
+resistance (MDR) pumps;
+(3) activating quorum-
+sensing systems; and
+(4) changing profiles of
+outer membrane proteins
+(OMP).
+TRENDS in Microbiology
++
++
++ +
+Antibiotic
+concentration
+Nutrient and
+oxygen
+concentration
+Quorum
+sensing
+RpoS
+MDR pumps
+OMP
+• What other factors are important for
+antimicrobial resistance in multi-species
+biofilms?
+• What genes are induced in biofilm cells that
+allow for increased resistance to antimicrobial
+agents?
+• What signals are involved in rpoS regulation
+in biofilms?
+• Are multidrug efflux pumps important for
+biofilm resistance to antimicrobial agents?
+• What is the role of quorum sensing in the
+biocide resistance developed by biofilms?
+Questions for future research
+
+<<<PAGE 5>>>
+TRENDS in Microbiology  Vol.9 No.1  January 2001
+http://tim.trends.com
+38
+Review
+Review
+Review
+Review
+Review
+Review
+genes encoding the outer membrane porin proteins
+OmpF and OmpC) and in ompF increased the
+resistance of E. coli to a β-lactam antibiotic43.
+Mutants that lack OmpF have been shown to be more
+resistant to chloramphenicol and tetracycline44.
+Furthermore, in starving cells, the relative
+proportions of the major E. coli porins OmpC and
+OmpF were altered, favoring the expression of the
+smaller porin, OmpC (Ref. 45). The above results
+support the suggestion that altering porin expression
+affects the intrinsic resistance of bacteria to
+antimicrobial agents. Recently, it was shown that the
+expression of ompC and three other osmotically
+regulated genes was increased in biofilm bacteria
+compared with planktonic cells46. These data
+suggested that bacteria in a biofilm are indeed living
+in an environment of increased osmotic stress. Thus,
+the environmental conditions within the biofilm can
+lead to alterations within the cell envelope that
+protect the bacteria from the detrimental affects of
+antimicrobial agents.
+Conclusion
+There is no one answer to the question of why and how
+bacteria growing in a biofilm develop increased
+resistance to antimicrobial agents. We have seen that
+there are many possible mechanisms that account for
+bacterial resistance to antimicrobial compounds
+(summarized in Fig. 3). Depending on the bacterial
+complement of the biofilm, and the antimicrobial agent
+used to treat the biofilm, different mechanisms will
+account for resistance to the antimicrobial compound.
+Furthermore, the environmental heterogeneity that
+exists within a biofilm might promote the formation of
+a heterogeneous population of cells, such that different
+levels of resistance can be expressed throughout the
+community. For example, the cells closest to the
+liquid–biofilm interface might be protected to a small
+degree by the exopolysaccharide matrix and by
+enzymes that inactivate certain antimicrobial agents.
+The cells in an intermediate position might be growing
+slowly and could also be protected by the outermost
+layer of cells. Finally, another sub-population of cells
+might express a biofilm-specific resistance phenotype
+induced by the particular environmental factors
+influencing these cells. It is clear that additional
+studies must be performed to further elucidate how
+and why bacteria growing in complex surface-attached
+communities can protect themselves from the insults of
+antimicrobial agents.
+Acknowledgements
+We wish to thank Phil
+Stewart for permission to
+use Figs 1 and 2. This
+work was supported by a
+grant from Microbia, Inc.
+and The Pew Charitable
+Trusts (to G.A.O.). G.A.O.
+is a Pew Scholar in the
+Biomedical Sciences.
+References
+1 Whittaker, C.J. et al.(1996) Mechanisms of adhesion
+by oral bacteria. Annu. Rev. Microbiol. 50, 513–552
+2 Prosser, B.L. et al. (1987) Method of evaluating
+effects of antibiotics on bacterial biofilm.
+Antimicrob. Agents Chemother. 31, 1502–1506
+3 Nickel, J.C. et al. (1985) Tobramycin resistance of
+Pseudomonas aeruginosa cells growing as a
+biofilm on urinary tract catheter. Antimicrob.
+Agents Chemother. 27, 619–624
+4 Gristina, A.G. et al. (1987) Adhesive colonization
+of biomaterials and antibiotic resistance.
+Biomaterials 8, 423–426
+5 Evans, R.C. and Holmes, C.J. (1987) Effect of
+vancomycin hydrochloride on Staphylococcus
+epidermidis biofilm associated with silicone
+elastomer. Antimicrob. Agents Chemother.
+31, 889–894
+6 Licking, E. (1999) Getting a grip on bacterial
+slime. Business Week 13 September, pp. 98–100
+7 Costerton, J.W. et al. (1995) Microbial biofilms.
+Annu. Rev. Microbiol. 49, 711–745
+8 Archibald, L.K. and Gaynes, R.P. (1997) Hospital
+acquired infections in the United States: the
+importance of interhospital comparisons.
+Nosocomial Infect. 11, 245–255
+9 Potera, C. (1999) Forging a link between biofilms
+and disease. Science 283, 1837–1838
+10 Stewart, P.S. (1996) Theoretical aspects of
+antibiotic diffusion into microbial biofilms.
+Antimicrob. Agents Chemother. 40, 2517–2522
+11 de Beer, D. et al. (1994) Direct measurement of
+chlorine penetration into biofilms during
+disinfection. Appl. Environ. Microbiol.
+60, 4339–4344
+12 Suci, P.A. et al. (1994) Investigation of
+ciprofloxacin penetration into Pseudomonas
+aeruginosa biofilms. Antimicrob. Agents
+Chemother. 38, 2125–2133
+13 Hoyle, B. et al. (1992) Pseudomonas aeruginosa
+biofilm as a diffusion barrier to piperacillin.
+Antimicrob. Agents Chemother. 36, 2054–2056
+14 Dunne, W.M. et al. (1993) Diffusion of rifampin
+and vancomycin through a Staphylococcus
+epidermidis biofilm. Antimicrob. Agents
+Chemother. 37, 2522–2526
+15 Cochran, W.L. et al. (2000) Reduced susceptibility
+of thin Pseudomonas aeruginosa biofilms to
+hydrogen peroxide and monochloramine. J. Appl.
+Microbiol. 88, 22–30
+16 Stewart, P.S. et al. (2000) Effect of catalase on
+hydrogen peroxide penetration into Pseudomonas
+aeruginosa biofilms. Appl. Environ. Microbiol.
+66, 836–838
+17 Anderl, J.N. et al. (2000) Role of antibiotic
+penetration limitation in Klebsiella pneumoniae
+biofilm resistance to ampicillin and ciprofloxacin.
+Antimicrob. Agents Chemother. 44, 1818–1824
+18 Tuomanen, E. et al. (1986) The rate of killing of
+Escherichia coli by β-lactam antibiotics is strictly
+proportional to the rate of bacterial growth.
+J. Gen. Microbiol. 132, 1297–1304
+19 Tuomanen, E. et al.(1986) Antibiotic tolerance
+among clinical isolates of bacteria. Antimicrob.
+Agents Chemother. 30, 521–527
+20 Brown, M.R. et al. (1988) Resistance of bacterial
+biofilms to antibiotics: a growth-rate related
+effect? J. Antimicrob. Chemother. 22, 777–780
+21 Wentland, E.J. et al. (1996) Spatial variations in
+growth rate within Klebsiella pneumoniae
+colonies and biofilm. Biotechnol. Prog.
+12, 316–321
+22 Evans, D.J. et al. (1991) Susceptibility of
+Pseudomonas aeruginosa and Escherichia coli
+biofilms towards ciprofloxacin: effect of specific
+growth rate. J. Antimicrob. Chemother.
+27, 177–184
+23 Duguid, I.G. et al. (1992) Growth-rate-
+independent killing by ciprofloxacin of biofilm-
+derived Staphylococcus epidermidis; evidence for
+cell-cycle dependency. J. Antimicrob. Chemother.
+30, 791–802
+24 Duguid, I.G. et al. (1992) Effect of biofilm culture
+upon the susceptibility of Staphylococcus
+epidermidis to tobramycin. J. Antimicrob.
+Chemother. 30, 803–810
+25 Desai, M. et al. (1998) Increasing resistance of
+planktonic and biofilm cultures of Burkholderia
+cepacia to ciprofloxacin and ceftazidime during
+exponential growth. J. Antimicrob. Chemother.
+42, 153–160
+26 Brooun, A. et al. (2000) A dose-response study of
+antibiotic resistance in Pseudomonas aeruginosa
+biofilms. Antimicrob. Agents Chemother.
+44, 640–646
+27 Huang, C-T. et al. (1998) Spatial patterns of
+alkaline phosphatase expression within bacterial
+colonies and biofilms in response to phosphate
+starvation. Appl. Environ. Microbiol.
+64, 1526–1531
+28 Xu, K.D. et al. (2000) Biofilm resistance to
+antimicrobial agents. Microbiology
+146, 547–549
+29 Huang, C-T. et al. (1995) Nonuniform spatial
+patterns of respiratory activity within biofilms
+during disinfection. Appl. Environ. Microbiol.
+61, 2252–2256
+30 Korber, D.R. et al. (1994) Evaluation of fleroxacin
+activity against established Pseudomonas
+fluorescens biofilms. Appl. Environ. Microbiol.
+60, 1663–1669
+31 Brown, M.R. and Barker, J. (1999) Unexplored
+reservoirs of pathogenic bacteria: protozoa and
+biofilms. Trends Microbiol. 7, 46–50
+32 Hengge-Aronis, R. (1996) Regulation of gene
+expression during entry into stationary phase. In
+Escherichia coli and Salmonella: Cellular and
+Molecular Biology (Neidhart, F.C. et al., eds),
+pp. 1497–1512, ASM Press
+33 Liu, X. et al. (2000) Global adaptations resulting
+from high population densities in Escherichia coli
+cultures. J. Bacteriol. 182, 4158–4164
+34 Foley, I. et al. (1999) General stress response
+master regulator rpoS is expressed in human
+infection: a possible role in chronicity.
+J. Antimicrob. Chemother. 43, 164–165
+
+<<<PAGE 6>>>
+TRENDS in Microbiology  Vol.9 No.1  January 2001
+39
+Review
+Review
+Review
+Review
+Review
+http://tim.trends.com   0966-842X/01/$ – see front matter © 2001 Elsevier Science Ltd. All rights reserved.   PII: S0966-842X(00)01910-7
+Review
+35 Adams, J.L. and McLean, R.J. (1999) Impact of
+rpoS deletion on Escherichia coli biofilms. Appl.
+Environ. Microbiol. 65, 4285–4287
+36 Cochran, W.L. et al. (2000) Role of RpoS and AlgT
+in Pseudomonas aeruginosa biofilm resistance to
+hydrogen peroxide and monochloramine. J. Appl.
+Microbiol. 88, 546–553
+37 Davies, D.G. et al. (1998) The involvement of cell-
+to-cell signals in the development of a bacterial
+biofilm. Science 280, 295–298
+38 Whiteley, M. et al. (2000) Regulation of quorum
+sensing by RpoS in Pseudomonas aeruginosa.
+J. Bacteriol. 182, 4356–4360
+39 Gilbert, P. et al. (1997) Biofilms susceptibility to
+antimicrobials. Adv. Dent. Res. 11, 160–167
+40 Maira-Litran, T. et al. (2000) An evaluation of the
+potential of the multiple antibiotic resistance
+operon (mar) and the multidrug efflux pump
+acrAB to moderate resistance towards
+ciprofloxacin in Escherichia coli biofilms.
+J. Antimicrob. Chemother. 45, 789–795
+41 Maira-Litran, T. et al. (2000) Expression of the
+multiple antibiotic resistance operon (mar)
+during growth of Escherichia coli as a biofilm.
+J. Appl. Microbiol. 88, 243–247
+42 Kuchma, S.L. and O’Toole, G.A. (2000) Surface-
+induced and biofilm-induced changes in gene
+expression. Curr. Opin. Biotechnol. 11, 429–433 
+43 Jaffe, A. et al. (1982) Role of porin proteins
+OmpF and OmpC in the permeation of
+β-lactams. Antimicrob. Agents Chemother.
+22, 942–948
+44 Pugsley, A.P. and Schnaitman, C.A. (1978)
+Outer membrane proteins of Escherichia coli.
+VII. Evidence that bacteriophage-directed
+protein 2 functions as a pore. J. Bacteriol.
+133, 1181–1189
+45 Liu, X. and Ferenci, T. (1998) Regulation of porin-
+mediated outer membrane permeability by
+nutrient limitation in Escherichia coli.
+J. Bacteriol. 180, 3917–3922
+46 Prigent-Combaret, C. et al. (1999) Abiotic surface
+sensing and biofilm-dependent regulation of gene
+expression in Eschericia coli. J. Bacteriol.
+181, 5993–6002
+Since their recognition as the third domain of life,
+Archaea, particularly those that thrive in extreme
+environments, have been the focus of a great deal of
+recent research, including complete genome sequence
+determination1. However, the viruses of these
+organisms are poorly understood. A survey of the
+extra-chromosomal elements of the extremely
+thermophilic and acidophilic archaeon Sulfolobus has
+revealed the presence of many novel viruses, and both
+conjugative and cryptic plasmids2,3. The viruses of
+Sulfolobus have been assigned to four novel
+families – Fuselloviridae (viruses SSV1, SSV2 and
+SSV3)3–5, Rudiviridae (SIRV1 and SIRV2)6,
+Lipothrixviridae (SIFV)7 and Guttaviridae
+(SNDV)8 – on the basis of their unique morphology.
+Morphology
+The structure of typical virus particles from each of
+the four families is shown in Fig. 1. The flexible
+filamentous virions of the lipothrixvirus SIFV
+(2000 × 24 nm) contain a nucleosome-like core of
+linear DNA wound as a superhelix around a zipper-
+like array of 80-kDa protein subunits. The core is
+covered by a lipid envelope (Fig. 1a). By contrast, the
+stiff rod-shaped virions of rudiviruses
+(830–900 × 23 nm) do not possess an envelope. In the
+Rudiviridae, the tube-like superhelix formed by
+linear DNA and a single 15.8-kDa DNA-binding
+protein is closed at its ends by ‘plugs’ to which tail
+filaments are attached (Fig. 1b). The spindle-shaped
+fusellovirus virions (100 × 60 nm) have a core of
+positively supercoiled circular DNA associated with a
+DNA-binding protein, packaged in a hydrophobic
+protein envelope, which has a short tail (Fig. 1c).
+Finally, virions of the guttavirus SNDV
+(100–185 × 70–95 nm) take the form of droplets,
+which, on their pointed end, carry a dense ‘beard’ of
+long thin filaments (Fig. 1d).
+Natural hosts and geographical distribution
+Sulfolobus viruses appear to be ubiquitous in acidic
+hot-spring environments. Fuselloviruses have been
+found in Sulfolobus strains isolated from solfataric
+fields in Japan, Iceland and North America. The
+natural carriers of rudiviruses and the
+lipothrixvirus SIFV are Sulfolobus isolates from
+diverse locations in Iceland, although viruses of
+similar morphology have been observed in samples
+from North America. The guttavirus SNDV has been
+found in a Sulfolobus isolate from a field sample
+from New Zealand.
+Virus–host relationships
+None of the Sulfolobus viruses is lytic: the
+fuselloviruses are temperate, and the others are
+present in their hosts in a more-or-less-stable carrier
+state. This strategy could help the viruses escape
+prolonged direct exposure to the low pH (1–3) and
+Viruses of the extremely thermophilic
+archaeon Sulfolobus
+David Prangishvili, Kenneth Stedman and Wolfram Zillig
+Viruses of Sulfolobus are highly unusual in their morphology, and genome
+structure and sequence. Certain characteristics of the replication strategies of
+these viruses and the virus–host interactions suggest relationships with
+eukaryal and bacterial viruses, and the primeval existence of common
+ancestors. Moreover, studying these viruses led to the discovery of archaeal
+promoters and has provided tools for the development of the molecular
+genetics of these organisms. The Sulfolobus viruses contain unique
+regulatory features and structures that undoubtedly hold surprises for
+researchers in the future.
+David Prangishvili*
+Universität Regensburg,
+Lehrstuhl für
+Mikrobiologie –
+Archaeenzentrum,
+Universitätsstraße 31,
+93053, Regensburg,
+Germany.
+*e-mail:
+david.prangishvili@
+biologie.uni-r.de
+Kenneth Stedman
+Thermal Biology Institute,
+Montana State University,
+Bozeman,
+MT 59717, USA.
+Wolfram Zillig
+Max-Planck-Institut für
+Biochemie, 
+82152 Martinsried,
+Germany.
