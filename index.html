@@ -11,6 +11,21 @@
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/extra.css">
 <link rel="stylesheet" href="assets/css/interactions.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<script>
+/* 首屏防闪烁：在样式生效前定好主题 */
+(function () {
+  try {
+    var t = localStorage.getItem('lattice.theme');
+    if (t !== 'dark' && t !== 'light') {
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+    var l = localStorage.getItem('lattice.lang');
+    if (l === 'en') document.documentElement.setAttribute('lang', 'en');
+  } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+})();
+</script>
 </head>
 <body>
 <div class="app" id="app">
@@ -175,6 +190,8 @@
 <script src="assets/js/views2-stages.js"></script>
 <script src="assets/js/views2-paper.js"></script>
 <script src="assets/js/interactions.js"></script>
+<script src="assets/js/i18n-dict.js"></script>
+<script src="assets/js/prefs.js"></script>
 <script src="assets/js/boot.js"></script>
 </body>
 </html>
