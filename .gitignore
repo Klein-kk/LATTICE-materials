@@ -3,3 +3,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 node_modules/
+
+# 本地工作记忆（非交付内容）
+.learnbuddy/
+.workbuddy/
+
+# 第三方依赖解压目录（等价于 node_modules）
+LATTICE-PPT/_slidep_extract/

@@ -1,0 +1,138 @@
+/* ============================================================
+   LATTICE · 交互增强层
+   键盘快捷键 · 命令面板 · Toast · 复制 · 移动端抽屉 ·
+   面板折叠 · 数字滚动
+   （纯 CSS，沿用设计令牌，零运行时依赖）
+   ============================================================ */
+
+/* ---------- 1. 键盘提示 chip ---------- */
+.kbd{
+  display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px;
+  font-family:var(--f-mono); font-size:10px; color:var(--ink-2); background:var(--surface-2);
+  border:1px solid var(--line); border-bottom-width:2px; border-radius:var(--r-xs);
+}
+
+/* ---------- 2. TOAST ---------- */
+.toast-wrap{
+  position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:120;
+  display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;
+}
+.toast{
+  position:relative; display:inline-flex; align-items:center; gap:8px; pointer-events:auto; cursor:pointer;
+  font-size:12.5px; color:var(--ink); background:var(--surface); overflow:hidden;
+  border:1px solid var(--line); border-left-width:3px; border-radius:var(--r-sm);
+  box-shadow:var(--sh-3); padding:9px 14px; max-width:74vw;
+  opacity:0; transform:translateY(-10px) scale(.965);
+  transition:opacity var(--t-mid) var(--ease), transform var(--t-mid) var(--ease);
+}
+.toast.is-on{ opacity:1; transform:none; }
+.toast__ic{ width:15px; height:15px; flex:0 0 auto; display:grid; place-items:center; }
+.toast__msg{ min-width:0; }
+.toast__close{ margin-left:2px; font-size:15px; line-height:1; color:var(--ink-4); opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.toast:hover .toast__close{ opacity:.7; }
+.toast__close:hover{ opacity:1; color:var(--ink); }
+.toast__bar{ position:absolute; left:0; bottom:0; width:100%; height:2px; transform-origin:left center; animation:toastBar linear forwards; }
+@keyframes toastBar{ from{ transform:scaleX(1); } to{ transform:scaleX(0); } }
+.toast--ok{ border-left-color:var(--ok); } .toast--ok .toast__ic{ color:var(--ok); } .toast--ok .toast__bar{ background:var(--ok); }
+.toast--sig{ border-left-color:var(--sig); } .toast--sig .toast__ic{ color:var(--sig); } .toast--sig .toast__bar{ background:var(--sig); }
+.toast--risk{ border-left-color:var(--risk); } .toast--risk .toast__ic{ color:var(--risk); } .toast--risk .toast__bar{ background:var(--risk); }
+.toast--acc{ border-left-color:var(--acc); } .toast--acc .toast__ic{ color:var(--acc); } .toast--acc .toast__bar{ background:var(--acc); }
+.toast b{ font-weight:600; }
+
+/* ---------- 3. 命令面板 ---------- */
+.cmdpal{
+  position:fixed; inset:0; z-index:110; display:none; align-items:flex-start; justify-content:center;
+  padding-top:14vh; background:rgba(20,24,28,.32); backdrop-filter:blur(2px);
+}
+.cmdpal.is-open{ display:flex; animation:clIn var(--t-mid) var(--ease) both; }
+.cmdpal__sheet{
+  width:min(560px,92vw); background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r-lg); box-shadow:var(--sh-3); overflow:hidden;
+  display:flex; flex-direction:column; max-height:64vh; animation:mdIn var(--t-fast) var(--ease) both;
+}
+.cmdpal__search{
+  display:flex; align-items:center; gap:10px; padding:12px 15px; border-bottom:1px solid var(--line-2);
+}
+.cmdpal__search svg{ color:var(--ink-3); flex:0 0 auto; }
+.cmdpal__input{
+  flex:1; border:0; outline:none; background:none; font:inherit; font-size:14px; color:var(--ink);
+  font-family:var(--f-sans);
+}
+.cmdpal__input::placeholder{ color:var(--ink-4); }
+.cmdpal__hint{ font-family:var(--f-mono); font-size:10px; color:var(--ink-4); letter-spacing:.04em; }
+.cmdpal__list{ overflow-y:auto; padding:6px; }
+.cmdpal__group{ font-family:var(--f-mono); font-size:9.5px; letter-spacing:.1em; color:var(--ink-4); text-transform:uppercase; padding:9px 10px 5px; }
+.cmdpal__group:not(:first-child){ border-top:1px solid var(--line-2); margin-top:3px; }
+.cmdpal__item{
+  position:relative; display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:var(--r-sm);
+  cursor:pointer; text-align:left; width:100%; transition:background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.cmdpal__item:hover{ background:var(--surface-3); }
+.cmdpal__item.is-sel{ background:var(--acc-tint); }
+.cmdpal__item.is-sel::before{ content:""; position:absolute; left:0; top:7px; bottom:7px; width:2.5px; background:var(--acc); border-radius:2px; }
+.cmdpal__ic{ width:26px; height:26px; border-radius:var(--r-sm); display:grid; place-items:center; flex:0 0 auto;
+  background:var(--surface-2); color:var(--ink-2); transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.cmdpal__item.is-sel .cmdpal__ic{ background:var(--acc); color:#fff; }
+.cmdpal__txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
+.cmdpal__t{ font-size:13px; font-weight:500; color:var(--ink); }
+.cmdpal__d{ font-size:11px; color:var(--ink-3); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cmdpal__hl{ color:var(--acc); font-weight:600; }
+.cmdpal__go{ margin-left:auto; font-family:var(--f-mono); font-size:12px; color:var(--acc); opacity:.85; flex:0 0 auto; }
+.cmdpal__empty{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:26px 22px; color:var(--ink-4); text-align:center; }
+.cmdpal__empty svg{ color:var(--line-strong); }
+.cmdpal__empty span{ font-size:12.5px; color:var(--ink-3); }
+.cmdpal__empty em{ font-style:normal; font-size:11px; color:var(--ink-4); }
+.cmdpal__foot{
+  display:flex; align-items:center; gap:14px; padding:8px 14px; border-top:1px solid var(--line-2);
+  background:var(--surface-2); font-size:10.5px; color:var(--ink-3);
+}
+.cmdpal__foot .kbd{ margin-right:2px; }
+
+/* ---------- 4. 移动端导航抽屉 ---------- */
+.navtoggle{
+  display:none; width:34px; height:30px; align-items:center; justify-content:center;
+  border:1px solid var(--line); border-radius:var(--r-sm); color:var(--ink-2); background:var(--surface);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.navtoggle:hover{ background:var(--surface-2); color:var(--ink); }
+.navbackdrop{
+  position:fixed; inset:56px 0 0 0; background:rgba(20,24,28,.34); z-index:85; display:none;
+}
+@media (max-width:860px){
+  .navtoggle{ display:inline-flex; }
+  .rail{
+    position:fixed; top:56px; bottom:0; left:0; width:248px; z-index:86;
+    transform:translateX(-100%); transition:transform var(--t-mid) var(--ease);
+    box-shadow:var(--sh-3); background:var(--surface-2);
+  }
+  .app[data-mobnav="open"] .rail{ transform:translateX(0); }
+  .app[data-mobnav="open"] .navbackdrop{ display:block; }
+}
+@media (prefers-reduced-motion:reduce){
+  .navbackdrop, .rail, .panel__collapse, .toast, .copybtn{ transition:none !important; animation:none !important; }
+  .toast__bar{ display:none; }
+}
+
+/* ---------- 5. 面板折叠 ---------- */
+.panel__toggle{
+  width:24px; height:24px; display:grid; place-items:center; border-radius:var(--r-xs);
+  color:var(--ink-3); transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-mid) var(--ease);
+}
+.panel__toggle:hover{ background:var(--surface-3); color:var(--ink); }
+.panel.is-collapsed .panel__toggle{ transform:rotate(-90deg); }
+.panel__collapse{ display:grid; grid-template-rows:1fr; min-height:0; transition:grid-template-rows var(--t-mid) var(--ease); }
+.panel.is-collapsed .panel__collapse{ grid-template-rows:0fr; }
+.panel__collapse > *{ overflow:hidden; min-height:0; }
+
+/* ---------- 6. 复制按钮 ---------- */
+.copybtn{
+  position:absolute; top:7px; right:7px; z-index:3; display:inline-flex; align-items:center; gap:4px;
+  height:22px; padding:0 7px; font-size:10px; color:var(--ink-3); background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--r-xs); opacity:0; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  cursor:pointer;
+}
+.eq, .ref-item{ position:relative; }
+.eq:hover > .copybtn, .ref-item:hover > .copybtn{ opacity:1; }
+.copybtn:hover{ color:var(--acc); border-color:var(--acc-tint-2); }
+.copybtn.is-done{ color:var(--ok); border-color:var(--ok-line); animation:copyPop var(--t-mid) var(--ease); }
+@keyframes copyPop{ 0%{ transform:scale(.85); } 55%{ transform:scale(1.1); } 100%{ transform:none; } }
