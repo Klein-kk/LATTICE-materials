@@ -1,0 +1,134 @@
+/* ============================================================
+   LATTICE · 明暗主题 / 语言切换控件
+   在 app.css 之后加载，接管暗模式下的变量与散落硬编码色。
+   ============================================================ */
+
+:root { --on-acc: #FFFFFF; }        /* 强调色底上的文字色 */
+html[data-theme="dark"] { --on-acc: #071110; }
+
+/* ---------------- 暗色 tokens ---------------- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper:      #0E1216;
+  --paper-2:    #12171C;
+  --surface:    #161B21;
+  --surface-2:  #1B2128;
+  --surface-3:  #22282F;
+  --ink:        #E7EBEF;
+  --ink-2:      #B2BAC1;
+  --ink-3:      #7D868E;
+  --ink-4:      #5A636B;
+  --line:       #333C45;
+  --line-2:     #262D35;
+  --line-strong:#5A6470;
+
+  --acc:        #4FB3A5;
+  --acc-2:      #63C3B5;
+  --acc-ink:    #9BD9CE;
+  --acc-tint:   #12211E;
+  --acc-tint-2: #1A322D;
+
+  --sig:        #D8B45C;
+  --sig-tint:   #221D12;
+  --sig-line:   #3B3320;
+
+  --risk:       #E08A7D;
+  --risk-tint:  #2A1A17;
+  --risk-line:  #402823;
+
+  --ok:         #7CC194;
+  --ok-tint:    #14211A;
+  --ok-line:    #24382A;
+
+  --c1: #4FB3A5;
+  --c2: #6E8FC4;
+  --c3: #D8B45C;
+  --c4: #E08A7D;
+  --c5: #9CB567;
+  --c6: #98A2AC;
+
+  --sh-1: 0 1px 2px rgba(0,0,0,.35);
+  --sh-2: 0 1px 2px rgba(0,0,0,.40), 0 10px 26px -14px rgba(0,0,0,.70);
+  --sh-3: 0 2px 4px rgba(0,0,0,.45), 0 24px 60px -20px rgba(0,0,0,.75);
+}
+
+/* Tweaks 的四套强调色：.app[data-acc] 优先级高于 html[data-theme]，
+   因此暗色必须按同前缀重写，否则换色后暗模式失效 */
+html[data-theme="dark"] .app[data-acc="indigo"] {
+  --acc:#6E8FC4; --acc-2:#85A5D8; --acc-ink:#B9C9E9; --acc-tint:#171F2E; --acc-tint-2:#202B3F; --c1:#6E8FC4;
+}
+html[data-theme="dark"] .app[data-acc="iron"] {
+  --acc:#C08A5E; --acc-2:#D2A177; --acc-ink:#E4BE99; --acc-tint:#251A13; --acc-tint-2:#33241A; --c1:#C08A5E;
+}
+html[data-theme="dark"] .app[data-acc="moss"] {
+  --acc:#8FB673; --acc-2:#A5C88B; --acc-ink:#C6DCB2; --acc-tint:#182015; --acc-tint-2:#222D1D; --c1:#8FB673;
+}
+
+/* ---------------- 接管散落的硬编码色 ---------------- */
+html[data-theme="dark"] body { background: var(--paper); }
+
+html[data-theme="dark"] .btn--primary,
+html[data-theme="dark"] .btn--primary:hover { color: var(--on-acc); }
+html[data-theme="dark"] .btn--primary:hover { background: var(--acc-2); border-color: var(--acc-2); }
+
+html[data-theme="dark"] .btn--sig:hover { background: #3A3220; color: #EBD9A8; }
+
+html[data-theme="dark"] .pipe.is-done .pipe__tick::after { border-color: var(--on-acc); }
+
+html[data-theme="dark"] .cell--4 { background: color-mix(in srgb, var(--acc) 55%, #0E1216); color: var(--on-acc); }
+html[data-theme="dark"] .cell--5 { background: color-mix(in srgb, var(--acc) 82%, #0E1216); color: var(--on-acc); }
+
+html[data-theme="dark"] .note--sig  { color: #E3C98C; }
+html[data-theme="dark"] .note--risk { color: #EAA396; }
+html[data-theme="dark"] .note--ok   { color: #9BD3AF; }
+
+/* 甘特图块内文字与虚纹底 */
+html[data-theme="dark"] .gantt__blk > span,
+html[data-theme="dark"] .gantt__blk { color: var(--on-acc); }
+html[data-theme="dark"] .gantt__blk--q {
+  background: repeating-linear-gradient(45deg, var(--line-strong) 0 3px, #1B2128 3px 6px);
+  color: var(--ink-2);
+}
+
+/* 运行日志：本就是深底，暗模式下再压一档 */
+html[data-theme="dark"] .console { background: #0A0D11; border-top-color: #000; }
+html[data-theme="dark"] .console__body::-webkit-scrollbar-thumb { background: #2C343C; }
+
+/* 图表浮层提示 */
+html[data-theme="dark"] .chart__tip { background: #252C34; color: #EAEFF2; border-color: #3D4650; }
+
+/* 论文正文排版 */
+html[data-theme="dark"] .paper { color: var(--ink); }
+
+html[data-theme="dark"] .seg button.is-on { color: var(--on-acc); }
+html[data-theme="dark"] .avatar { color: var(--on-acc); }
+
+/* 平滑切换（只作用于配色，不影响布局） */
+.app, .topbar, .rail, .main, .trace, .console, .phasebar, .modal__panel {
+  transition: background-color var(--t-mid) var(--ease), color var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease);
+}
+
+/* ---------------- 顶栏切换控件 ---------------- */
+.prefbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  min-width: 30px; height: var(--row, 34px); padding: 0 7px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  color: var(--ink-2); background: transparent;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  cursor: pointer; transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.prefbtn:hover { color: var(--ink); border-color: var(--line-strong); background: var(--surface-2); }
+.prefbtn:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.prefbtn svg { display: block; }
+
+/* 主题图标：按当前主题显示其一 */
+.prefbtn .ico-sun, .prefbtn .ico-moon { display: none; }
+html[data-theme="dark"] .prefbtn .ico-sun  { display: block; }
+html[data-theme="light"] .prefbtn .ico-moon { display: block; }
+html:not([data-theme]) .prefbtn .ico-moon { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) .prefbtn .ico-moon { display: none; }
+  html:not([data-theme]) .prefbtn .ico-sun  { display: block; }
+}
