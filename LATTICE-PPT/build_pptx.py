@@ -134,6 +134,38 @@ def title_block(slide, title, sub=None):
 def newslide():
     return prs.slides.add_slide(BLANK)
 
+# ---------- 截图嵌入 ----------
+from PIL import Image
+IMGD = 'D:/learnbuddy内容/2026-09-17-01-28-37/_dev'
+
+def pic_fit(slide, path, x, y, w, h, cover=False):
+    """在 (x,y,w,h) 盒内放置图片：fit=等比居中，cover=裁切填满。"""
+    iw, ih = Image.open(path).size
+    ai = iw / ih; ab = w / h
+    if cover:
+        pic = slide.shapes.add_picture(path, Inches(x), Inches(y), Inches(w), Inches(h))
+        if ai > ab:
+            c = (1 - ab / ai) / 2; pic.crop_left = c; pic.crop_right = c
+        else:
+            c = (1 - ai / ab) / 2; pic.crop_top = c; pic.crop_bottom = c
+        return pic
+    if ai > ab:
+        pw, ph = w, w / ai
+    else:
+        pw, ph = h * ai, h
+    px, py = x + (w - pw) / 2, y + (h - ph) / 2
+    return slide.shapes.add_picture(path, Inches(px), Inches(py), Inches(pw), Inches(ph))
+
+def app_window(slide, path, x, y, w, h, title='', cover=False):
+    """仿应用窗口图框：标题栏 + 三色圆点 + 截图。"""
+    rect(slide, x, y, w, h, WHITE, line=RGBColor(0xC5,0xDA,0xD6), lw=1.25)
+    rect(slide, x, y, w, 0.34, PANEL)
+    for i, c in enumerate((RGBColor(0xE3,0x6C,0x5A), RGBColor(0xE8,0xB8,0x4A), RGBColor(0x5C,0xC7,0x8F))):
+        oval(slide, x+0.14+i*0.17, y+0.115, 0.11, c)
+    if title:
+        txt(slide, x+0.75, y+0.04, w-0.9, 0.26, title, 10, GRAY, anchor=MSO_ANCHOR.MIDDLE)
+    pic_fit(slide, path, x+0.07, y+0.41, w-0.14, h-0.48, cover=cover)
+
 # =========================================================
 # P1 封面
 # =========================================================
@@ -213,15 +245,14 @@ rect(s,0,0,SW,SH,BG)
 txt(s,0.6,0.7,11,0.4,'平台总览 · OVERVIEW',16,CYAN,bold=True)
 txt(s,0.6,1.15,11.5,0.9,'一个平台，覆盖材料科研的全链路',38,INK,bold=True)
 rect(s,0.65,2.15,1.2,0.06,CYAN)
-nums=[('10','十环节科研流水线'),('10','覆盖材料大方向'),('250+','中英双语指标词表'),('0','依赖 · 零部署')]
-xb=0.6
-for n,l in nums:
-    txt(s,xb,2.6,2.7,1.3,n,100,CYAN,bold=True,fontname='Consolas',align=PP_ALIGN.CENTER)
-    txt(s,xb,3.95,2.7,0.7,l,16,GRAY,align=PP_ALIGN.CENTER)
-    if xb<9.5:
-        rect(s,xb+2.85,2.7,0.02,1.3,RGBColor(0xD6,0xE2,0xE0))
-    xb+=3.1
-txt(s,0.6,5.4,12.1,0.8,'纯静态、零构建、零第三方运行时依赖——双击 index.html 即跑，把一篇论文自动跑成一篇可投稿的成果。',20,INK,line_spacing=1.4)
+nums=[('10','十环节科研流水线'),('10','覆盖材料大方向'),
+      ('250+','中英双语指标词表'),('0','第三方运行时依赖')]
+pos=[(0.6,2.45),(3.05,2.45),(0.6,4.25),(3.05,4.25)]
+for (n,l),(px,py) in zip(nums,pos):
+    txt(s,px,py,2.3,1.0,n,54,CYAN,bold=True,fontname='Consolas')
+    txt(s,px,py+0.95,2.4,0.6,l,14,GRAY)
+app_window(s, IMGD+'/shots/overview.png', 6.1, 2.2, 6.6, 4.25, 'LATTICE · 平台总览实拍')
+txt(s,0.6,6.1,5.3,0.7,'纯静态、零构建、零依赖——\n双击 index.html 即跑。',15,INK,line_spacing=1.3)
 footer(s,4)
 
 # =========================================================
@@ -248,12 +279,13 @@ line(s,prev,y,12.0,y,CYAN,2)
 cards=[('导入与解析','文献一键上传，逐项抽取原料、仪器、工艺、变量与指标，每条附原文依据，缺项标「未报告」。'),
        ('绘图与配图','论文专属科学图形 + 3D 科研绘图（响应面 / 晶胞 / 界面），内嵌期刊配色与 SCI 配图规范。'),
        ('撰写与评审','初稿自动生成、降 AI 改写、可解释查重与三位专家评审，问题自动检测一站式闭环。')]
-for i,(t,d) in enumerate(cards):
+for i,(t,d) in enumerate(cards[:2]):
     x=0.6+i*4.05
     rect(s,x,4.4,3.85,2.05,WHITE,line=RGBColor(0xE1,0xE8,0xE7),lw=1)
     rect(s,x,4.4,3.85,0.12,CYAN)
     txt(s,x+0.25,4.7,3.4,0.5,t,22,TEAL,bold=True)
     txt(s,x+0.25,5.3,3.4,1.0,d,14,GRAY,line_spacing=1.3)
+app_window(s, IMGD+'/shots/peer.png', 8.75, 4.4, 3.85, 2.05, '论文评审 · 实拍', cover=True)
 footer(s,5)
 
 # =========================================================
@@ -262,20 +294,18 @@ footer(s,5)
 s = newslide()
 rect(s,0,0,SW,SH,BG)
 title_block(s,'智能抽取：真实论文锚定，绝不臆造')
-txt(s,0.6,1.6,7.2,0.5,'只分析原文有的内容',24,TEAL,bold=True)
-txt(s,0.6,2.2,7.2,1.4,'抽取引擎只输出论文中真实出现的东西——原料、仪器、工艺、变量、指标、参考文献，逐条标注来源。',19,RGBColor(0x3C,0x4A,0x49),line_spacing=1.5)
-txt(s,0.6,3.6,7.2,1.2,'抽不到的内容一律标「原文未报告」，绝不补全、绝不凭空生成。',19,RGBColor(0x3C,0x4A,0x49),line_spacing=1.5)
-rect(s,0.6,4.95,7.2,1.0,PANEL)
-rect(s,0.6,4.95,0.1,1.0,CYAN)
-txt(s,0.85,5.1,6.8,0.8,'每条结论都附原文依据——可追溯、可复核、可信任。',19,TEAL,bold=True,anchor=MSO_ANCHOR.MIDDLE)
-rect(s,8.4,1.6,4.3,5.1,TEAL)
-txt(s,8.7,1.9,3.7,0.5,'抽取引擎能识别',20,CYANL,bold=True)
-recog=[('原料与试剂'),('仪器与设备'),('工艺与步骤'),('变量与水平'),('可测指标'),('参考文献')]
-ry=2.7
-for r in recog:
-    oval(s,8.75,ry+0.05,0.18,CYANL)
-    txt(s,9.1,ry,3.4,0.5,r,18,WHITE,anchor=MSO_ANCHOR.MIDDLE)
-    ry+=0.62
+app_window(s, IMGD+'/shots6/app-mid.png', 0.6, 1.6, 6.7, 5.0, '智能抽取 · 解析结果实拍')
+txt(s,7.7,1.7,5.0,0.5,'只分析原文有的内容',22,TEAL,bold=True)
+txt(s,7.7,2.3,5.0,1.1,'抽取引擎只输出论文中真实出现的东西——原料、仪器、工艺、变量、指标、参考文献，逐条标注来源。',15,RGBColor(0x3C,0x4A,0x49),line_spacing=1.4)
+txt(s,7.7,3.5,5.0,0.8,'抽不到的内容一律标「原文未报告」，绝不补全、绝不凭空生成。',15,RGBColor(0x3C,0x4A,0x49),line_spacing=1.4)
+rect(s,7.7,4.45,5.0,0.85,PANEL)
+rect(s,7.7,4.45,0.09,0.85,CYAN)
+txt(s,7.95,4.55,4.6,0.65,'每条结论都附原文依据——可追溯、可复核、可信任。',14,TEAL,bold=True,anchor=MSO_ANCHOR.MIDDLE)
+recog=['原料与试剂','仪器与设备','工艺与步骤','变量与水平','可测指标','参考文献']
+for i,r in enumerate(recog):
+    cxx=7.7+(i%2)*2.55; cyy=5.55+(i//2)*0.42
+    oval(s,cxx,cyy+0.07,0.14,CYAN)
+    txt(s,cxx+0.26,cyy,2.2,0.34,r,13,INK,anchor=MSO_ANCHOR.MIDDLE)
 footer(s,6)
 
 # =========================================================
@@ -284,18 +314,7 @@ footer(s,6)
 s = newslide()
 rect(s,0,0,SW,SH,BG)
 title_block(s,'3D 科研绘图与 SCI 配图规范')
-rect(s,0.6,1.6,6.6,5.0,TEAL)
-# 球棍晶体
-atoms=[(2.4,2.4,(46,91,226)),(4.5,2.7,(226,59,46)),(3.4,4.0,(191,194,199)),
-       (1.9,5.0,(200,161,101)),(5.4,4.9,(217,194,43)),(3.2,5.7,(46,91,226)),
-       (5.1,5.9,(226,59,46)),(2.2,5.9,(191,194,199))]
-bonds=[(0,2),(1,2),(2,3),(2,4),(2,5),(2,6),(5,7),(6,7),(3,7)]
-for a,b in bonds:
-    line(s,atoms[a][0]+0.18,atoms[a][1]+0.18,atoms[b][0]+0.18,atoms[b][1]+0.18,RGBColor(0x9F,0xE9,0xDF),3,op=55)
-for (x,y,c) in atoms:
-    cc=RGBColor(*c)
-    oval(s,x+0.02,y+0.02,0.34,cc,None); alpha(oval(s,x-0.04,y-0.04,0.46,cc,None),25)
-    oval(s,x,y,0.3,cc,line=WHITE,lw=1)
+app_window(s, IMGD+'/shots5/c-3d.png', 0.6, 1.6, 6.6, 5.0, '3D 科研绘图 · 晶胞球棍 / 层状界面实拍')
 txt(s,8.5,1.7,4.3,0.5,'论文专属三维图形',22,TEAL,bold=True)
 txt(s,8.5,2.35,4.3,1.0,'三维响应面、晶胞球棍模型、层状 / 界面结构，纯手写投影引擎生成。',18,RGBColor(0x3C,0x4A,0x49),line_spacing=1.4)
 txt(s,8.5,3.5,4.3,0.5,'期刊配色板',22,TEAL,bold=True)
@@ -310,39 +329,17 @@ footer(s,7)
 s = newslide()
 rect(s,0,0,SW,SH,BG)
 title_block(s,'应用场景一 · 高校科研团队','让课题组从"读文献"到"出初稿"一步到位')
-rect(s,0.6,1.55,12.1,2.9,TEAL)
-# 实验室意象：屏幕+柱状、烧瓶、原子、文档
-rect(s,1.2,2.1,3.2,1.7,RGBColor(0x0B,0x2E,0x2C),line=CYAN,lw=2)
-for i,(bx,bh) in enumerate([(1.45,0.5),(1.85,1.0),(2.25,1.4),(2.65,0.9),(3.05,1.5)]):
-    rect(s,bx,3.75-bh,0.28,bh,CYANL if i%2 else CYAN)
-# 烧瓶
-def flask(cx,top_y):
-    # 用矩形+梯形近似：简化为一个倒三角(用线条) + 椭圆底
-    pts=[(cx-0.35,top_y),(cx+0.35,top_y),(cx+0.55,top_y+1.5),(cx-0.55,top_y+1.5)]
-    # 用 add_freeform 画梯形
-    from pptx.enum.shapes import MSO_SHAPE
-    sp = s.shapes.add_shape(MSO_SHAPE.OVAL,Inches(cx-0.25),Inches(top_y-0.1),Inches(0.5),Inches(0.18),)
-    sp.fill.solid(); sp.fill.fore_color.rgb=CYAN; sp.line.color.rgb=CYAN; sp.shadow.inherit=False
-    shp = s.shapes.add_shape(MSO_SHAPE.OVAL,Inches(cx-0.6),Inches(top_y+1.3),Inches(1.2),Inches(0.3))
-    shp.fill.solid(); shp.fill.fore_color.rgb=CYAN; shp.line.fill.background(); shp.shadow.inherit=False
-    alpha(shp,40)
-flask(6.6,2.3)
-# 原子
-for (ax,ay,ac,r) in [(9.1,2.5,(46,91,226),0.5),(9.7,3.4,(226,59,46),0.4),(9.0,3.6,(217,194,43),0.32),(10.2,2.8,(127,233,223),0.28)]:
-    oval(s,ax,ay,r,RGBColor(*ac),None); alpha(oval(s,ax-0.06,ay-0.06,r+0.12,RGBColor(*ac),None),25)
-    oval(s,ax,ay,r*0.8,RGBColor(*ac),line=WHITE,lw=1)
-# 文档
-rect(s,10.9,2.2,1.4,1.7,RGBColor(0x0B,0x2E,0x2C),line=CYAN,lw=2)
-for i,by in enumerate([2.45,2.7,2.95,3.25,3.5]):
-    rect(s,11.1,by,1.0,0.1,CYANL if i%2 else CYAN)
+app_window(s, IMGD+'/shots/exp.png', 0.6, 1.55, 5.9, 4.55, '自动实验 · 设备排程实拍')
 cards=[('极速出成果','研究生把文献一键导入，自动产出实验指导书与论文初稿，从数月压缩到数小时。'),
        ('规范且可复现','每条结论附原文依据，课题组知识结构化沉淀，经验传承不再靠口耳相传。')]
 for i,(t,d) in enumerate(cards):
-    x=0.6+i*6.2
-    rect(s,x,4.7,5.9,1.6,WHITE,line=RGBColor(0xE1,0xE8,0xE7),lw=1)
-    rect(s,x,4.7,5.9,0.12,CYAN)
-    txt(s,x+0.3,4.95,5.4,0.5,t,22,TEAL,bold=True)
-    txt(s,x+0.3,5.5,5.4,0.7,d,15,GRAY,line_spacing=1.3)
+    yb=1.55+i*2.4
+    rect(s,6.8,yb,5.9,2.15,WHITE,line=RGBColor(0xE1,0xE8,0xE7),lw=1)
+    rect(s,6.8,yb,0.12,2.15,CYAN)
+    txt(s,7.1,yb+0.3,5.4,0.5,t,22,TEAL,bold=True)
+    txt(s,7.1,yb+0.95,5.4,1.0,d,15,GRAY,line_spacing=1.35)
+rect(s,0.6,6.25,12.1,0.5,PANEL)
+txt(s,0.85,6.3,11.6,0.4,'从数月到数小时——让课题组把时间花在科学问题本身。',14,TEAL,bold=True,anchor=MSO_ANCHOR.MIDDLE)
 footer(s,8)
 
 # =========================================================
@@ -372,26 +369,7 @@ footer(s,9)
 s = newslide()
 rect(s,0,0,SW,SH,BG)
 title_block(s,'应用场景三 · 综述与文献情报')
-rect(s,0.6,1.6,6.6,5.0,TEAL)
-# 知识图谱（径向）
-cx,cy=3.9,4.1
-ring1=[(cx+1.1*0+0,0)]  # placeholder
-import math
-r1=1.7; r2=3.0
-ring1_nodes=[]; ring2_nodes=[]
-for i in range(6):
-    a=math.radians(60*i-90)
-    ring1_nodes.append((cx+r1*math.cos(a),cy+r1*math.sin(a)))
-for i in range(4):
-    a=math.radians(90*i)
-    ring2_nodes.append((cx+r2*math.cos(a),cy+r2*math.sin(a)))
-for n in ring1_nodes: line(s,n[0]+0.18,n[1]+0.18,cx+0.18,cy+0.18,CYAN,1.6,op=40)
-for i,n in enumerate(ring1_nodes):
-    if i<len(ring2_nodes):
-        line(s,n[0]+0.18,n[1]+0.18,ring2_nodes[i][0]+0.18,ring2_nodes[i][1]+0.18,CYAN,1.4,op=35)
-oval(s,cx-0.25,cy-0.25,0.5,CYANL)
-for n in ring1_nodes: oval(s,n[0]-0.12,n[1]-0.12,0.28,RGBColor(0xBF,0xC2,0xC7))
-for n in ring2_nodes: oval(s,n[0]-0.1,n[1]-0.1,0.22,CYAN)
+app_window(s, IMGD+'/shots/lit.png', 0.6, 1.6, 6.6, 5.0, '文献调研 · 配比矩阵 / 空缺解析实拍')
 txt(s,8.5,1.7,4.3,0.5,'综述自动识别',22,TEAL,bold=True)
 txt(s,8.5,2.35,4.3,1.0,'无变量、无实验步骤的综述 / 展望类文献，按结构证据自动切换为情报模式。',18,RGBColor(0x3C,0x4A,0x49),line_spacing=1.4)
 txt(s,8.5,3.5,4.3,0.5,'三类图谱',22,TEAL,bold=True)

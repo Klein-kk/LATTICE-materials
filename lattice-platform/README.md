@@ -176,6 +176,21 @@
 
 同时给出 **CPK 原子配色表**（C `#303030`、O `#E23B2E`、N `#2E5BE2`、Si `#C8A165`、S `#D9C22B`、P `#E8802A`、Cl `#3FBF3F`、Ti `#BFC2C7`…）与骨架式/球棍式/反应式的**示例绘制**，可直接导出。
 
+### 6.5 可交互 3D 模型（文生 3D · 文献锚定）
+
+环节 04「图 8 · 晶胞 / 球棍模型」下方会挂载一个**可交互的 WebGL 3D 模型**（拖拽旋转 · 滚轮缩放 · 双击恢复自转），用于直观展示该论文所代表结构的占位与配位环境。
+
+- **离线、零 CDN**：查看器依赖 `assets/js/vendor/three.min.js`（three.js r128 UMD）+ `assets/js/vendor/GLTFLoader.js`，已本地打包，无外网依赖。
+- **模型来源（agent 端文生 3D）**：GLB 由 agent 基于该文的晶格参数 / 代表结构在云端文生 3D 生成，落盘到 `assets/3d/`，并在 `assets/js/three-manifest.js` 中按 `MR.state.paperId` 登记。当前内置示例 **S4（NASICON 型磷酸钒钠）** 已带一个示意 GLB。**纯示意、非精修结构**，仅用于占位与配位关系说明。
+- **用户上传论文**：当 `paperId` 不在 `three-manifest.js` 时，环节 04 仍显示 SVG 球棍图，并附「需通过代理 / 离线生成」提示；平台不会替原文臆造 3D 结构。
+
+> ⚠️ **必须用本地服务器打开**：3D 查看器通过 `fetch()` 读取本地 `.glb`，`file://` 协议下浏览器会禁止读取本地文件，此时查看器会**优雅回退**到下方 SVG 球棍图（不会报错、不影响其他图形）。推荐：
+> ```bash
+> cd lattice-platform
+> python -m http.server 8000
+> # 浏览器访问 http://localhost:8000
+> ```
+
 ---
 
 ## 7. 目录结构
@@ -186,7 +201,13 @@ lattice-platform/
 ├── assets/
 │   ├── css/
 │   │   ├── app.css                # 设计系统与基础组件
-│   │   └── extra.css              # 上传区 / 图形框 / 专家卡 / 仪表 等
+│   │   ├── extra.css              # 上传区 / 图形框 / 专家卡 / 仪表 等
+│   │   ├── interactions.css       # 交互增强层（快捷键 / 命令面板 / Toast / 复制）
+│   │   ├── glb3d.css              # 本地 3D 查看器面板样式
+│   │   └── theme.css
+│   ├── 3d/
+│   │   ├── S4_nasicion.glb        # 内置示例 S4 的文生 3D 示意模型（需本地服务器加载）
+│   │   └── S4_nasicion.png        # 同一模型的预览图
 │   └── js/
 │       ├── library.js             # 本地文献库（132 条真实文献）
 │       ├── papers.js              # 内置示例文档（4 篇虚构）+ 已核验题录（3 条）
@@ -200,8 +221,14 @@ lattice-platform/
 │       ├── data.js                # 设计令牌、文本特征词表、写作样本
 │       ├── app.js                 # 外壳：路由、真实上传下载、配色系统、流水线引擎
 │       ├── views2-core.js         # 文档读取、GHS 词典、问题检测、正文生成
-│       ├── views2-stages.js       # 环节 01–07
+│       ├── views2-stages.js       # 环节 01–07（含环节 04 的 3D 查看器挂载）
 │       ├── views2-paper.js        # 环节 08–10
+│       ├── interactions.js        # 交互增强层（命令面板 / Toast / 复制 / 移动端导航）
+│       ├── vendor/
+│       │   ├── three.min.js       # three.js r128 UMD（本地打包，零 CDN）
+│       │   └── GLTFLoader.js      # three.js GLTFLoader（本地打包）
+│       ├── glb3d.js               # 本地 three.js 查看器（手写 orbit，MR.glb3d.mount）
+│       ├── three-manifest.js      # 内置 3D 模型清单（按 paperId 登记 GLB）
 │       └── boot.js
 ```
 

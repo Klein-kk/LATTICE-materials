@@ -1,0 +1,3 @@
+{
+  "_comment": "运行时清单已迁移至 assets/js/three-manifest.js（嵌入 JS，避免 file:// 下 fetch 本地 JSON 失败）。本文件仅作文档留档，请勿与 three-manifest.js 重复维护。"
+}

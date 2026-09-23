@@ -932,6 +932,31 @@ MR.views2 = {};
           miller: null
         });
       });
+      /* 文献锚定 3D 模型（agent 端文生3D 产出，纯示意；GLB 仅在本地服务器下可加载） */
+      if (el3 && MR.glb3d && MR.threeManifest) {
+        var entry = MR.threeManifest[MR.state.paperId];
+        if (entry) {
+          var vhead = document.createElement('div');
+          vhead.className = 'mono-xs';
+          vhead.style.cssText = 'color:#6B7A88;margin:10px 2px 2px';
+          vhead.textContent = '可交互 3D 模型（拖拽旋转 · 滚轮缩放 · 双击恢复自转）';
+          el3.appendChild(vhead);
+          var vbox = document.createElement('div');
+          vbox.style.height = '360px';
+          el3.appendChild(vbox);
+          try {
+            MR.glb3d.mount(vbox, entry.glb, { badge: entry.badge || 'AI 生成 · 示意 · 基于本文晶格参数', height: 360 });
+          } catch (e) {
+            vbox.innerHTML = '<div class="glb3d__msg">3D 查看器初始化失败：' + ((e && e.message) || e) + '</div>';
+          }
+        } else {
+          var vnote = document.createElement('div');
+          vnote.className = 'mono-xs';
+          vnote.style.cssText = 'color:#9A6A2E;margin-top:8px';
+          vnote.textContent = '当前论文无内置 3D 模型；上传论文的 3D 模型需通过代理 / 离线生成（见 README 第 6 节）。';
+          el3.appendChild(vnote);
+        }
+      }
       /* 层状 / 界面 */
       var el4 = host.querySelector('#f3layer');
       if (el4) renderInto(el4, function (w) {
