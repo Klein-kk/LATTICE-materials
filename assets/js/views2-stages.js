@@ -101,6 +101,61 @@ MR.views2 = {};
         '</div>'
     }) + '<div class="mb-4"></div>';
   }
+  /* ---------- 微型试验台：实验选择 ---------- */
+  function denseLevels(model, n) {
+    var lv = (model.levels || []).slice().sort(function (a, b) { return a - b; });
+    if (lv.length < 2) return lv.slice();
+    var a = lv[0], b = lv[lv.length - 1], out = [];
+    for (var k = 0; k < n; k++) out.push(+((a + (b - a) * k / (n - 1))).toFixed(3));
+    return out;
+  }
+  function isReported(x, model) {
+    return (model.levels || []).some(function (L) { return Math.abs(L - x) < 1e-6; });
+  }
+  function benchSpecs(pf) {
+    MR.state.bench = MR.state.bench || { on: {}, res: {}, n: 24 };
+    var ms = [];
+    (pf.matrix || []).forEach(function (m) {
+      var model = pf.__model[m.v + '|' + m.i];
+      if (!model) return;
+      var key = m.v + '|' + m.i;
+      if (MR.state.bench.on[key] === false) return;
+      ms.push({ v: m.v, i: m.i, model: model, m: m, key: key, res: MR.state.bench.res[key] || 'reported', n: MR.state.bench.n || 24 });
+    });
+    return ms;
+  }
+  function benchPanel(pf) {
+    MR.state.bench = MR.state.bench || { on: {}, res: {}, n: 24 };
+    var all = [];
+    (pf.matrix || []).forEach(function (m) {
+      var model = pf.__model[m.v + '|' + m.i];
+      if (model) all.push({ v: m.v, i: m.i, key: m.v + '|' + m.i, model: model });
+    });
+    if (!all.length) return '';
+    var rows = all.map(function (s) {
+      var on = MR.state.bench.on[s.key] !== false;
+      var res = MR.state.bench.res[s.key] || 'reported';
+      var base = (MR.state.params[s.v] != null) ? ('基准 ' + MR.paper.shortVar(s.v) + '=' + MR.state.params[s.v] + (s.model.unit ? ' ' + s.model.unit : '')) : '';
+      return '<div class="bench-row">' +
+        '<label class="bench-chk"><input type="checkbox" data-bench-on="' + MR.esc(s.key) + '"' + (on ? ' checked' : '') + '><span>' + MR.esc(s.i) + ' @ ' + MR.esc(MR.paper.shortVar(s.v)) + '</span></label>' +
+        '<div class="seg bench-res">' +
+          '<button type="button" data-bench-res="' + MR.esc(s.key) + '" data-v="reported"' + (res === 'reported' ? ' class="is-on"' : '') + '>原文水平</button>' +
+          '<button type="button" data-bench-res="' + MR.esc(s.key) + '" data-v="dense"' + (res === 'dense' ? ' is-on' : '') + '>加密扫描</button>' +
+        '</div>' +
+        (base ? '<span class="bench-base mono-xs">' + base + '</span>' : '') +
+      '</div>';
+    }).join('');
+    var n = MR.state.bench.n || 24;
+    return MR.panel({
+      title: '微型试验台 · 选择实验（先于结果分析）', meta: all.length + ' 组响应', icon: 'analysis', pad: true, flush: true,
+      body: '<div class="bench-intro">预测一律来自<b>原文建立的响应模型</b>（可靠趋势），不是凭空生成。勾选要研究的单变量实验、可调扫描密度；其余变量固定在「确认方案」所选水平。选好后下方即出结果分析。</div>' +
+        '<div class="bench-rows">' + rows + '</div>' +
+        '<div class="bench-foot"><span class="mono-xs">加密点数 N</span>' +
+          '<input type="range" min="8" max="60" step="2" value="' + n + '" data-bench-n><span class="mono-xs" id="benchN">' + n + '</span></div>',
+      note: '「加密扫描」在区间内插值生成 N 个预测点，用于更精细地定位预测最优水平；这些点为<b>预测值·待实测校准</b>，并非原文已有数据。'
+    }) + '<div class="mb-4"></div>';
+  }
+
   function cfRoute(w) {
     var d = conceptData(); if (!d) return '';
     var cats = d.cats.slice(0, 6), FS = 9.6, LBLW = 138, GAPX = 20, avail = Math.max(160, w - LBLW - GAPX - 62);
@@ -288,6 +343,22 @@ MR.views2 = {};
           note: '这三条是真实文献，题录与 DOI 已通过 Crossref / 出版方页面核验。为遵守版权，平台不内嵌全文；如需分析请自行上传 PDF 或粘贴正文。'
         }) + '</div>';
 
+      /* 3.5 我的论文库（本地优先 + 登录后云同步） */
+      var lib = (MR.store && MR.store.list) ? MR.store.list() : [];
+      var libHtml = lib.length ? '<div class="rowlist">' + lib.map(function (p) {
+        return '<div class="librow"><span><span class="librow__t">' + MR.esc(p.name) +
+          '</span><span class="librow__s">' + MR.esc(p.kind || '') + ' · ' + ((p.chars || 0) / 1000).toFixed(1) + ' 千字符 · ' + (p.date || '').slice(0, 10) + '</span></span>' +
+          '<button class="btn btn--sm" data-libload="' + MR.esc(p.id) + '">载入</button>' +
+          '<button class="btn btn--sm" data-libdel="' + MR.esc(p.id) + '">删除</button></div>';
+      }).join('') + '</div>'
+        : MR.note('你的论文库还是空的。上传或粘贴一篇论文后，它会自动保存到本机；登录后还会同步到你的私有云端。', 'acc', 'review1');
+      html += MR.panel({
+        title: '我的论文库', meta: lib.length + ' 篇 · 本地优先', icon: 'book', pad: true, flush: true,
+        acts: MR.state.paper ? '<button class="btn btn--sm btn--primary" data-act="savepaper">保存到论文库</button>' : '',
+        body: libHtml,
+        note: '论文先存本机浏览器；登录后自动同步到你的私有云端数据库（users/{uid}/papers），每位用户彼此隔离。'
+      }) + '<div class="mb-4"></div>';
+
       /* 未载入论文：给引导，不给错误 */
       if (!MR.state.paper) {
         html += MR.panel({
@@ -300,18 +371,50 @@ MR.views2 = {};
         return html;
       }
 
-      /* 抽取总览 */
+      /* 抽取总览（颜色随文献类型变化：综述的空字段是"正常"，不标红；并直接写明为什么空） */
       var conf = pf.confidence || 0;
+      var isReview = an.paperType === 'review';
+      var isClinical = an.paperType === 'clinical';
+      var er = an.emptyReasons || {};
+      // 统一的字段态：有内容=ok；综述为空=info（中性，正常）；研究为空=异常(bad/warn)
+      function fld(key, len, researchEmpty) {
+        if (len) return { s: 'ok', n: '' };
+        if (isReview) return { s: 'info', n: er[key] || '综述类文献通常不报告此项，为空属正常。' };
+        return { s: (researchEmpty ? 'bad' : 'warn'), n: er[key] || '' };
+      }
+      var mMat = fld('materials', an.materials.length, false);
+      var mIns = fld('instruments', an.instruments.length, false);
+      var mVar = fld('variables', an.variables.length, true);
+      var mPerf = fld('indicators', pf.perf.length, true);
+      var mChar = fld('indicators', pf.chars.length, false);
+      var mStep = fld('steps', an.steps.length, false);
+      var mRef = fld('references', an.references.length, false);
       html += '<div class="metrics mb-4">' +
         MR.metric('抽取置信度', conf, ' / 100', '', conf >= 60 ? 'ok' : (conf >= 35 ? 'warn' : 'bad'), '由各字段抽取数量加权') +
-        MR.metric('原料 / 试剂', an.materials.length, ' 种', '', an.materials.length ? 'ok' : 'warn') +
-        MR.metric('仪器设备', an.instruments.length, ' 台', '', an.instruments.length ? 'ok' : 'warn') +
-        MR.metric('变量（含水平）', an.variables.length, ' 个', '', an.variables.length ? 'ok' : 'bad') +
-        MR.metric('可测指标', pf.perf.length, ' 项', '', pf.perf.length ? 'ok' : 'bad') +
-        MR.metric('表征手段', pf.chars.length, ' 项', '', pf.chars.length ? 'ok' : 'warn') +
-        MR.metric('工艺步骤', an.steps.length, ' 步', '', an.steps.length ? 'ok' : 'warn') +
-        MR.metric('参考文献', an.references.length, ' 条', '', an.references.length ? 'ok' : 'warn') +
+        MR.metric('原料 / 试剂', an.materials.length, ' 种', '', mMat.s, mMat.n) +
+        MR.metric('仪器设备', an.instruments.length, ' 台', '', mIns.s, mIns.n) +
+        MR.metric('变量（含水平）', an.variables.length, ' 个', '', mVar.s, mVar.n) +
+        MR.metric('可测指标', pf.perf.length, ' 项', '', mPerf.s, mPerf.n) +
+        MR.metric('表征手段', pf.chars.length, ' 项', '', mChar.s, mChar.n) +
+        MR.metric('工艺步骤', an.steps.length, ' 步', '', mStep.s, mStep.n) +
+        MR.metric('参考文献', an.references.length, ' 条', '', mRef.s, mRef.n) +
         '</div>';
+
+      /* 文献类型判定（显著提示：先告诉用户这是什么性质的文章，再解释为何某些字段为空） */
+      var TYPE_ICON = { review: 'lit', clinical: 'book', research: 'exp' };
+      var typeChipKind = isReview ? 'acc' : (isClinical ? 'sig' : 'ok');
+      var typeNoteKind = isReview ? 'acc' : (isClinical ? 'sig' : 'ok');
+      html += MR.panel({
+        title: '文献类型判定', meta: (an.typeLabel || '研究论文'), icon: TYPE_ICON[an.paperType] || 'review1', pad: true,
+        cls: isReview ? 'panel--acc' : (isClinical ? 'panel--sig' : ''),
+        body: '<div class="switchline" style="align-items:flex-start;margin-bottom:9px"><span class="switchline__k"><b>判定结果</b>' +
+          '<span class="mono-xs" style="display:block;text-transform:none">' + MR.esc(an.typeLabel || '研究论文') + '</span></span>' +
+          MR.chip(an.typeLabel || '研究论文', typeChipKind) + '</div>' +
+          '<div class="mono-xs" style="margin-bottom:9px"><b>为什么这么判：</b>' + MR.esc(an.typeReason || '') + '</div>' +
+          (an.typeNote ? '<div class="note note--' + typeNoteKind + '">' + MR.icon(TYPE_ICON[an.paperType] || 'review1', 14) +
+            '<span>' + MR.esc(an.typeNote) + '</span></div>' : ''),
+        note: '平台先识别文章性质，再决定后续环节：综述 / 展望走"概念路线"（技术概念图、对比矩阵、年份演进），原创研究走"变量—指标"分析。空字段只有在"本应出现却没出现"时才判为异常（标红）。'
+      }) + '<div class="mb-4"></div>';
 
       /* 题录解析结果：每条都标"从哪来"，不冒充原文 */
       var SRC_LABEL = {
@@ -347,8 +450,8 @@ MR.views2 = {};
           }).join('') : MR.note('未发现异常：各维度均有内容，摘要与关键词也都来自原文。', 'ok', 'review1')
         }) +
         (an.paperType === 'review' ? MR.panel({
-          title: '文献类型：综述 / 展望', meta: '后续改走"概念路线"', icon: 'lit', pad: true, tight: true, cls: 'panel--acc',
-          body: '<div class="mono-xs" style="margin-bottom:9px">这类文献没有变量与实验步骤（源于体裁，不是抽取失败）。环节 02–07 会自动切换为：<b>技术概念路线图 · 概念对比矩阵 · 年份演进时间线</b>，不再做"变量—指标"分析。</div>' +
+          title: '综述 / 展望 · 概念路线', meta: '替代"变量—指标分析"', icon: 'lit', pad: true, tight: true, cls: 'panel--acc',
+          body: '<div class="mono-xs" style="margin-bottom:9px">综述不含变量与实验步骤，因此环节 02–07 自动切换为以下"概念路线"内容：<b>技术概念路线图 · 概念对比矩阵 · 年份演进时间线</b>。</div>' +
             (an.concepts || []).map(function (c) {
               return '<div class="switchline" style="align-items:flex-start"><span class="switchline__k"><b>' + MR.esc(c.cat) + '</b>' +
                 '<span class="mono-xs" style="display:block;text-transform:none">' + c.items.map(function (x) { return MR.esc(x.t) + '(' + x.n + ')'; }).join('、') + '</span></span></div>';
@@ -522,6 +625,30 @@ MR.views2 = {};
         var box = host.querySelector('#absBox');
         if (box) box.textContent = list[i];
         if (MR.state.analysis) MR.state.analysis.abstract = list[i];
+      });
+      var sp = host.querySelector('[data-act="savepaper"]');
+      if (sp) sp.addEventListener('click', function () {
+        if (!MR.state.paper) return;
+        var p = MR.state.paper;
+        if (!p.text) { MR.log('WARN', '当前论文没有可保存的文字层，跳过'); return; }
+        MR.store.put({ id: p.id, name: p.name, kind: p.kind, text: p.text });
+        MR.log('OK', '已保存到「我的论文库」：<b>' + MR.esc(p.name) + '</b>（本机）' + (MR.cloud && MR.cloud.ready ? ' · 云端同步中' : ''));
+        MR.app.render();
+      });
+      host.querySelectorAll('[data-libload]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var id = b.getAttribute('data-libload');
+          var rec = MR.store.get(id);
+          if (rec && rec.text) { MR.loadText(rec.text, rec.name); MR.log('OK', '从论文库载入 <b>' + MR.esc(rec.name) + '</b>'); }
+          else { MR.log('WARN', '该条目正文缺失（可能曾超出本机存储上限），无法载入'); }
+        });
+      });
+      host.querySelectorAll('[data-libdel]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          MR.store.del(b.getAttribute('data-libdel'));
+          MR.log('OK', '已从论文库删除一篇论文（本机）');
+          MR.app.render();
+        });
       });
       bindFig(host);
     }
@@ -770,10 +897,22 @@ MR.views2 = {};
       }) + '<div class="mb-4"></div>';
 
       /* 图形 */
-      var has = { flow: (an.steps.length > 0), mech: true, xrd: (pf.peakData.theta || []).length >= 3, ftir: (pf.ftir.bands || []).length >= 3, sem: (pf.sem || []).length >= 1 };
+      var has = { flow: (an.steps.length > 0), mech: (an.mechType && an.mechType !== 'none' && an.paperType !== 'review'), xrd: (pf.peakData.theta || []).length >= 3, ftir: (pf.ftir.bands || []).length >= 3, sem: (pf.sem || []).length >= 1 };
       if (has.flow) html += figBox('f2flow', '图 1 · 制备工艺流程图', '工序 + 条件 + 设备（来自原文）');
       else html += MR.note('原文未报告可抽取的工艺步骤，因此不生成流程图 —— 占位图会误导读者。', 'sig', 'review1') + '<div class="mb-4"></div>';
-      html += figBox('f2mech', '图 2 · 界面结合机理示意', '处理方式 + 界面化学（来自原文表述）');
+      if (has.mech) {
+        var MECH_TITLE = {
+          'planar-interface': ['图 2 · 纤维-基体界面结合机理', '处理方式 + 界面化学（来自原文材料与表述）'],
+          'cell-transform': ['图 2 · 细胞转分化 / 相互作用示意', '研究对象来自原文（干细胞 → 功能细胞）'],
+          'molecular': ['图 2 · 分子相互作用 / 反应机理', '反应物 → 产物（条件取自原文流程）'],
+          'polymer-network': ['图 2 · 高分子网络 / 交联结构', '网络与交联节点（来自原文研究对象）'],
+          'coating': ['图 2 · 涂层 / 薄膜界面结构', '功能层 / 过渡层 / 基体（来自原文）']
+        };
+        var mtT = MECH_TITLE[an.mechType] || ['图 2 · 结构 / 界面机理示意', '来自原文研究对象'];
+        html += figBox('f2mech', mtT[0], mtT[1]);
+      } else {
+        html += MR.note(an.mechReason || '本文未识别出明确的材料界面 / 结构对象，故不生成固定的界面结合示意图。', 'sig', 'review1') + '<div class="mb-4"></div>';
+      }
       if (has.xrd) html += figBox('f2xrd', '图 3 · XRD 衍射图谱', '峰位取自原文：' + (pf.peakData.theta || []).slice(0, 5).map(function (x) { return x + '°'; }).join('、'));
       if (has.ftir) html += figBox('f2ftir', '图 4 · 红外光谱', '波数取自原文：' + (pf.ftir.bands || []).slice(0, 5).join('、') + ' cm⁻¹');
       if (has.sem) html += figBox('f2sem', '图 5 · 断面形貌对比', '面板描述取自原文');
@@ -960,11 +1099,12 @@ MR.views2 = {};
       /* 层状 / 界面 */
       var el4 = host.querySelector('#f3layer');
       if (el4) renderInto(el4, function (w) {
-        var txt = (MR.state.rawText || '');
+        var mt = (MR.state.analysis && MR.state.analysis.mechType) || '';
+        var txt = (MR.state.rawText || (MR.state.profile && MR.state.profile.rawText) || '');
         var layers = [];
-        if (/纤维|fiber|增强/.test(txt) && /基体|树脂|水泥|matrix/.test(txt)) {
+        if (mt === 'planar-interface' || (/纤维|fiber|增强/.test(txt) && /基体|树脂|水泥|matrix/.test(txt))) {
           layers = [{ t: '纤维增强相', color: '#4A6B8A', pattern: 'fiber' }, { t: '界面过渡区', color: '#D6B656', th: 0.26, pattern: 'mesh' }, { t: '基体相', color: '#9AA1A8', pattern: 'grain' }];
-        } else if (/涂层|镀层|膜/.test(txt)) {
+        } else if (mt === 'coating' || /涂层|镀层|膜/.test(txt)) {
           layers = [{ t: '功能涂层', color: '#82B366', pattern: 'grain' }, { t: '界面层', color: '#D6B656', th: 0.26, pattern: 'mesh' }, { t: '基体', color: '#9AA1A8', pattern: 'grain' }];
         } else {
           layers = [{ t: '表层', color: '#6C8EBF', pattern: 'grain' }, { t: '过渡区', color: '#D6B656', th: 0.26, pattern: 'mesh' }, { t: '本体', color: '#9AA1A8', pattern: 'grain' }];
@@ -996,113 +1136,128 @@ MR.views2 = {};
     render: function () {
       if (!MR.state.profile) return MR.head({ n: '05', t: '结果分析与作图', sub: '' }) + noPaper();
       var pf = PF();
-      var specs = [];
-      (pf.matrix || []).forEach(function (m) {
-        var model = pf.__model[m.v + '|' + m.i];
-        if (model) specs.push({ v: m.v, i: m.i, model: model, m: m });
-      });
+      MR.state.bench = MR.state.bench || { on: {}, res: {}, n: 24 };
+      var matrixExists = (pf.matrix || []).some(function (m) { return pf.__model[m.v + '|' + m.i]; });
       var html = '';
       html += MR.head({
         n: '05', t: '结果分析与作图',
-        sub: '按你需要的图型生成：折线 / 分组柱状 / 散点误差棒。数据来自原文的变量水平与最优值，可直接导出 SVG 与 CSV（列名按 Origin 导入习惯排列）。',
+        sub: '先在上方微型试验台选择要做的单变量实验、调好扫描密度，平台基于原文响应模型给出预测，再在这里做结果分析（折线 / 分组柱状 / 散点误差棒），可直接导出 SVG 与 CSV。',
         acts: '<div class="seg" style="display:flex">' + [['line', '折线'], ['bar', '柱状'], ['scatter', '散点']].map(function (t) {
           return '<button type="button" data-ctype="' + t[0] + '" class="' + (MR.state.chartType === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>';
         }).join('') + '</div><button class="btn" data-act="csvexp">' + MR.icon('analysis') + '导出 CSV</button>'
       });
-
-      if (!specs.length) {
+      html += benchPanel(pf);
+      if (!matrixExists) {
         return html + noneNote('原文未建立"变量—指标"的定量对应关系，无法生成趋势图。请回到环节 02 选择变量与指标，或换一篇报告了变量水平与对应性能的文献。');
       }
-      html += '<div class="grid g-4 mb-4">' + specs.slice(0, 4).map(function (s, i) {
+      var sel = benchSpecs(pf);
+      if (!sel.length) {
+        return html + noneNote('微型试验台里没有任何被勾选的实验。请至少勾选一组「指标 @ 变量」单变量响应，平台才会给出预测与结果分析。');
+      }
+
+      html += '<div class="grid g-4 mb-4">' + sel.slice(0, 4).map(function (s) {
         return MR.metric((s.i + ' @ ' + MR.paper.shortVar(s.v)),
           (s.m.opt != null ? s.m.opt : '—'),
           s.model.unit ? ' ' + s.model.unit : '',
-          s.m.amp != null ? '原文报道 ' + (s.m.amp > 0 ? '+' : '') + s.m.amp + '%' : '幅度未报告',
+          s.model.amp != null ? '原文报道 ' + (s.m.amp > 0 ? '+' : '') + s.m.amp + '%' : '幅度未报告',
           s.model.polarity === 'min' ? 'warn' : 'ok');
       }).join('') + '</div>';
 
       html += '<div class="figbox mb-4"><div class="figbox__bar"><span class="figbox__t" id="figT">图 · 变量—指标响应</span>' +
         '<div class="figbox__acts">' +
-        '<span class="mono-xs" id="figIdx">1 / ' + specs.length + '</span>' +
+        '<span class="mono-xs" id="figIdx">1 / ' + sel.length + '</span>' +
         '<button class="btn btn--sm" data-act="prev">上一个</button><button class="btn btn--sm" data-act="next">下一个</button>' +
         '<button class="btn btn--sm" data-svg="f2trend" data-name="LATTICE-趋势图.svg">导出 SVG</button>' +
         '<button class="btn btn--sm" data-png="f2trend" data-name="LATTICE-趋势图.png">导出 PNG</button>' +
         '</div></div><div class="figbox__body" id="f2trend"></div>' +
         '<div class="figbox__cap" id="figCap"></div></div>';
 
+      var tblRows = '';
+      sel.forEach(function (s) {
+        var levels = (s.res === 'dense') ? denseLevels(s.model, s.n) : s.model.levels.slice();
+        tblRows += levels.map(function (L) {
+          var rep = isReported(L, s.model);
+          return '<tr><td class="wrap">' + MR.esc(MR.paper.shortVar(s.v)) + '</td><td class="wrap">' + MR.esc(s.i) + '</td>' +
+            '<td class="num">' + (+L.toFixed(3)) + '</td><td class="num">' + s.model.f(L).toFixed(2) + '</td>' +
+            '<td style="font-size:10.5px;color:var(--ink-3)">' + (Math.abs(L - s.m.opt) < 1e-6 ? '原文最优' : (rep ? '原文水平' : '预测·插值')) + '</td></tr>';
+        }).join('');
+      });
       html += MR.panel({
         title: '数据表（可直接导入 Origin）', meta: '长表格式', icon: 'analysis', pad: true, flush: true,
         body: '<div class="tbl-wrap" style="max-height:300px;overflow-y:auto"><table class="tbl tbl--sm"><thead><tr>' +
-          '<th>变量</th><th>指标</th><th class="num">水平</th><th class="num">相对变化 (%)</th><th>备注</th></tr></thead><tbody>' +
-          specs.map(function (s) {
-            return s.model.levels.map(function (L) {
-              return '<tr><td class="wrap">' + MR.esc(MR.paper.shortVar(s.v)) + '</td><td class="wrap">' + MR.esc(s.i) + '</td>' +
-                '<td class="num">' + L + '</td><td class="num">' + s.model.f(L).toFixed(2) + '</td>' +
-                '<td style="font-size:10.5px;color:var(--ink-3)">' + (L == s.m.opt ? '原文最优' : '') + '</td></tr>';
-            }).join('');
-          }).join('') + '</tbody></table></div>',
-        note: 'CSV 列名为 Variable / Indicator / Level / Delta_pct / Note，导入 Origin 后可直接设为 X/Y 列。'
+          '<th>变量</th><th>指标</th><th class="num">水平</th><th class="num">相对变化 (%)</th><th>备注</th></tr></thead><tbody>' + tblRows + '</tbody></table></div>',
+        note: 'CSV 列名为 Variable / Indicator / Level / Delta_pct / Note，导入 Origin 后可直接设为 X/Y 列。加密模式下，标注"预测·插值"的行为模型在区间内的预测点，需实测校准。'
       });
       return html;
     },
     mount: function (host) {
       var pf = PF();
-      var specs = [];
-      (pf.matrix || []).forEach(function (m) {
-        var model = pf.__model[m.v + '|' + m.i];
-        if (model) specs.push({ v: m.v, i: m.i, model: model, m: m });
-      });
+      var sel = benchSpecs(pf);
       function draw() {
-        var i = Math.min(MR.state.chartSpec || 0, specs.length - 1);
+        if (!sel.length) return;
+        var i = Math.min(MR.state.chartSpec || 0, sel.length - 1);
         MR.state.chartSpec = i;
-        var s = specs[i];
+        var s = sel[i];
         if (!s) return;
         var el = host.querySelector('#f2trend');
         var type = MR.state.chartType;
-        if (type === 'line' || MR.state.chartType === undefined) {
-          renderInto(el, function (w) { return MR.figs2.trendFig(w, { varKey: s.v, ind: s.i, model: s.model }); });
+        var levels = (s.res === 'dense') ? denseLevels(s.model, s.n) : null;
+        if (type === 'line' || type === undefined) {
+          renderInto(el, function (w) { return MR.figs2.trendFig(w, { varKey: s.v, ind: s.i, model: s.model, levels: levels }); });
         } else if (type === 'bar') {
-          var lv = s.model.levels.slice().sort(function (a, b) { return a - b; });
+          var lv = (levels || s.model.levels).slice().sort(function (a, b) { return a - b; });
           MR.charts.draw(el, {
             type: 'barsGroup', height: 250, unit: '%', max: Math.max(20, Math.ceil(Math.max.apply(null, lv.map(function (x) { return Math.abs(s.model.f(x)); })) / 5) * 5 + 5),
-            groups: lv.map(function (x) { return String(x); }),
+            groups: lv.map(function (x) { return String(+x.toFixed(3)); }),
             series: [{ name: s.i, color: '--sub', vals: lv.map(function (x) { return s.model.f(x); }) }]
           });
         } else {
-          var lv2 = s.model.levels.slice().sort(function (a, b) { return a - b; });
+          var lv2 = (levels || s.model.levels).slice().sort(function (a, b) { return a - b; });
           MR.charts.draw(el, {
             type: 'scatterErr', height: 250, x0: lv2[0] - 1, x1: lv2[lv2.length - 1] + 1,
             y0: Math.floor(Math.min.apply(null, lv2.map(function (x) { return s.model.f(x); })) / 5) * 5 - 5,
             y1: Math.ceil(Math.max.apply(null, lv2.map(function (x) { return s.model.f(x); })) / 5) * 5 + 5,
             xlabel: MR.paper.shortVar(s.v), ylabel: s.i + ' 相对变化 (%)',
-            points: lv2.map(function (x) { return { x: x, y: s.model.f(x), ey: 1.8, color: '--sub', tip: MR.paper.shortVar(s.v) + ' = ' + x + '<br>' + s.i + ' ' + s.model.f(x).toFixed(1) + '%' }; })
+            points: lv2.map(function (x) { return { x: x, y: s.model.f(x), ey: 1.8, color: '--sub', tip: MR.paper.shortVar(s.v) + ' = ' + (+x.toFixed(3)) + '<br>' + s.i + ' ' + s.model.f(x).toFixed(1) + '%' }; })
           });
         }
         var tEl = host.querySelector('#figT'), cEl = host.querySelector('#figCap'), iEl = host.querySelector('#figIdx');
-        if (tEl) tEl.textContent = '图 · ' + s.i + ' 随 ' + MR.paper.shortVar(s.v) + ' 的变化';
-        if (iEl) iEl.textContent = (i + 1) + ' / ' + specs.length;
+        if (tEl) tEl.textContent = '图 · ' + s.i + ' 随 ' + MR.paper.shortVar(s.v) + ' 的变化' + (s.res === 'dense' ? '（加密扫描·预测）' : '');
+        if (iEl) iEl.textContent = (i + 1) + ' / ' + sel.length;
         if (cEl) cEl.textContent = '数据来源：原文报告的变量水平（' + s.model.levels.join('、') + '）' +
           (s.m.opt != null ? '与最优值 ' + s.m.opt : '；原文未报告最优值') +
-          (s.m.amp != null ? '，峰值幅度 ' + s.m.amp + '%（原文报道）' : '，峰值幅度原文未报告，曲线仅表示趋势') + '。';
+          (s.m.amp != null ? '，峰值幅度 ' + s.m.amp + '%（原文报道）' : '，峰值幅度原文未报告，曲线仅表示趋势') +
+          (s.res === 'dense' ? '；当前为加密扫描，含预测插值点（待实测校准）。' : '。');
       }
       draw();
       host.querySelectorAll('[data-ctype]').forEach(function (b) {
         b.addEventListener('click', function () { MR.state.chartType = b.getAttribute('data-ctype'); MR.app.render(); });
       });
       var pv = host.querySelector('[data-act="prev"]'), nx = host.querySelector('[data-act="next"]');
-      if (pv) pv.addEventListener('click', function () { MR.state.chartSpec = (MR.state.chartSpec - 1 + specs.length) % specs.length; MR.app.render(); });
-      if (nx) nx.addEventListener('click', function () { MR.state.chartSpec = (MR.state.chartSpec + 1) % specs.length; MR.app.render(); });
+      if (pv) pv.addEventListener('click', function () { MR.state.chartSpec = (MR.state.chartSpec - 1 + sel.length) % sel.length; MR.app.render(); });
+      if (nx) nx.addEventListener('click', function () { MR.state.chartSpec = (MR.state.chartSpec + 1) % sel.length; MR.app.render(); });
       bindFig(host);
       var ce = host.querySelector('[data-act="csvexp"]');
       if (ce) ce.addEventListener('click', function () {
         var rows = [['Variable', 'Indicator', 'Level', 'Unit', 'Delta_pct', 'Note']];
-        specs.forEach(function (s) {
-          s.model.levels.forEach(function (L) {
-            rows.push([MR.paper.shortVar(s.v), s.i, L, s.model.unit || '', s.model.f(L).toFixed(2), L == s.m.opt ? 'reported optimum' : '']);
+        sel.forEach(function (s) {
+          var levels = (s.res === 'dense') ? denseLevels(s.model, s.n) : s.model.levels.slice();
+          levels.forEach(function (L) {
+            rows.push([MR.paper.shortVar(s.v), s.i, +L.toFixed(3), s.model.unit || '', s.model.f(L).toFixed(2), (Math.abs(L - s.m.opt) < 1e-6 ? 'reported optimum' : (isReported(L, s.model) ? 'reported level' : 'predicted interpolation'))]);
           });
         });
         MR.dlCSV('LATTICE-Origin数据.csv', rows);
       });
+      /* 微型试验台控件 */
+      host.querySelectorAll('[data-bench-on]').forEach(function (cb) {
+        cb.addEventListener('change', function () { MR.state.bench.on[cb.getAttribute('data-bench-on')] = cb.checked; MR.app.render(); });
+      });
+      host.querySelectorAll('[data-bench-res]').forEach(function (b) {
+        b.addEventListener('click', function () { MR.state.bench.res[b.getAttribute('data-bench-res')] = b.getAttribute('data-v'); MR.app.render(); });
+      });
+      var rn = host.querySelector('[data-bench-n]');
+      if (rn) rn.addEventListener('input', function () { var l = host.querySelector('#benchN'); if (l) l.textContent = rn.value; });
+      if (rn) rn.addEventListener('change', function () { MR.state.bench.n = +rn.value; MR.app.render(); });
     }
   };
 

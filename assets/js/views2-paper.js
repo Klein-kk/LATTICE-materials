@@ -55,16 +55,74 @@ window.MR = window.MR || {};
     [/综上所述[,，]?/g, '综合来看，'], [/值得注意的是[,，]?/g, '需要指出，'], [/为进一步[^，。]{0,12}[,，]/g, '为了把这一点做实，'],
     [/具有重要的(?:意义|价值)/g, '会影响后续判断'], [/显著提升/g, '提高了'], [/与此同时[,，]?/g, '同时，'],
     [/不仅[^，。]{0,20}[，,]而且/g, '既如此，也'], [/此外[,，]?/g, '另外，'], [/因此[,，]?/g, '所以，'],
-    [/结果表明[,，]?/g, '数据显示，'], [/本工作/g, '这项试验']
+    [/结果表明[,，]?/g, '数据显示，'], [/本工作/g, '这项试验'],
+    /* —— 削弱序数并列 / 套话 —— */
+    [/首先[,，]?/g, '一开始，'], [/其次[,，]?/g, '接着，'], [/最后[,，]?/g, '收尾时，'],
+    [/第一[,，]?/g, '头一条，'], [/第二[,，]?/g, '再一条，'], [/第三[,，]?/g, '另一条，'],
+    [/总而言之/g, '总的说'], [/整体而言/g, '从整体看'],
+    /* —— 削弱空泛评价词 —— */
+    [/显著地/g, '明显地'], [/出色地/g, '较好地'], [/极大地/g, '在很大程度上'], [/有效地/g, '稳妥地'],
+    [/毋庸置疑/g, '没有疑问'], [/不言而喻/g, '很清楚'], [/至关重要/g, '很关键'], [/不可或缺/g, '少不了'],
+    [/深入探讨/g, '细看'], [/深入分析了/g, '拆解了'], [/基于上述分析/g, '顺着前面的分析'],
+    [/本文旨在/g, '这篇文字想'], [/近年来[,，]?/g, '这几年，'], [/大量研究表明/g, '不少工作显示'],
+    [/在某种程度上/g, '从某个侧面看'], [/得到了广泛认可/g, '被不少人接受']
   ];
   function deAI(t) {
     var out = t, n = 0;
     REWRITE.forEach(function (r) { var b = out; out = out.replace(r[0], r[1]); if (b !== out) n++; });
-    out = out.split(/(?<=[。！？])/).map(function (s) {
-      if (s.length > 62) { var p = s.split('，'); if (p.length >= 3) return p.slice(0, 2).join('，') + '。' + p.slice(2).join('，'); }
+    out = out.split(/(?<=[。！？；])/).map(function (s) {
+      if (s.length > 60) {
+        var p = s.split('，');
+        if (p.length >= 3) return p.slice(0, 2).join('，') + '。' + p.slice(2).join('，');
+        if (s.length > 90) {                                   // 超长且无足够逗号：在居中逗号处断句
+          var mid = s.indexOf('，', Math.floor(s.length / 2));
+          if (mid > 0) return s.slice(0, mid) + '。' + s.slice(mid + 1);
+        }
+      }
       return s;
     }).join('');
     return { text: out, changes: n };
+  }
+
+  /* LaTeX 转义（投稿前请按目标期刊替换中文宏包与文档类） */
+  function texEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/\\/g, '\\textbackslash{}')
+      .replace(/([&%$#_{}])/g, '\\$1')
+      .replace(/~/g, '\\textasciitilde{}')
+      .replace(/\^/g, '\\textasciicircum{}')
+      .replace(/—/g, '\\textemdash{}');
+  }
+  /* 生成可编译的 LaTeX 文稿（SCI 结构） */
+  function tex() {
+    var pf = PF(), an = AN();
+    var L = [];
+    L.push('\\documentclass[11pt]{article}');
+    L.push('\\usepackage[UTF8]{ctex}        % 中文支持；英文投稿请改为 \\usepackage[T1]{fontenc} 等');
+    L.push('\\usepackage{geometry,hyperref,booktabs}');
+    L.push('\\usepackage[numbers,sort&compress]{natbib}');
+    L.push('\\title{' + texEsc(an.title || '论文题目') + '}');
+    L.push('\\author{LATTICE \\textperiodcentered\\ 自动生成}');
+    L.push('\\date{}');
+    L.push('\\begin{document}');
+    L.push('\\maketitle');
+    if (pf.abstract) { L.push('\\begin{abstract}'); L.push(texEsc(pf.abstract)); L.push('\\end{abstract}'); }
+    [
+      ['引言', MR.gen.background(pf, an)],
+      ['研究空白与本文切入点', MR.gen.gap(pf)],
+      ['实验思路与方法', MR.gen.method(pf, an)],
+      ['结果与分析', MR.gen.results(pf)],
+      ['结论', MR.gen.conclusion(pf)],
+      ['未来研究方向与研究意义', MR.gen.future(pf)]
+    ].forEach(function (s) {
+      L.push('\\section{' + texEsc(s[0]) + '}');
+      s[1].forEach(function (p) { L.push(texEsc(p)); L.push(''); });
+    });
+    L.push('\\begin{thebibliography}{99}');
+    an.references.forEach(function (r, i) { L.push('\\bibitem{ref' + (i + 1) + '}' + texEsc(r.raw)); });
+    L.push('\\end{thebibliography}');
+    L.push('\\end{document}');
+    return L.join('\n');
   }
 
   /* ======================= 08 论文撰写 ======================= */
@@ -86,7 +144,7 @@ window.MR = window.MR || {};
       html += MR.head({
         n: '08', t: '论文撰写',
         sub: '按 SCI 结构组织全文：研究背景与意义 → 研究空白 → 实验思路与方法 → 结果分析 → 结论 → 未来方向与研究意义。文中的引用与参考文献全部来自你这篇论文，不掺入其它来源。',
-        acts: '<button class="btn" data-act="dl">导出全文</button><button class="btn" data-act="dlrefs">导出参考文献</button>' +
+        acts: '<button class="btn" data-act="dl">导出 Markdown</button><button class="btn" data-act="dltex">导出 LaTeX</button><button class="btn" data-act="dlrefs">导出参考文献</button>' +
           '<button class="btn btn--primary" data-act="run">生成论文</button>'
       });
       html += '<div class="grid g-4 mb-4">' +
@@ -136,6 +194,11 @@ window.MR = window.MR || {};
         MR.dl('LATTICE-论文.md', L.join('\n'), 'text/markdown');
       }
       ['dl', 'dl2'].forEach(function (a) { var b = host.querySelector('[data-act="' + a + '"]'); if (b) b.addEventListener('click', dl); });
+      var tx = host.querySelector('[data-act="dltex"]');
+      if (tx) tx.addEventListener('click', function () {
+        MR.dl('LATTICE-论文.tex', tex(), 'application/x-tex');
+        MR.log('OK', '已导出 LaTeX 文稿（含摘要、6 个章节与参考文献，特殊字符已转义）');
+      });
       var dr = host.querySelector('[data-act="dlrefs"]');
       if (dr) dr.addEventListener('click', function () {
         MR.dl('LATTICE-参考文献-GBT7714.txt', AN().references.map(function (r, i) { return '[' + (i + 1) + '] ' + r.raw; }).join('\n'), 'text/plain');

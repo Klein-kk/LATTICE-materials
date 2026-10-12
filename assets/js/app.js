@@ -238,13 +238,33 @@ MR.COST = { imp: 42, scope: 36, design: 28, figure: 54, analysis: 33, guide: 22,
 
 /* ---------------- 弹窗 ---------------- */
 MR.modal = {
+  _lastFocus: null,
   open: function (title, body, foot) {
+    try { this._lastFocus = document.activeElement; } catch (e) {}
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalBody').innerHTML = body;
     document.getElementById('modalFoot').innerHTML = foot || '<button class="btn" data-close="1">关闭</button>';
-    document.getElementById('modal').hidden = false;
+    var m = document.getElementById('modal');
+    m.hidden = false;
+    var panel = m.querySelector('.modal__panel');
+    if (panel) { var f = panel.querySelector('input,textarea,button,[tabindex]'); (f || panel).focus(); }
   },
-  close: function () { document.getElementById('modal').hidden = true; }
+  close: function () {
+    var m = document.getElementById('modal');
+    m.hidden = true;
+    if (this._lastFocus && this._lastFocus.focus) { try { this._lastFocus.focus(); } catch (e) {} }
+    this._lastFocus = null;
+  },
+  trap: function (e) {
+    if (e.key !== 'Tab') return;
+    var m = document.getElementById('modal');
+    if (m.hidden) return;
+    var f = m.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select,[tabindex]:not([tabindex="-1"])');
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 };
 
 /* ---------------- 片段组件 ---------------- */
@@ -503,6 +523,18 @@ function initTop() {
   document.getElementById('impBtn').addEventListener('click', function () { MR.pick('file'); });
   document.getElementById('dlBtn').addEventListener('click', function () { MR.views.imp.exportCenter(); });
   document.getElementById('runAllBtn').addEventListener('click', function () { MR.app.runAll(); });
+  var lb = document.getElementById('loginBtn');
+  if (lb) lb.addEventListener('click', function () { MR.ui.openLogin(); });
+  var uc = document.getElementById('userChip');
+  if (uc) uc.addEventListener('click', function () {
+    MR.modal.open('退出登录？',
+      MR.note('你将以 <b>' + MR.esc((MR.cloud.user && (MR.cloud.user.email || MR.cloud.user.name)) || '当前用户') + '</b> 身份退出。本机论文库保留，云端数据不受影响。', 'acc', 'review1'),
+      '<button class="btn" data-close="1">取消</button><button class="btn btn--primary" data-act="doSignOut">退出登录</button>');
+    setTimeout(function () {
+      var b = document.querySelector('[data-act="doSignOut"]');
+      if (b) b.addEventListener('click', function () { MR.ui.signOut(); MR.modal.close(); });
+    }, 0);
+  });
   var tb = document.getElementById('traceBtn');
   tb.addEventListener('click', function () {
     var app = document.getElementById('app');
@@ -527,6 +559,7 @@ function initTop() {
     }
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') MR.modal.close(); });
+  document.addEventListener('keydown', function (e) { MR.modal.trap(e); });
   /* 引文点击 */
   document.addEventListener('click', function (e) {
     var c = e.target.closest && e.target.closest('[data-cite]');
@@ -575,6 +608,7 @@ MR.app.readCSV = function (file) {
 /* ---------------- 启动 ---------------- */
 MR.boot = function () {
   document.getElementById('consoleId').textContent = 'job-2609-0930';
+  if (MR.cloud && MR.cloud.init) MR.cloud.init();   // 恢复登录态 / 判定后端是否启用
   MR.lib.init();
   initTop();
   initTweaks();
