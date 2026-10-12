@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LATTICE · 材料学科科研自动化平台</title>
+<meta name="description" content="面向材料学科全部方向的科研自动化平台：上传任意材料类论文，平台抽取其真实的原料、仪器、变量与指标，并在这些内容之上完成变量设计、图形生成、结果分析、实验指导、论文写作与评审。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/extra.css">
+<link rel="stylesheet" href="assets/css/interactions.css">
+<link rel="stylesheet" href="assets/css/auth.css">
+<link rel="stylesheet" href="assets/css/glb3d.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/mascot.css">
+<script>
+/* 首屏防闪烁：在样式生效前定好主题 */
+(function () {
+  try {
+    var t = localStorage.getItem('lattice.theme');
+    if (t !== 'dark' && t !== 'light') {
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+    var l = localStorage.getItem('lattice.lang');
+    if (l === 'en') document.documentElement.setAttribute('lang', 'en');
+  } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+})();
+</script>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============ TOPBAR ============ -->
+  <header class="topbar">
+    <div class="topbar__left">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 28 28" width="26" height="26">
+            <rect x="0.9" y="0.9" width="26.2" height="26.2" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+            <circle cx="8" cy="8" r="2.1" fill="currentColor"/>
+            <circle cx="20" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+            <circle cx="8" cy="20" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+            <circle cx="20" cy="20" r="2.1" fill="currentColor"/>
+            <path d="M8 8 L20 8 M8 20 L20 20 M8 8 L8 20 M20 8 L20 20 M8 8 L20 20" stroke="currentColor" stroke-width="0.8" opacity="0.5"/>
+          </svg>
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">LATTICE</span>
+          <span class="brand__sub">材料科研流水线</span>
+        </span>
+      </div>
+
+      <div class="proj">
+        <span class="proj__label">当前课题</span>
+        <span class="proj__btn" id="projTitle">未命名课题 · 请先导入文献</span>
+      </div>
+    </div>
+
+    <div class="topbar__right">
+      <span class="demo-badge" id="dataBadge" title="预测值由机理约束模型实时计算；真实数据在环节 07 回填后用于矫正">
+        <span class="dot"></span>预测值 · 待真实数据矫正
+      </span>
+      <button class="btn btn--ghost" id="impBtn" type="button">
+        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M7 10V2.5M7 2.5 4 5.5M7 2.5 10 5.5M2.5 11.5h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        上传文献
+      </button>
+      <button class="btn btn--ghost" id="dlBtn" type="button">
+        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M7 2v7M7 9 4 6M7 9 10 6M2.5 11.5h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        导出中心
+      </button>
+      <div class="credit" title="LearnBuddy 赛事算力额度">
+        <span class="credit__label">算力</span>
+        <span class="credit__val" id="creditVal">0</span>
+        <span class="credit__max">/ 2500</span>
+        <div class="credit__bar"><i id="creditBar" style="width:0%"></i></div>
+      </div>
+      <button class="btn btn--ghost" id="traceBtn" type="button" aria-pressed="true">
+        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M2 4h10M2 7h6M2 10h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
+        推理轨迹
+      </button>
+      <button class="btn btn--ghost" id="loginBtn" type="button">
+        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M7 2.2 11.5 6.2V11.5h-3v-3H5.5v3h-3V6.2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        登录
+      </button>
+      <button class="userchip" id="userChip" type="button" hidden aria-label="用户菜单">
+        <span class="userchip__av" data-uav aria-hidden="true">U</span>
+        <span class="userchip__name" data-uname>用户</span>
+      </button>
+      <button class="btn btn--primary" id="runAllBtn" type="button">
+        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M4 2.8 11 7l-7 4.2z" fill="currentColor"/></svg>
+        运行整条流水线
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ PHASE BAR ============ -->
+  <nav class="phasebar" id="phasebar" aria-label="阶段进度"></nav>
+
+  <!-- ============ BODY ============ -->
+  <div class="body">
+    <aside class="rail" id="rail" aria-label="环节导航"></aside>
+    <main class="main" id="main" tabindex="-1"></main>
+    <aside class="trace" id="trace" aria-label="Agent 推理轨迹">
+      <div class="trace__head">
+        <span class="trace__title">Agent 推理轨迹</span>
+        <span class="trace__meta" id="traceCount">0 步</span>
+      </div>
+      <div class="trace__body" id="traceBody"></div>
+      <div class="trace__foot"><span class="mono-xs">模型 LATTICE-Sci-1 · 温度 0.2 · 所有数值可追溯</span></div>
+    </aside>
+  </div>
+
+  <!-- ============ CONSOLE ============ -->
+  <section class="console" id="console" data-open="true" aria-label="运行日志">
+    <div class="console__head">
+      <span class="console__tag">RUN LOG</span>
+      <span class="console__id mono-xs" id="consoleId">job-2609-0930</span>
+      <span class="console__spacer"></span>
+      <button class="console__toggle" id="consoleToggle" type="button" aria-expanded="true"><span id="consoleToggleText">收起</span></button>
+    </div>
+    <div class="console__body" id="consoleBody"></div>
+  </section>
+</div>
+
+<!-- 真实文件选择器 -->
+<input type="file" id="fileInput" multiple accept=".pdf,.txt,.csv,.bib,.ris,.json" hidden>
+<input type="file" id="csvInput" accept=".csv,.txt" hidden>
+
+<!-- 弹窗 -->
+<div class="modal" id="modal" hidden>
+  <div class="modal__backdrop" data-close="1"></div>
+  <div class="modal__panel" role="dialog" aria-modal="true">
+    <div class="modal__head">
+      <h3 id="modalTitle">标题</h3>
+      <button class="btn btn--icon" id="modalClose" type="button" aria-label="关闭">
+        <svg viewBox="0 0 12 12" width="12" height="12"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal__body" id="modalBody"></div>
+    <div class="modal__foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<!-- Tweaks -->
+<div class="tweaks" id="tweaks" data-open="false">
+  <button class="tweaks__fab" id="tweaksFab" type="button" aria-label="Tweaks">
+    <svg viewBox="0 0 16 16" width="15" height="15"><path d="M3 5h10M3 11h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="5" r="1.8" fill="var(--surface)" stroke="currentColor" stroke-width="1.3"/><circle cx="10.5" cy="11" r="1.8" fill="var(--surface)" stroke="currentColor" stroke-width="1.3"/></svg>
+  </button>
+  <div class="tweaks__panel">
+    <div class="tweaks__head">Tweaks</div>
+    <div class="tweaks__row">
+      <label>强调色</label>
+      <div class="swatches" id="swatches">
+        <button type="button" class="sw" data-acc="teal" style="--c:#0E5C56"></button>
+        <button type="button" class="sw" data-acc="indigo" style="--c:#2C4A7C"></button>
+        <button type="button" class="sw" data-acc="iron" style="--c:#8A4A24"></button>
+        <button type="button" class="sw" data-acc="moss" style="--c:#3F6136"></button>
+      </div>
+    </div>
+    <div class="tweaks__row">
+      <label>信息密度</label>
+      <div class="seg" id="segDensity">
+        <button type="button" data-v="compact">紧凑</button><button type="button" data-v="cozy" class="is-on">标准</button>
+      </div>
+    </div>
+    <div class="tweaks__row">
+      <label>毫米格纸底纹</label>
+      <div class="seg" id="segGrid">
+        <button type="button" data-v="on" class="is-on">开</button><button type="button" data-v="off">关</button>
+      </div>
+    </div>
+    <div class="tweaks__row">
+      <label>绘图配色</label>
+      <div class="paletterow" id="paletteRow"></div>
+    </div>
+    <div class="tweaks__row">
+      <label>图表风格</label>
+      <div class="seg" id="segFig">
+        <button type="button" data-v="sci">SCI 期刊</button><button type="button" data-v="origin" class="is-on">Origin</button><button type="button" data-v="ppt">演示</button>
+      </div>
+    </div>
+    <div class="tweaks__foot mono-xs">改动实时重绘全部图形；配色可逐项指定</div>
+  </div>
+</div>
+
+<script src="assets/js/library.js"></script>
+<script src="assets/js/papers.js"></script>
+<script src="assets/js/domain.js"></script>
+<script src="assets/js/pdftext.js"></script>
+<script src="assets/js/extract.js"></script>
+<script src="assets/js/paper.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/figures2.js"></script>
+<script src="assets/js/figures3.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/views2-core.js"></script>
+<script src="assets/js/views2-stages.js"></script>
+<script src="assets/js/views2-paper.js"></script>
+<script src="supabase-config.js"></script>
+<script src="assets/js/cloud.js"></script>
+<script src="assets/js/interactions.js"></script>
+<script src="assets/js/mascot.js"></script>
+<script src="assets/js/i18n-dict.js"></script>
+<script src="assets/js/prefs.js"></script>
+<!-- 本地 3D 查看器（离线、零 CDN）：three.js r128 UMD + GLTFLoader + glb3d.js -->
+<script src="assets/js/vendor/three.min.js"></script>
+<script src="assets/js/vendor/GLTFLoader.js"></script>
+<script src="assets/js/glb3d.js"></script>
+<script src="assets/js/three-manifest.js"></script>
+<script src="assets/js/boot.js"></script>
+</body>
+</html>
