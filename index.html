@@ -93,16 +93,12 @@
         <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".6"/></svg>
         入门页
       </a>
-      <a class="btn btn--ghost" href="./lab.html" title="化学实验工作台（25 个实验）" type="button">
+      <a class="btn btn--ghost" href="#design" onclick="MR.app.setView('design');return false" title="变量设计与安全评估（含虚拟实验台）" type="button">
         <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
         实验台
       </a>
-      <a class="btn btn--ghost" href="./fig3d.html" title="3D 反应路径树 + 误差分解" type="button">
+      <a class="btn btn--ghost" href="#figure" onclick="MR.app.setView('figure');return false" title="数据预期与 SCI 图形（含 3D 科研绘图）" type="button">
         <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="2.5" fill="currentColor"/><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/></svg>
-        3D 绘图
-      </a>
-      <a class="btn btn--ghost" href="./figs.html" title="Nature 风格科研绘图集（8 张）" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M3 11V7M7 11V3M11 11V5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         科研绘图
       </a>
       <button class="btn btn--primary" id="runAllBtn" type="button">
@@ -227,6 +223,11 @@
 <script src="assets/js/vendor/GLTFLoader.js"></script>
 <script src="assets/js/glb3d.js"></script>
 <script src="assets/js/three-manifest.js"></script>
+<!-- 虚拟实验台 + 化学反应引擎 + Nature 风格科研绘图 -->
+<script src="assets/js/lab-chem.js"></script>
+<script src="assets/js/lab-experiments.js"></script>
+<script src="assets/js/lab.js"></script>
+<script src="assets/js/figs.js"></script>
 <script src="assets/js/boot.js"></script>
 </body>
 </html>

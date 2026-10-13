@@ -613,6 +613,7 @@ MR.traces = {
         body: '<ol style="margin:0;padding-left:19px;font-size:12px;line-height:2">' + d.forcedPPE.map(function (f) { return '<li>' + f + '</li>'; }).join('') + '</ol>'
       });
 
+      /* 虚拟实验台（views2 已接管，此处留空防止重复） */
       return html;
     },
 

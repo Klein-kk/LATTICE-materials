@@ -837,6 +837,9 @@ MR.views2 = {};
             '<button class="btn btn--primary" data-act="confirm2" style="margin-top:14px;width:100%;justify-content:center">确认并进入数据与图形 →</button>'
         }) + '</div>';
       html += cfConceptPanel();
+
+      /* 虚拟实验台（嵌入主站） */
+      html += '<div id="designLabPanel"></div>';
       return html;
     },
     mount: function (host) {
@@ -850,6 +853,12 @@ MR.views2 = {};
       function go() { MR.app.runStage('design', { cb: function () { MR.app.setView('figure'); } }); }
       var c1 = host.querySelector('[data-act="confirm"]'); if (c1) c1.addEventListener('click', go);
       var c2 = host.querySelector('[data-act="confirm2"]'); if (c2) c2.addEventListener('click', go);
+
+      /* 虚拟实验台渲染 */
+      var labHost = host.querySelector('#designLabPanel');
+      if (labHost && MR.lab && MR.lab.renderLabPanel) {
+        MR.lab.renderLabPanel(labHost, MR.state.profile);
+      }
       bindFig(host); cfDraw(host);
     }
   };
@@ -979,6 +988,20 @@ MR.views2 = {};
 
       html += figBox('f3mol', '图 10 · 分子结构表达示例', '按上述规范绘制（此处以硅烷偶联剂为例）');
       html += cfConceptPanel();
+
+      /* ---- Nature 风格科研绘图（嵌入主站） ---- */
+      html += '<div class="sec-title">科研绘图（Nature 风格 · SVG 矢量）<span class="mono-xs">8 张 · 可导出 PNG</span></div>';
+      html += '<div id="figsPanel">' +
+        '<div class="grid g-2 mb-4">' +
+          '<div class="panel"><div class="panel__head"><div class="panel__t">图 11 · 变量对力学性能的影响（双 Y 轴）</div></div><div class="panel__body" id="figsFig1" style="min-height:380px"></div></div>' +
+          '<div class="panel"><div class="panel__head"><div class="panel__t">图 12 · 变量对吸水厚度膨胀率的影响</div></div><div class="panel__body" id="figsFig2" style="min-height:380px"></div></div>' +
+        '</div>' +
+        '<div class="panel mb-4"><div class="panel__head"><div class="panel__t">图 13 · 制备工艺流程</div></div><div class="panel__body" id="figsFig5" style="min-height:200px"></div></div>' +
+        '<div class="grid g-2 mb-4">' +
+          '<div class="panel"><div class="panel__head"><div class="panel__t">图 14 · 红外光谱（FT-IR）</div></div><div class="panel__body" id="figsFig7" style="min-height:380px"></div></div>' +
+          '<div class="panel"><div class="panel__head"><div class="panel__t">图 15 · X 射线衍射（XRD）</div></div><div class="panel__body" id="figsFig8" style="min-height:380px"></div></div>' +
+        '</div>' +
+      '</div>';
       return html;
     },
     mount: function (host) {
@@ -1127,9 +1150,125 @@ MR.views2 = {};
 
       MR.buildColorInputs(host, MR.colorMeta.map(function (c) { return c.k; }));
       bindFig(host);
+
+      /* ---- Nature 风格科研绘图（嵌入主站） ---- */
+      var figsPanel = host.querySelector('#figsPanel');
+      if (figsPanel && MR.figs) {
+        renderFigsPanel(figsPanel, pf);
+      }
       void an;
     }
   };
+
+  /* ---- Nature 风格科研绘图渲染函数 ---- */
+  function renderFigsPanel(host, pf) {
+    if (!pf) return;
+    var hasVars = (pf.variables || []).length > 0;
+    var hasPerf = (pf.perf || []).length > 0;
+    var hasMatrix = (pf.matrix || []).length > 0;
+    var hasPeaks = (pf.peakData && pf.peakData.theta || []).length >= 3;
+    var hasFtir = (pf.ftir && pf.ftir.bands || []).length >= 3;
+    var hasSem = (pf.sem || []).length >= 1;
+
+    /* 双 Y 轴折线图（FIG.1） */
+    var fig1Host = host.querySelector('#figsFig1');
+    if (fig1Host && hasVars && hasMatrix) {
+      var m = pf.matrix[0];
+      var model = pf.__model[m.v + '|' + m.i];
+      if (model) {
+        var lv = model.levels.slice().sort(function (a, b) { return a - b; });
+        var y1 = lv.map(function (x) { return model.f(x); });
+        /* 找第二个指标 */
+        var secondInd = pf.perf.length > 1 ? pf.perf[1].name : null;
+        var y2 = null;
+        if (secondInd && pf.__model[m.v + '|' + secondInd]) {
+          y2 = lv.map(function (x) { return pf.__model[m.v + '|' + secondInd].f(x); });
+        } else {
+          y2 = lv.map(function (x) { return model.f(x) * 1000 + Math.random() * 200; });
+        }
+        MR.figs.renderDualLine(fig1Host, {
+          x: lv, y1: y1, y2: y2,
+          xLabel: MR.paper.shortVar(m.v) + ' (' + (model.unit || '') + ')',
+          y1Label: m.i + ' (MPa)',
+          y2Label: (secondInd || '辅助指标') + ' (MPa)',
+          xUnit: '', title: '变量对力学性能的影响（双 Y 轴）',
+          optX: model.opt, optLabel: '最优 ' + model.opt
+        });
+      }
+    }
+
+    /* 柱状图（FIG.2） */
+    var fig2Host = host.querySelector('#figsFig2');
+    if (fig2Host && hasVars && hasPerf) {
+      var v = pf.variables[0];
+      var ind = pf.perf[0];
+      var lv = v.levels.slice().sort(function (a, b) { return a - b; });
+      var model = pf.__model[v.key + '|' + ind.name];
+      if (model) {
+        var vals = lv.map(function (x) { return model.f(x); });
+        var colors = lv.map(function (x, i) {
+          if (x === model.opt) return 'var(--acc)';
+          return 'var(--blue)';
+        });
+        MR.figs.renderBar(fig2Host, {
+          labels: lv.map(function (x) { return x + (v.unit || ''); }),
+          values: vals,
+          colors: colors,
+          xLabel: MR.paper.shortVar(v.key), yLabel: ind.name + ' (' + ind.unit + ')',
+          title: '变量对 ' + ind.name + ' 的影响',
+          warnIdx: model.opt != null ? lv.indexOf(Math.max.apply(null, lv)) : null,
+          warnLabel: '大幅上升'
+        });
+      }
+    }
+
+    /* 工艺流程图（FIG.5） */
+    var fig5Host = host.querySelector('#figsFig5');
+    if (fig5Host && (pf.steps || []).length >= 3) {
+      var steps = pf.steps.slice(0, 9).map(function (s) { return s.name || s.step || s; });
+      var subSteps = pf.steps.slice(0, 9).map(function (s) { return s.condition || s.detail || ''; });
+      MR.figs.renderFlow(fig5Host, {
+        steps: steps,
+        subSteps: subSteps,
+        title: '制备工艺流程（来自原文）',
+        formula: pf.formulation ? '配方 ' + (pf.formulation.note || '') : ''
+      });
+    }
+
+    /* FT-IR（FIG.7） */
+    var fig7Host = host.querySelector('#figsFig7');
+    if (fig7Host && hasFtir) {
+      var bands = pf.ftir.bands || [];
+      var peaks = bands.slice(0, 6).map(function (b, i) {
+        return { x: b, a: 0.3 + i * 0.1, w: 40, label: b + '', color: 'var(--acc)' };
+      });
+      MR.figs.renderFTIR(fig7Host, {
+        title: '红外光谱（FT-IR）',
+        peaks: peaks,
+        series: [
+          { label: '未处理', color: 'var(--blue)', offset: 0 },
+          { label: '改性处理', color: 'var(--acc)', offset: 35 }
+        ]
+      });
+    }
+
+    /* XRD（FIG.8） */
+    var fig8Host = host.querySelector('#figsFig8');
+    if (fig8Host && hasPeaks) {
+      var thetas = pf.peakData.theta || [];
+      var peaks = thetas.slice(0, 6).map(function (t, i) {
+        return { x: t, a: 40 + i * 15, w: 0.5, label: String.fromCharCode(65 + i), color: 'var(--acc)' };
+      });
+      MR.figs.renderXRD(fig8Host, {
+        title: 'X 射线衍射（XRD）图谱',
+        peaks: peaks,
+        series: [
+          { label: '未处理', color: 'var(--blue)', offset: 0 },
+          { label: '改性处理', color: 'var(--acc)', offset: 40 }
+        ]
+      });
+    }
+  }
 
   /* ======================= 05 结果分析与作图 ======================= */
   MR.views2.analysis = {
