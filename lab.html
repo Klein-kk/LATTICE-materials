@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LATTICE · 化学实验工作台（虚拟实验室）</title>
+<meta name="description" content="LATTICE 实验工作台：从文献识别实验 → 自动布置试验台、设备、试剂 → 模拟反应 → 3D 产物结构 + 误差分析。">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+:root{
+  --bg:#08080a; --surface:#121215; --surface-2:#1a1a1e; --surface-3:#232329;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.18);
+  --ink:#f4f4f5; --ink-2:#a1a1aa; --ink-3:#6b6b74;
+  --acc:#2dd4bf; --acc-dim:#0d9488; --acc-ink:#03201d;
+  --pink:#fb7185; --violet:#a78bfa; --amber:#fbbf24; --blue:#60a5fa;
+  --r:14px; --r-lg:18px; --r-pill:999px;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+[data-theme="light"]{
+  --bg:#fafaf8; --surface:#ffffff; --surface-2:#f3f3f0; --surface-3:#e9e9e5;
+  --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.20);
+  --ink:#17171a; --ink-2:#5c5c66; --ink-3:#8e8e99;
+  --acc:#0f766e; --acc-dim:#115e59; --acc-ink:#e7fffb;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+canvas#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none}
+main{position:relative;z-index:1}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:20px;border:2px solid var(--bg)}
+
+/* ---------- header ---------- */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav__in{max-width:1640px;margin:0 auto;padding:13px 32px;display:flex;align-items:center;gap:22px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.02em;font-size:15px}
+.brand svg{width:22px;height:22px;color:var(--acc)}
+.nav__links{display:flex;gap:4px;margin-left:6px}
+.nav__links a{padding:7px 12px;border-radius:var(--r-pill);font-size:13.5px;color:var(--ink-2);
+  transition:background .16s,color .16s}
+.nav__links a:hover{background:var(--surface-2);color:var(--ink)}
+.nav__spacer{flex:1}
+.iconbtn{width:36px;height:36px;display:grid;place-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-pill);cursor:pointer;transition:background .16s,border-color .16s}
+.iconbtn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.iconbtn svg{width:16px;height:16px}
+.navcta{display:inline-flex;align-items:center;gap:7px;background:var(--acc);color:var(--acc-ink);
+  border:0;border-radius:var(--r-pill);padding:9px 17px;font-size:13.5px;font-weight:600;cursor:pointer;
+  transition:transform .16s,filter .16s;white-space:nowrap}
+.navcta:hover{transform:translateY(-1px);filter:brightness(1.08)}
+
+/* ---------- wrap & section ---------- */
+.wrap{max-width:1640px;margin:0 auto;padding:0 32px}
+.hero{padding:36px 0 18px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--acc);
+  font-family:var(--mono);letter-spacing:.1em;margin-bottom:12px}
+.eyebrow .d{width:6px;height:6px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 0 3px rgba(45,212,191,.18);animation:pulse 2.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(45,212,191,0)}}
+h1{margin:0;font-size:clamp(26px,3.5vw,38px);font-weight:600;letter-spacing:-.018em;line-height:1.1}
+p.lead{margin:14px 0 0;max-width:760px;color:var(--ink-2);font-size:14.5px;line-height:1.7}
+
+/* ---------- 主工作区 4 列布局 ---------- */
+.workspace{display:grid;grid-template-columns:1.4fr 1.1fr 1.4fr 1.1fr;gap:18px;
+         padding-bottom:48px;align-items:start}
+@media(max-width:1400px){ .workspace{grid-template-columns:1fr 1fr} }
+@media(max-width:780px){ .workspace{grid-template-columns:1fr} }
+
+.col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+     padding:20px;display:flex;flex-direction:column;min-height:560px}
+.col__head{display:flex;align-items:center;justify-content:space-between;
+          margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.col__title{font-size:13.5px;font-weight:600;letter-spacing:-.01em;
+           display:flex;align-items:center;gap:8px}
+.col__title svg{width:16px;height:16px;color:var(--acc)}
+.col__meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-3)}
+
+/* ---------- 实验台 3D 视口 ---------- */
+.lab3d{position:relative;background:linear-gradient(180deg,#0c0c10 0%,#08080a 100%);
+       border-radius:14px;overflow:hidden;min-height:380px;flex:1;display:flex}
+.lab3d__host{position:relative;width:100%;min-height:380px;flex:1}
+.lab3d__host canvas{display:block;width:100%;height:100%}
+.lab3d__tools{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;
+              background:rgba(0,0,0,.42);border:1px solid var(--line-2);border-radius:10px;
+              padding:5px;backdrop-filter:blur(8px)}
+.lab3d__tool{width:28px;height:28px;display:grid;place-items:center;background:transparent;border:0;
+             color:var(--ink-2);border-radius:7px;cursor:pointer;transition:background .15s,color .15s}
+.lab3d__tool:hover{background:rgba(255,255,255,.1);color:#fff}
+.lab3d__tool.on{background:var(--acc);color:var(--acc-ink)}
+.lab3d__tool svg{width:14px;height:14px}
+
+/* ---------- 试剂架 ---------- */
+.reagent-rack{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;overflow:auto;align-content:start}
+.reagent{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+         padding:12px;cursor:grab;transition:background .15s,border-color .15s,transform .15s;
+         display:flex;flex-direction:column;gap:6px;user-select:none}
+.reagent:hover{background:var(--surface-3);border-color:var(--line-2);transform:translateY(-1px)}
+.reagent.added{opacity:.35;pointer-events:none;border-style:dashed}
+.reagent__name{font-size:13px;font-weight:600}
+.reagent__cat{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+             text-transform:uppercase;color:var(--ink-3)}
+.reagent__formula{font-family:var(--mono);font-size:11px;color:var(--acc);
+                  background:rgba(45,212,191,.08);padding:1px 6px;border-radius:4px;align-self:flex-start}
+.reagent__swatch{width:100%;height:8px;border-radius:3px;margin-top:auto}
+
+/* ---------- 已添加试剂列表 ---------- */
+.added-list{display:flex;flex-direction:column;gap:6px;margin-top:14px;
+            padding-top:14px;border-top:1px solid var(--line)}
+.added-list__head{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+                  text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.added-chip{display:flex;align-items:center;gap:8px;background:rgba(45,212,191,.06);
+            border:1px solid rgba(45,212,191,.18);border-radius:8px;
+            padding:6px 10px;font-size:12.5px}
+.added-chip__swatch{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
+.added-chip__name{flex:1;font-weight:500}
+.added-chip__formula{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.added-chip__x{background:transparent;border:0;color:var(--ink-3);cursor:pointer;
+               padding:0 4px;font-size:14px;line-height:1}
+.added-chip__x:hover{color:var(--pink)}
+
+/* ---------- 操作面板 ---------- */
+.controls{display:flex;flex-direction:column;gap:14px}
+.ctrl{display:flex;flex-direction:column;gap:6px}
+.ctrl__label{display:flex;justify-content:space-between;align-items:baseline;
+             font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+             color:var(--ink-3);text-transform:uppercase}
+.ctrl__label b{font-family:var(--display);font-size:15px;color:var(--acc);font-weight:600;
+               letter-spacing:0;text-transform:none}
+.ctrl input[type=range]{-webkit-appearance:none;background:transparent;width:100%}
+.ctrl input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--surface-3);
+                                                       border-radius:2px}
+.ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;
+                                                border-radius:50%;background:var(--acc);margin-top:-5px;
+                                                cursor:pointer;border:2px solid var(--bg)}
+.ctrl input[type=range]::-moz-range-track{height:4px;background:var(--surface-3);border-radius:2px}
+.ctrl input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+                                          background:var(--acc);cursor:pointer;border:2px solid var(--bg)}
+.ctrl-row{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;
+     border-radius:var(--r-pill);font-size:13px;font-weight:600;border:1px solid transparent;cursor:pointer;
+     transition:transform .15s,filter .15s,background .15s;white-space:nowrap}
+.btn--primary{background:var(--acc);color:var(--acc-ink)}
+.btn--primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn--ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn--ghost:hover{background:var(--surface-2)}
+.btn--danger{background:transparent;color:var(--pink);border-color:rgba(251,113,133,.3)}
+.btn--danger:hover{background:rgba(251,113,133,.08)}
+.btn--full{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+
+/* ---------- 反应结果 ---------- */
+.result{display:flex;flex-direction:column;gap:14px;flex:1}
+.result__banner{padding:14px 16px;border-radius:12px;display:flex;align-items:center;gap:12px;
+                background:rgba(45,212,103,.08);border:1px solid rgba(45,212,103,.25)}
+.result__banner.is-no{background:rgba(255,180,40,.06);border-color:rgba(251,191,36,.25)}
+.result__banner.is-err{background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.3)}
+.result__bicon{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+               background:var(--acc);color:var(--acc-ink);font-size:16px;flex:none}
+.result__banner.is-no .result__bicon{background:var(--amber);color:#1f1300}
+.result__banner.is-err .result__bicon{background:var(--pink);color:#fff}
+.result__title{font-size:14px;font-weight:600}
+.result__desc{font-size:12.5px;color:var(--ink-2);line-height:1.55;margin-top:3px}
+.phenomena{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px}
+.phenom{display:flex;align-items:center;gap:6px;padding:6px 10px;
+        background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font-size:12px}
+.phenom__dot{width:7px;height:7px;border-radius:50%;background:var(--pink);flex:none}
+.phenom.is-on .phenom__dot{background:var(--acc)}
+.phenom.is-off .phenom__dot{background:var(--ink-3)}
+.equation{font-family:var(--mono);font-size:12.5px;color:var(--accent);background:var(--surface-2);
+          padding:10px 12px;border-radius:8px;border-left:2px solid var(--acc);word-break:break-all}
+.products{display:flex;flex-wrap:wrap;gap:6px}
+.product{background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);border-radius:8px;
+         padding:5px 10px;font-size:12px}
+.product b{color:var(--acc);font-family:var(--mono)}
+
+/* ---------- 实验目录 ---------- */
+.catalog{display:flex;flex-direction:column;gap:6px;flex:1;overflow:auto;
+     scrollbar-width:thin}
+.cat-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.cat-tab{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-pill);
+         padding:5px 11px;font-size:11.5px;color:var(--ink-2);cursor:pointer;
+         transition:background .15s,color .15s}
+.cat-tab:hover{background:var(--surface-3);color:var(--ink)}
+.cat-tab.on{background:var(--ink);color:var(--bg);font-weight:600}
+.exp-card{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+          padding:11px 12px;cursor:pointer;transition:background .15s,border-color .15s;
+          display:flex;flex-direction:column;gap:5px}
+.exp-card:hover{background:var(--surface-3);border-color:var(--line-2)}
+.exp-card__title{font-size:13px;font-weight:600;line-height:1.3}
+.exp-card__meta{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;
+                color:var(--ink-3);letter-spacing:.04em}
+.exp-card__meta b{color:var(--ink-2);font-weight:500}
+.exp-card__desc{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.exp-card__badge{font-size:10.5px;font-family:var(--mono);letter-spacing:.08em;
+                color:var(--ink-3);text-transform:uppercase;align-self:flex-start;
+                padding:2px 7px;border:1px solid var(--line);border-radius:var(--r-pill)}
+
+/* ---------- 文献识别面板 ---------- */
+.lit-panel{display:flex;flex-direction:column;gap:10px}
+.lit-panel textarea{background:var(--bg);border:1px solid var(--line-2);border-radius:10px;
+                    padding:10px;font-size:12.5px;color:var(--ink);min-height:100px;
+                    resize:vertical;line-height:1.55;font-family:var(--f)}
+.lit-panel textarea:focus{outline:0;border-color:var(--acc)}
+.lit-found{display:flex;flex-direction:column;gap:6px}
+.lit-found__head{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+                  text-transform:uppercase;color:var(--ink-3)}
+.lit-found__item{display:flex;align-items:center;gap:8px;background:var(--surface-2);
+                 border:1px solid var(--line);border-radius:8px;padding:7px 10px;
+                 font-size:12px;cursor:pointer}
+.lit-found__item:hover{background:var(--surface-3);border-color:var(--line-2)}
+.lit-found__score{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+                  background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.2);
+                  padding:1px 7px;border-radius:var(--r-pill);flex:none}
+.lit-found__name{flex:1;font-weight:500}
+.lit-found__add{background:var(--acc);color:var(--acc-ink);border:0;
+                border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600}
+
+/* ---------- 误差分析 ---------- */
+.error-panel{display:flex;flex-direction:column;gap:6px}
+.error-item{display:flex;gap:9px;padding:9px 10px;background:rgba(251,191,36,.06);
+           border:1px solid rgba(251,191,36,.2);border-radius:8px;font-size:12px}
+.error-item__ic{width:16px;height:16px;color:var(--amber);flex:none;margin-top:2px}
+.error-item__ic svg{width:16px;height:16px}
+.error-item__txt{flex:1;line-height:1.5}
+.error-item__txt b{color:var(--amber)}
+
+/* ---------- 3D 产物查看器（嵌入在结果下方） ---------- */
+.product3d{margin-top:auto;background:linear-gradient(180deg,var(--surface-2),var(--surface));
+          border:1px solid var(--line);border-radius:12px;overflow:hidden;
+          min-height:280px;display:flex;flex-direction:column}
+.product3d__head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
+                border-bottom:1px solid var(--line);font-size:12.5px}
+.product3d__head b{font-family:var(--mono);color:var(--acc)}
+.product3d__host{flex:1;min-height:220px;position:relative}
+.product3d__host canvas{display:block;width:100%;height:100%}
+
+/* ---------- footer ---------- */
+.foot{margin-top:48px;padding:32px 0;border-top:1px solid var(--line);font-size:12px;
+     color:var(--ink-3);text-align:center}
+
+@media(prefers-reduced-motion: reduce){
+  *{animation-duration:.001s !important;transition-duration:.001s !important}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<!-- ================== HEADER ================== -->
+<header class="nav">
+  <div class="nav__in">
+    <a class="brand" href="https://klein-kk.github.io/LATTICE-materials/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      LATTICE
+    </a>
+    <nav class="nav__links">
+      <a href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">主站</a>
+      <a href="./intro.html">入门页</a>
+      <a href="./lab.html" style="color:var(--ink);background:var(--surface-2)">实验台</a>
+      <a href="./fig3d.html">3D 科研绘图</a>
+    </nav>
+    <span class="nav__spacer"></span>
+    <button class="iconbtn" id="themeToggle" aria-label="切换主题">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<section class="wrap hero">
+  <div class="eyebrow"><span class="d"></span>LATTICE 实验台 · 环节 11b · 借鉴自 lanyuxi/huaxue (MIT)</div>
+  <h1>从文献到试管，<em>一站式</em>化学实验台</h1>
+  <p class="lead">导入论文文本 → 自动识别 25 个常见实验 → 一键布置试验台/试剂/设备 → 反应引擎模拟 → 3D 产物结构 + 误差分析。支持酸碱、氧化还原、沉淀、气体、金属、电化学、配位 8 大类。</p>
+</section>
+
+<!-- ================== 4 列工作区 ================== -->
+<section class="wrap workspace">
+
+  <!-- 列1: 实验目录（选择实验 / 浏览） -->
+  <div class="col" id="col-catalog">
+    <div class="col__head">
+      <div class="col__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+        实验目录
+      </div>
+      <div class="col__meta" id="cat-count">—</div>
+    </div>
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div class="catalog" id="catalog"></div>
+  </div>
+
+  <!-- 列2: 试剂架 + 已添加 -->
+  <div class="col" id="col-reagents">
+    <div class="col__head">
+      <div class="col__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3"/></svg>
+        试剂架
+      </div>
+      <div class="col__meta">点击添加 → 烧杯</div>
+    </div>
+    <div class="reagent-rack" id="rack"></div>
+    <div class="added-list" id="added-section" style="display:none">
+      <div class="added-list__head">当前烧杯 <span id="added-n">0</span> 种试剂</div>
+      <div id="added-list"></div>
+    </div>
+  </div>
+
+  <!-- 列3: 试验台 3D + 操作面板 -->
+  <div class="col" id="col-lab">
+    <div class="col__head">
+      <div class="col__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 21h12M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg>
+        试验台 · 操作
+      </div>
+      <div class="col__meta">3D 立体</div>
+    </div>
+    <div class="lab3d">
+      <div class="lab3d__host" id="lab3dHost"></div>
+      <div class="lab3d__tools">
+        <button class="lab3d__tool on" id="tView" title="旋转视角">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9M3 12V3M3 12h9"/></svg>
+        </button>
+        <button class="lab3d__tool" id="tHeat" title="酒精灯加热">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c2 4 4 6 4 9a4 4 0 0 1-8 0c0-3 2-5 4-9z"/></svg>
+        </button>
+        <button class="lab3d__tool" id="tStir" title="搅拌">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h12M16 8l4 4-4 4M20 4l-4 4"/></svg>
+        </button>
+        <button class="lab3d__tool" id="tReset" title="重置烧杯">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top:14px">
+      <div class="ctrl">
+        <div class="ctrl__label">温度 <b><span id="tempLabel">25</span> °C</b></div>
+        <input type="range" id="tempSlider" min="0" max="100" value="25" step="1">
+      </div>
+      <div class="ctrl-row">
+        <button class="btn btn--primary btn--full" id="btnReact">▶ 触发反应</button>
+        <button class="btn btn--danger" id="btnClear">✕ 清空</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 列4: 反应结果 + 产物 3D + 误差分析 -->
+  <div class="col" id="col-result">
+    <div class="col__head">
+      <div class="col__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z"/></svg>
+        反应结果 · 误差分析
+      </div>
+      <div class="col__meta">13 维现象</div>
+    </div>
+
+    <div class="result" id="result">
+      <div class="result__banner" style="background:var(--surface-2);border-color:var(--line)">
+        <div class="result__bicon" style="background:var(--ink-3)">·</div>
+        <div>
+          <div class="result__title">等待反应</div>
+          <div class="result__desc">从试剂架添加 2 种及以上试剂 → 点击「触发反应」</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product3d" id="product3d" style="display:none">
+      <div class="product3d__head">
+        <span>产物结构</span>
+        <b id="productFormula">—</b>
+      </div>
+      <div class="product3d__host" id="product3dHost"></div>
+    </div>
+
+    <div class="error-panel" id="errorPanel" style="margin-top:14px;display:none">
+      <div class="added-list__head">⚠ 主要误差来源</div>
+      <div id="errorList"></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ================== 文献识别面板 ================== -->
+<section class="wrap" style="padding-bottom:32px">
+  <div class="col lit-panel">
+    <div class="col__head">
+      <div class="col__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        从文献识别实验
+      </div>
+      <div class="col__meta">关键词扫描 · 加权打分</div>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-2);margin:0 0 10px">
+      粘贴论文摘要或方法节片段（如「通过酸碱滴定测定反应速率常数…」）→ 系统按关键词加权打分匹配实验 → 一键布置试验台。
+    </p>
+    <textarea id="litInput" placeholder="示例：将过氧化氢溶液加入蒸馏烧瓶，加入二氧化锰作催化剂，用排水法收集氧气…">用标准盐酸滴定未知浓度的氢氧化钠溶液，借助酚酞指示剂判断终点，掌握定量分析基本操作。</textarea>
+    <div class="ctrl-row">
+      <button class="btn btn--primary" id="btnScan">🔍 扫描识别</button>
+      <button class="btn btn--ghost" id="btnSample">填示例</button>
+    </div>
+    <div class="lit-found" id="litFound" style="display:none"></div>
+  </div>
+</section>
+
+<footer class="foot">
+  LATTICE · 实验台原型 · 数据 + 引擎借鉴自 <a href="https://github.com/lanyuxi/huaxue" target="_blank" rel="noopener" style="color:var(--acc)">lanyuxi/huaxue</a> (MIT) · <a href="https://github.com/Klein-kk/LATTICE-materials" target="_blank" rel="noopener" style="color:var(--acc)">返回主站</a>
+</footer>
+</main>
+
+<!-- ================== 数据 + 引擎 ================== -->
+<script src="./lab-experiments.js"></script>
+<script src="./lab-chem.js"></script>
+
+<script>
+/* ================== 主题 ================== */
+const html = document.documentElement;
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const cur = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  try { localStorage.setItem('lattice.theme', html.getAttribute('data-theme')); } catch(e){}
+});
+try { const t = localStorage.getItem('lattice.theme'); if (t) html.setAttribute('data-theme', t); } catch(e){}
+
+/* ================== 背景（同 intro.html 模式） ================== */
+const bgCanvas = document.getElementById('bg');
+const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, antialias: true, alpha: true });
+bgRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+bgRenderer.setSize(innerWidth, innerHeight);
+const bgScene = new THREE.Scene();
+const bgCamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+bgCamera.position.z = 9;
+const W=18,H=11,D=6,NX=32,NY=20,NZ=10,N=NX*NY*NZ;
+const positions=new Float32Array(N*3),seeds=new Float32Array(N);
+let idx=0;
+for (let x=0;x<NX;x++) for(let y=0;y<NY;y++) for(let z=0;z<NZ;z++){
+  positions[idx*3]=(x/(NX-1)-0.5)*W+(Math.random()-0.5)*0.35;
+  positions[idx*3+1]=(y/(NY-1)-0.5)*H+(Math.random()-0.5)*0.35;
+  positions[idx*3+2]=(z/(NZ-1)-0.5)*D+(Math.random()-0.5)*0.35;
+  seeds[idx]=Math.random();idx++;
+}
+const bgGeo=new THREE.BufferGeometry();
+bgGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+bgGeo.setAttribute('aSeed',new THREE.BufferAttribute(seeds,1));
+const bgU={uTime:{value:0},uMouse3:{value:new THREE.Vector3(0,0,0)},uPx:{value:innerHeight},uReduce:{value:0}};
+const bgMat=new THREE.ShaderMaterial({uniforms:bgU,transparent:true,depthWrite:false,
+  vertexShader:`attribute float aSeed;uniform float uTime;uniform vec3 uMouse3;uniform float uPx;uniform float uReduce;
+    varying float vSeed;varying float vGlow;
+    void main(){vec3 p=position;float t=uTime;
+      if(uReduce<0.5){p.y+=sin(t*0.5+aSeed*6.283)*0.10;p.x+=cos(t*0.35+aSeed*4.0)*0.08;}
+      vec2 d=uMouse3.xy-p.xy;float dist=length(d);float f=exp(-dist*0.55)*1.1;
+      p.xy+=normalize(d+1e-5)*f;p.z+=f*0.35*sin(t*1.4+aSeed*9.0);vGlow=f;
+      vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+      gl_PointSize=(1.4+aSeed*2.2+f*9.0)*(uPx/max(-mv.z,0.1))*0.012;vSeed=aSeed;}`,
+  fragmentShader:`varying float vSeed;varying float vGlow;
+    void main(){vec2 c=gl_PointCoord-0.5;float d=length(c);if(d>0.5)discard;
+      float a=smoothstep(0.5,0.05,d)*(0.18+vSeed*0.32+vGlow*0.9);
+      vec3 col=mix(vec3(0.18,0.83,0.75),vec3(0.78,0.88,0.92),vSeed*0.7)+vGlow*vec3(0.4,0.95,0.85);
+      gl_FragColor=vec4(col,a);}`,blending:THREE.AdditiveBlending});
+bgScene.add(new THREE.Points(bgGeo,bgMat));
+const mNDC=new THREE.Vector2(0,0),mW=new THREE.Vector3(0,0,0);
+const rc=new THREE.Raycaster(),pl=new THREE.Plane(new THREE.Vector3(0,0,1),0);
+function uMW(){rc.setFromCamera(mNDC,bgCamera);rc.ray.intersectPlane(pl,mW);bgU.uMouse3.value.copy(mW);}
+addEventListener('pointermove',e=>{mNDC.x=(e.clientX/innerWidth)*2-1;mNDC.y=-(e.clientY/innerHeight)*2+1;uMW();},{passive:true});
+const clock=new THREE.Clock();
+!function tickBg(){bgU.uTime.value=clock.getElapsedTime();bgRenderer.render(bgScene,bgCamera);requestAnimationFrame(tickBg);}();
+addEventListener('resize',()=>{bgRenderer.setSize(innerWidth,innerHeight);bgCamera.aspect=innerWidth/innerHeight;bgCamera.updateProjectionMatrix();bgU.uPx.value=innerHeight;});
+bgU.uReduce.value=matchMedia('(prefers-reduced-motion: reduce)').matches?1:0;
+
+/* ================== 试验台 3D ==================
+   简化版立体器皿：烧杯 + 试剂瓶 + 气泡动画 + 酒精灯火焰
+   ================== */
+const labHost = document.getElementById('lab3dHost');
+const labRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+labRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+labHost.appendChild(labRenderer.domElement);
+
+const labScene = new THREE.Scene();
+const labCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+labCamera.position.set(2.5, 1.8, 4.5);
+labScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dL = new THREE.DirectionalLight(0xffffff, 1.0); dL.position.set(3,5,4); labScene.add(dL);
+const dL2 = new THREE.DirectionalLight(0x88ccff, 0.4); dL2.position.set(-4,-2,-3); labScene.add(dL2);
+
+const labControls = new THREE.OrbitControls(labCamera, labRenderer.domElement);
+labControls.enableDamping = true; labControls.dampingFactor = 0.08;
+labControls.minDistance = 2.5; labControls.maxDistance = 12;
+labControls.target.set(0, 0.5, 0);
+
+let viewMode = true, heatOn = false, stirOn = false;
+let beakerLiquid = null, bubbles = [], flames = [];
+let stirRod = null;
+
+const labGroup = new THREE.Group();
+labScene.add(labGroup);
+
+/* 桌面 */
+const desk = new THREE.Mesh(
+  new THREE.CylinderGeometry(5, 5, 0.1, 32),
+  new THREE.MeshStandardMaterial({ color:0x2a2a30, roughness:0.85, metalness:0.05 })
+);
+desk.position.y = -0.05;
+labGroup.add(desk);
+
+/* 铁架台 */
+const rackBase = new THREE.Mesh(
+  new THREE.BoxGeometry(1.4, 0.06, 0.8),
+  new THREE.MeshStandardMaterial({ color:0x3a3a40, metalness:0.6, roughness:0.4 })
+);
+rackBase.position.set(0, 0.03, -0.5); labGroup.add(rackBase);
+const rackPole = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.04, 0.04, 3.0, 12),
+  new THREE.MeshStandardMaterial({ color:0xb0b0b8, metalness:0.7, roughness:0.35 })
+);
+rackPole.position.set(0, 1.5, -0.5); labGroup.add(rackPole);
+
+/* 烧杯：玻璃圆柱（半透）+ 液面（圆盘 + 颜色） */
+const glassGeo = new THREE.CylinderGeometry(0.7, 0.7, 1.4, 24, 1, true);
+const glassMat = new THREE.MeshPhysicalMaterial({
+  color: 0xe8f4f8, transparent:true, opacity:0.22,
+  roughness:0.05, metalness:0.0, side:THREE.DoubleSide,
+  transmission:0.95, thickness:0.3,
+  clearcoat:1, clearcoatRoughness:0.05
+});
+const glass = new THREE.Mesh(glassGeo, glassMat);
+glass.position.set(0, 0.75, 0);
+labGroup.add(glass);
+
+/* 烧杯底 */
+const glassBase = new THREE.Mesh(
+  new THREE.CircleGeometry(0.7, 32),
+  new THREE.MeshStandardMaterial({ color:0xddeef2, transparent:true, opacity:0.6 })
+);
+glassBase.rotation.x = -Math.PI/2;
+glassBase.position.set(0, 0.05, 0);
+labGroup.add(glassBase);
+
+/* 刻度（4 条线） */
+for (let i = 1; i <= 4; i++) {
+  const line = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.005, 0.005),
+    new THREE.MeshStandardMaterial({ color:0xffffff, opacity:0.4, transparent:true })
+  );
+  line.position.set(-0.5, 0.3 + i*0.25, 0.71);
+  labGroup.add(line);
+}
+
+/* 液面 */
+function setLiquid(color, fillRatio){
+  if (beakerLiquid) { labGroup.remove(beakerLiquid); beakerLiquid.geometry.dispose(); beakerLiquid.material.dispose(); }
+  const geo = new THREE.CylinderGeometry(0.68, 0.68, 1.35*fillRatio, 24);
+  const mat = new THREE.MeshStandardMaterial({
+    color: color, transparent:true, opacity:0.75, roughness:0.3, metalness:0.1
+  });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(0, 0.05 + 0.675*fillRatio, 0);
+  labGroup.add(m);
+  beakerLiquid = m;
+}
+
+/* 试剂瓶（沿地面围成一圈） */
+function bottleFor(substance){
+  const g = new THREE.Group();
+  const colorByCategory = {
+    acid:0xff6b35, base:0x6ba6ff, salt:0xa8d8a8, carbonate:0xc89666,
+    metal:0x888888, oxide:0x604040, gas:0xa0d8e8, water:0xa0c8f0,
+    indicator:0xe06699, oxidizer:0xa050a0, reducer:0x603030, organic:0xe0c896, other:0xb0b0b0
+  };
+  const bottleBody = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.18, 0.5, 16),
+    new THREE.MeshPhysicalMaterial({
+      color: colorByCategory[substance.category] || 0x888888,
+      transparent:true, opacity:0.65, roughness:0.15, transmission:0.6, thickness:0.2,
+      clearcoat:0.8
+    })
+  );
+  bottleBody.position.y = 0.25;
+  g.add(bottleBody);
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.1, 0.06, 12),
+    new THREE.MeshStandardMaterial({ color:0x2a2a30, roughness:0.5 })
+  );
+  cap.position.y = 0.52;
+  g.add(cap);
+  g.userData = { substance };
+  return g;
+}
+const bottles = []; // 全局试剂瓶容器
+const bottleGroup = new THREE.Group();
+labGroup.add(bottleGroup);
+
+/* 气泡动画 */
+function addBubbles(){
+  for (let i = 0; i < 30; i++) {
+    const b = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04 + Math.random()*0.03, 8, 6),
+      new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.5 })
+    );
+    b.position.set((Math.random()-0.5)*1.0, 0.1, (Math.random()-0.5)*1.0);
+    b.userData.speed = 0.005 + Math.random()*0.012;
+    bubbles.push(b);
+    labScene.add(b);
+  }
+}
+
+/* 酒精灯 */
+const burner = new THREE.Group();
+const burnerBase = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.3, 0.3, 0.15, 16),
+  new THREE.MeshStandardMaterial({ color:0x4a2a1a, roughness:0.7 })
+);
+burnerBase.position.set(0, 0.08, 1.2); burner.add(burnerBase);
+const burnerFlask = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.2, 0.18, 0.3, 16),
+  new THREE.MeshStandardMaterial({ color:0x705040, transparent:true, opacity:0.7, roughness:0.3 })
+);
+burnerFlask.position.set(0, 0.3, 1.2); burner.add(burnerFlask);
+const burnerWick = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.02, 0.02, 0.08, 8),
+  new THREE.MeshStandardMaterial({ color:0x222 })
+);
+burnerWick.position.set(0, 0.49, 1.2); burner.add(burnerWick);
+labGroup.add(burner);
+
+/* 火焰粒子 */
+function makeFlame(){
+  const g = new THREE.Group();
+  for (let i = 0; i < 18; i++) {
+    const isOuter = i < 6;
+    const flame = new THREE.Mesh(
+      new THREE.SphereGeometry(isOuter?0.05:0.035, 8, 6),
+      new THREE.MeshBasicMaterial({
+        color: isOuter?0xff8533:0xffeb40,
+        transparent:true, opacity:0.7
+      })
+    );
+    flame.position.set((Math.random()-0.5)*0.1, Math.random()*0.18, (Math.random()-0.5)*0.1);
+    flame.userData.drift = (Math.random()-0.5)*0.02;
+    flame.userData.baseY = flame.position.y;
+    g.add(flame);
+  }
+  g.position.set(0, 0.55, 1.2);
+  flames.push(g);
+  labGroup.add(g);
+}
+
+/* 搅拌棒 */
+function addStirRod(){
+  stirRod = new THREE.Group();
+  const rod = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8),
+    new THREE.MeshStandardMaterial({ color:0xcccccc, roughness:0.5 })
+  );
+  rod.position.y = 0.75;
+  stirRod.add(rod);
+  stirRod.rotation.z = -Math.PI/4;
+  stirRod.position.set(0.3, 0, 0);
+  labGroup.add(stirRod);
+}
+
+/* 初始状态：空烧杯 + 透明液面 */
+setLiquid(0xa0d8e8, 0.0);
+
+function resizeLab(){
+  const r = labHost.getBoundingClientRect();
+  labRenderer.setSize(r.width, r.height);
+  labCamera.aspect = r.width / Math.max(r.height, 1);
+  labCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeLab).observe(labHost);
+resizeLab();
+
+/* 渲染循环 */
+(function tickLab(){
+  requestAnimationFrame(tickLab);
+  /* 气泡 */
+  if (beakerLiquid && beakerLiquid.position.y > 0.4) {
+    bubbles.forEach(b => {
+      b.position.y += b.userData.speed;
+      if (b.position.y > beakerLiquid.position.y) {
+        b.position.set((Math.random()-0.5)*1.0, 0.1, (Math.random()-0.5)*1.0);
+      }
+    });
+  }
+  /* 火焰 */
+  if (heatOn) {
+    if (flames.length === 0) makeFlame();
+    flames.forEach(g => g.children.forEach(f => {
+      f.position.y = f.userData.baseY + Math.sin(performance.now()*0.005 + f.userData.drift*100)*0.04;
+      f.position.x += f.userData.drift * 0.01;
+      if (Math.abs(f.position.x) > 0.15) f.userData.drift *= -1;
+    }));
+  } else if (flames.length) {
+    flames.forEach(f => labGroup.remove(f));
+    flames = [];
+  }
+  /* 搅拌 */
+  if (stirRod && stirOn) {
+    stirRod.rotation.y += 0.08;
+  }
+  labControls.update();
+  labRenderer.render(labScene, labCamera);
+})();
+
+/* 视图工具按钮 */
+const tView = document.getElementById('tView');
+const tHeat = document.getElementById('tHeat');
+const tStir = document.getElementById('tStir');
+const tReset = document.getElementById('tReset');
+tView.addEventListener('click', () => { viewMode = !viewMode; labControls.autoRotate = viewMode; tView.classList.toggle('on', viewMode); tView.style.color = viewMode ? 'var(--acc-ink)' : ''; });
+tHeat.addEventListener('click', () => { heatOn = !heatOn; tHeat.classList.toggle('on', heatOn); });
+tStir.addEventListener('click', () => {
+  stirOn = !stirOn; tStir.classList.toggle('on', stirOn);
+  if (stirRod) stirRod.visible = stirOn;
+});
+tReset.addEventListener('click', clearBeaker);
+labControls.autoRotate = viewMode;
+
+/* ================== 试剂架渲染 ================== */
+const REAGENT_DISPLAY = [
+  { name:'盐酸', formula:'HCl', category:'acid', liquid:0xff6b35 },
+  { name:'硫酸', formula:'H2SO4', category:'acid', liquid:0xc89666 },
+  { name:'乙酸', formula:'CH3COOH', category:'acid', liquid:0xe0c896 },
+  { name:'硝酸', formula:'HNO3', category:'acid', liquid:0xffa050 },
+  { name:'氢氧化钠', formula:'NaOH', category:'base', liquid:0x6ba6ff },
+  { name:'氢氧化钙', formula:'Ca(OH)2', category:'base', liquid:0xa0c8f0 },
+  { name:'氨水', formula:'NH3·H2O', category:'base', liquid:0xb0c8e8 },
+  { name:'氯化钠', formula:'NaCl', category:'salt', liquid:0xa8d8a8 },
+  { name:'氯化铁', formula:'FeCl3', category:'salt', liquid:0xb8a020 },
+  { name:'硫酸铜', formula:'CuSO4', category:'salt', liquid:0x4060d0 },
+  { name:'氯化钡', formula:'BaCl2', category:'salt', liquid:0xd0e0d0 },
+  { name:'氯化铜', formula:'CuCl2', category:'salt', liquid:0x60c0a0 },
+  { name:'碳酸钙', formula:'CaCO3', category:'carbonate', liquid:0xe0e0d0 },
+  { name:'碳酸氢钠', formula:'NaHCO3', category:'solid', liquid:0xd8d8d8 },
+  { name:'氯化铵', formula:'NH4Cl', category:'carbonate', liquid:0xe8e0d8 },
+  { name:'锌粒', formula:'Zn', category:'metal', liquid:0xa8a8b0 },
+  { name:'铁钉', formula:'Fe', category:'metal', liquid:0x8090a0 },
+  { name:'镁条', formula:'Mg', category:'metal', liquid:0xc0c0c8 },
+  { name:'铜丝', formula:'Cu', category:'metal', liquid:0xc08060 },
+  { name:'氧化铜', formula:'CuO', category:'oxide', liquid:0x303030 },
+  { name:'氢气', formula:'H2', category:'gas', liquid:0xe8f4f8 },
+  { name:'二氧化碳', formula:'CO2', category:'gas', liquid:0xb0b0c0 },
+  { name:'过氧化氢', formula:'H2O2', category:'oxidizer', liquid:0xa0e0f0 },
+  { name:'高锰酸钾', formula:'KMnO4', category:'oxidizer', liquid:0xa050a0 },
+  { name:'二氧化锰', formula:'MnO2', category:'oxidizer', liquid:0x202020 },
+  { name:'酚酞', formula:'指示剂', category:'indicator', liquid:0xe06699 },
+  { name:'硫氰化钾', formula:'KSCN', category:'other', liquid:0xe0e0e0 },
+  { name:'硝酸银', formula:'AgNO3', category:'other', liquid:0xc0c0d0 },
+  { name:'葡萄糖', formula:'C6H12O6', category:'organic', liquid:0xf0e8c8 },
+  { name:'蒸馏水', formula:'H2O', category:'water', liquid:0xa0c8f0 }
+];
+
+let beaker = [];
+let productRenderer = null, productScene = null, productCamera = null, productControls = null;
+
+function colorHex(num){ return '#' + num.toString(16).padStart(6,'0'); }
+
+function renderRack(){
+  const rack = document.getElementById('rack');
+  rack.innerHTML = REAGENT_DISPLAY.map((r, i) => `
+    <div class="reagent" data-i="${i}" data-name="${r.name}" data-formula="${r.formula}" data-cat="${r.category}">
+      <div class="reagent__cat">${r.category}</div>
+      <div class="reagent__name">${r.name}</div>
+      <div class="reagent__formula">${r.formula}</div>
+      <div class="reagent__swatch" style="background:${colorHex(r.liquid)}"></div>
+    </div>`).join('');
+  rack.querySelectorAll('.reagent').forEach(el => {
+    el.addEventListener('click', () => addToBeaker(REAGENT_DISPLAY[+el.dataset.i], el));
+  });
+}
+renderRack();
+
+function addToBeaker(r, el){
+  if (beaker.find(b => b.name === r.name)) return;
+  beaker.push(r);
+  if (el) el.classList.add('added');
+  refreshAdded();
+  updateBeakerLiquid();
+  hideStays();
+}
+function removeFromBeaker(i){
+  const removed = beaker[i].name;
+  beaker.splice(i, 1);
+  document.querySelectorAll('.reagent').forEach((el, idx) => {
+    if (REAGENT_DISPLAY[idx].name === removed) el.classList.remove('added');
+  });
+  refreshAdded();
+  updateBeakerLiquid();
+}
+
+function hideStays(){ /* 预留给动画隐藏 */ }
+
+function clearBeaker(){
+  beaker = [];
+  document.querySelectorAll('.reagent.added').forEach(el => el.classList.remove('added'));
+  refreshAdded();
+  updateBeakerLiquid();
+  hideStays();
+  document.getElementById('result').innerHTML = `
+    <div class="result__banner" style="background:var(--surface-2);border-color:var(--line)">
+      <div class="result__bicon" style="background:var(--ink-3)">·</div>
+      <div>
+        <div class="result__title">等待反应</div>
+        <div class="result__desc">从试剂架添加 2 种及以上试剂 → 点击「触发反应」</div>
+      </div>
+    </div>`;
+  document.getElementById('product3d').style.display = 'none';
+  document.getElementById('errorPanel').style.display = 'none';
+  setLiquid(0xa0d8e8, 0.0);
+}
+
+function refreshAdded(){
+  const sec = document.getElementById('added-section');
+  const list = document.getElementById('added-list');
+  const n = document.getElementById('added-n');
+  if (beaker.length === 0) {
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = 'block';
+  n.textContent = beaker.length;
+  list.innerHTML = beaker.map((r, i) => `
+    <div class="added-chip">
+      <span class="added-chip__swatch" style="background:${colorHex(r.liquid)}"></span>
+      <span class="added-chip__name">${r.name}</span>
+      <span class="added-chip__formula">${r.formula}</span>
+      <button class="added-chip__x" data-rm="${i}">×</button>
+    </div>`).join('');
+  list.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', e => {
+    const i = +e.target.dataset.rm;
+    const removed = beaker[i].name;
+    beaker.splice(i, 1);
+    document.querySelectorAll('.reagent').forEach((el, idx) => {
+      if (REAGENT_DISPLAY[idx].name === removed) el.classList.remove('added');
+    });
+    refreshAdded();
+    updateBeakerLiquid();
+  }));
+}
+
+function updateBeakerLiquid(){
+  if (beaker.length === 0) { setLiquid(0xa0d8e8, 0.0); return; }
+  /* 混合颜色（粗略平均）+ 液面高度 */
+  const avgR = beaker.reduce((s,b) => s + ((b.liquid>>16)&0xff), 0) / beaker.length;
+  const avgG = beaker.reduce((s,b) => s + ((b.liquid>>8)&0xff), 0) / beaker.length;
+  const avgB = beaker.reduce((s,b) => s + (b.liquid&0xff), 0) / beaker.length;
+  const mixedColor = ((Math.round(avgR)<<16) | (Math.round(avgG)<<8) | Math.round(avgB));
+  const fillRatio = Math.min(0.8, 0.15 + beaker.length * 0.12);
+  setLiquid(mixedColor, fillRatio);
+}
+
+/* ================== 触发反应 ================== */
+const tempSlider = document.getElementById('tempSlider');
+const tempLabel = document.getElementById('tempLabel');
+tempSlider.addEventListener('input', () => tempLabel.textContent = tempSlider.value);
+
+document.getElementById('btnReact').addEventListener('click', runReaction);
+document.getElementById('btnClear').addEventListener('click', clearBeaker);
+
+function runReaction(){
+  if (beaker.length < 2) {
+    flashResult('至少需要 2 种试剂', 'warning');
+    return;
+  }
+  const conditions = { temperature: +tempSlider.value, heated: heatOn || +tempSlider.value > 60 };
+  const names = beaker.map(b => b.name);
+  const result = MR.chem.react(names, conditions);
+  showResult(result);
+  if (result.reacted) {
+    showProduct3D(result);
+    showErrorsPanel();
+  } else {
+    document.getElementById('product3d').style.display = 'none';
+    document.getElementById('errorPanel').style.display = 'none';
+  }
+}
+
+function flashResult(text, kind){
+  const colors = { warning:0xffaa40, info:0x60a5fa };
+  setLiquid(colors[kind] || 0xffaa40, 0.3);
+}
+
+function showResult(r){
+  const div = document.getElementById('result');
+  const bannerClass = r.reacted ? '' : (r.description.includes('未观察') ? 'is-no' : 'is-err');
+  const bannerIcon = r.reacted ? '✓' : '·';
+  div.innerHTML = `
+    <div class="result__banner ${bannerClass}">
+      <div class="result__bicon">${bannerIcon}</div>
+      <div>
+        <div class="result__title">${r.reacted ? '发生反应' : '无可见反应'}</div>
+        <div class="result__desc">${r.description || ''}</div>
+      </div>
+    </div>
+    ${r.equation ? `<div class="equation">${r.equation}</div>` : ''}
+    ${r.reacted ? `
+    <div class="phenomena">
+      <div class="phenom ${r.producesGas?'is-on':'is-off'}"><span class="phenom__dot"></span>${r.producesGas?'✓ 产气':'· 无气体'}</div>
+      <div class="phenom ${r.producesPrecipitate?'is-on':'is-off'}"><span class="phenom__dot"></span>${r.producesPrecipitate?'✓ 沉淀':'· 无沉淀'}</div>
+      <div class="phenom ${r.colorChange?'is-on':'is-off'}"><span class="phenom__dot"></span>${r.colorChange?'✓ 颜色变化':'· 颜色不变'}</div>
+      <div class="phenom ${r.thermal!=='none'?'is-on':'is-off'}"><span class="phenom__dot"></span>${r.thermal==='exothermic'?'✓ 放热':r.thermal==='endothermic'?'✓ 吸热':'· 无热效应'}</div>
+    </div>` : ''}
+    ${r.reacted && r.products.length ? `<div class="products">${r.products.map(p => `<span class="product"><b>${p.formula}</b> ${p.name}</span>`).join('')}</div>` : ''}`;
+}
+
+/* ================== 产物 3D 查看器 ================== */
+const prodHost = document.getElementById('product3dHost');
+productRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+productRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+prodHost.appendChild(productRenderer.domElement);
+productScene = new THREE.Scene();
+productCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+productCamera.position.set(3, 2, 4);
+productScene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dL3 = new THREE.DirectionalLight(0xffffff, 0.9); dL3.position.set(3,5,4); productScene.add(dL3);
+productControls = new THREE.OrbitControls(productCamera, productRenderer.domElement);
+productControls.enableDamping = true;
+
+const ELEMENTS_COLORS = { H:0xf5f5f5, C:0x3a3a3a, N:0x3050ff, O:0xff4040, Cl:0x4ade80, Na:0xb05cf2, Cu:0xc08060, Fe:0xe06633, Ba:0xd0c0a0, Mn:0xa04030, S:0xe0d030, Ag:0xc0c0d0, Zn:0xa8a8b0, Mg:0xc0c0c8 };
+const ATOM_SCALE = { H:0.3, C:0.5, N:0.5, O:0.5, Cl:0.5, Na:0.7, Cu:0.6, Fe:0.6, Ba:0.7, Mn:0.55, S:0.55, Ag:0.6, Zn:0.6, Mg:0.55 };
+
+let productGroup = null;
+function clearProduct(){
+  if (productGroup) {
+    productGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    productScene.remove(productGroup);
+    productGroup = null;
+  }
+}
+function showProduct3D(result){
+  clearProduct();
+  productGroup = new THREE.Group();
+  /* 取第一个非水产物作展示（过滤掉 H2O 中性数据）*/
+  const main = result.products.find(p => p.formula !== 'H2O' && p.formula !== 'water') || result.products[0];
+  if (!main) { document.getElementById('product3d').style.display = 'none'; return; }
+  /* 解析化学式为原子数组 */
+  const parsed = MR.chem.parseFormulaFor3D(main.formula);
+  /* 对常见离子/分子用模板几何 */
+  const atoms = buildMolecule3D(main.formula);
+  /* 创建原子 */
+  const sphereGeo = new THREE.SphereGeometry(0.5, 22, 14);
+  atoms.forEach((a, i) => {
+    const m = new THREE.Mesh(
+      sphereGeo,
+      new THREE.MeshStandardMaterial({
+        color: ELEMENTS_COLORS[a.el] || 0xaaaaaa,
+        roughness: 0.4, metalness: 0.2
+      })
+    );
+    m.position.set(a.pos[0], a.pos[1], a.pos[2]);
+    const sc = ATOM_SCALE[a.el] || 0.5;
+    m.scale.setScalar(sc);
+    productGroup.add(m);
+  });
+  /* 共价键（连接近邻原子）*/
+  for (let i = 0; i < atoms.length; i++) {
+    for (let j = i+1; j < atoms.length; j++) {
+      const a = atoms[i], b = atoms[j];
+      const d = Math.sqrt((a.pos[0]-b.pos[0])**2 + (a.pos[1]-b.pos[1])**2 + (a.pos[2]-b.pos[2])**2);
+      if (d < 1.6) {
+        const mid = [(a.pos[0]+b.pos[0])/2, (a.pos[1]+b.pos[1])/2, (a.pos[2]+b.pos[2])/2];
+        const cyl = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.1, d, 12),
+          new THREE.MeshStandardMaterial({ color: 0xcfd3d8, roughness: 0.5 })
+        );
+        cyl.position.set(mid[0], mid[1], mid[2]);
+        cyl.scale.set(1, d, 1);
+        cyl.lookAt(b.pos[0], b.pos[1], b.pos[2]);
+        cyl.rotateX(Math.PI/2);
+        productGroup.add(cyl);
+      }
+    }
+  }
+  productScene.add(productGroup);
+  productControls.target.set(0, 0, 0);
+  document.getElementById('product3d').style.display = 'flex';
+  document.getElementById('productFormula').textContent = main.formula + (main.name ? ' · ' + main.name : '');
+
+  function resizeProduct(){
+    const r = prodHost.getBoundingClientRect();
+    productRenderer.setSize(r.width, r.height);
+    productCamera.aspect = r.width / Math.max(r.height, 1);
+    productCamera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resizeProduct).observe(prodHost);
+  resizeProduct();
+  (function tickProd(){
+    requestAnimationFrame(tickProd);
+    if (productGroup) { productGroup.rotation.y += 0.006; }
+    productControls.update();
+    productRenderer.render(productScene, productCamera);
+  })();
+}
+
+/* 分子 3D 模板（针对常见产物分子/离子）*/
+function buildMolecule3D(formula){
+  if (!formula) return [{el:'C',pos:[0,0,0]}];
+  /* 直接模板匹配 */
+  const TEMPLATES = {
+    'NaCl': [{el:'Na',pos:[1.0,0,0]}, {el:'Cl',pos:[-1.0,0,0]}],
+    'H2O': [{el:'O',pos:[0,0,0]}, {el:'H',pos:[0.78,0.6,0]}, {el:'H',pos:[-0.78,0.6,0]}],
+    'CO2': [{el:'C',pos:[0,0,0]}, {el:'O',pos:[-1.2,0,0]}, {el:'O',pos:[1.2,0,0]}],
+    'H2': [{el:'H',pos:[-0.4,0,0]}, {el:'H',pos:[0.4,0,0]}],
+    'O2': [{el:'O',pos:[-0.6,0,0]}, {el:'O',pos:[0.6,0,0]}],
+    'NH3': [{el:'N',pos:[0,0,0]}, {el:'H',pos:[0,0.9,0.4]}, {el:'H',pos:[-0.8,-0.5,0.4]}, {el:'H',pos:[0.8,-0.5,0.4]}],
+    'Cu': [{el:'Cu',pos:[0,0,0]}],
+    'CuSO4': [{el:'Cu',pos:[1.4,0,0]}, {el:'S',pos:[-0.4,0,0]}, {el:'O',pos:[-1.6,0.6,0]}, {el:'O',pos:[-1.6,-0.6,0]}, {el:'O',pos:[0.2,1.0,0]}, {el:'O',pos:[0.2,-1.0,0]}],
+    'Cu(OH)2': [{el:'Cu',pos:[0,0,0]}, {el:'O',pos:[-1.3,0.7,0]}, {el:'O',pos:[1.3,0.7,0]}, {el:'H',pos:[-1.9,1.4,0]}, {el:'H',pos:[1.9,1.4,0]}],
+    'FeSO4': [{el:'Fe',pos:[1.4,0,0]}, {el:'S',pos:[-0.4,0,0]}, {el:'O',pos:[-1.6,0.6,0]}, {el:'O',pos:[-1.6,-0.6,0]}, {el:'O',pos:[0.2,1.0,0]}, {el:'O',pos:[0.2,-1.0,0]}],
+    'AgCl': [{el:'Ag',pos:[1.0,0,0]}, {el:'Cl',pos:[-1.0,0,0]}],
+    'BaSO4': [{el:'Ba',pos:[1.6,0,0]}, {el:'S',pos:[-0.4,0,0]}, {el:'O',pos:[-1.5,0.7,0]}, {el:'O',pos:[-1.5,-0.7,0]}, {el:'O',pos:[0.2,1.1,0]}, {el:'O',pos:[0.2,-1.1,0]}],
+    'ZnSO4': [{el:'Zn',pos:[1.4,0,0]}, {el:'S',pos:[-0.4,0,0]}, {el:'O',pos:[-1.6,0.6,0]}, {el:'O',pos:[-1.6,-0.6,0]}, {el:'O',pos:[0.2,1.0,0]}, {el:'O',pos:[0.2,-1.0,0]}],
+    'Na2SO4': [{el:'Na',pos:[1.4,0.7,0]}, {el:'Na',pos:[-1.4,-0.7,0]}, {el:'S',pos:[0,0,0]}, {el:'O',pos:[0,1.1,0]}, {el:'O',pos:[0,-1.1,0]}, {el:'O',pos:[1.0,0,0]}, {el:'O',pos:[-1.0,0,0]}],
+    'NaNO3': [{el:'Na',pos:[1.4,0,0]}, {el:'N',pos:[-0.4,0,0]}, {el:'O',pos:[-1.4,0.7,0]}, {el:'O',pos:[-1.4,-0.7,0]}, {el:'O',pos:[0,1.0,0]}],
+    'FeCl3': [{el:'Fe',pos:[0,0,0]}, {el:'Cl',pos:[1.5,0.5,0]}, {el:'Cl',pos:[-1.2,0.8,0.5]}, {el:'Cl',pos:[0.3,-1.5,0]}],
+    'MgSO4': [{el:'Mg',pos:[1.4,0,0]}, {el:'S',pos:[-0.4,0,0]}, {el:'O',pos:[-1.6,0.6,0]}, {el:'O',pos:[-1.6,-0.6,0]}, {el:'O',pos:[0.2,1.0,0]}, {el:'O',pos:[0.2,-1.0,0]}]
+  };
+  if (TEMPLATES[formula]) return TEMPLATES[formula];
+  /* 否则用通用 atom 模板 */
+  const parsed = MR.chem.parseFormulaFor3D(formula);
+  if (!parsed.atoms || parsed.atoms.length === 0) return [{el:'C',pos:[0,0,0]}];
+  const n = parsed.atoms.length;
+  const atoms = [];
+  for (let i = 0; i < n; i++) {
+    const a = parsed.atoms[i];
+    const phi = Math.acos(1 - 2*(i+0.5)/n);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    const r = 0.9;
+    atoms.push({ el:a.el, pos:[r*Math.cos(theta)*Math.sin(phi), r*Math.cos(phi), r*Math.sin(theta)*Math.sin(phi)] });
+  }
+  return atoms;
+}
+
+/* ================== 误差分析 ================== */
+function showErrorsPanel(){
+  /* 从反应输入中找匹配的实验 */
+  const beakerNames = beaker.map(b => b.name).join('|');
+  let matched = null;
+  for (const exp of MR.experiments) {
+    const reagents = exp.reagents.join('|');
+    if (beakerNames.indexOf('|') !== -1) {
+      const allMatch = beaker.every(b => reagents.indexOf(b.name) !== -1 || reagents.indexOf(b.formula) !== -1);
+      if (allMatch) { matched = exp; break; }
+    }
+  }
+  const panel = document.getElementById('errorPanel');
+  const list = document.getElementById('errorList');
+  if (!matched || !matched.errorSources || matched.errorSources.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'flex';
+  list.innerHTML = matched.errorSources.map(e => `
+    <div class="error-item">
+      <div class="error-item__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 22h20z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+      <div class="error-item__txt">${e}</div>
+    </div>`).join('');
+}
+
+/* ================== 实验目录渲染 ================== */
+let currentCat = 'all';
+function renderCatTabs(){
+  const tabs = document.getElementById('cat-tabs');
+  const cats = ['all'].concat(Object.keys(MR.experimentCategories));
+  tabs.innerHTML = cats.map(c => `<button class="cat-tab ${c===currentCat?'on':''}" data-cat="${c}">${c === 'all' ? '全部' : MR.experimentCategories[c]}</button>`).join('');
+  tabs.querySelectorAll('.cat-tab').forEach(b => b.addEventListener('click', () => {
+    currentCat = b.dataset.cat;
+    renderCatTabs();
+    renderCatalog();
+  }));
+}
+function renderCatalog(){
+  const cat = document.getElementById('catalog');
+  const exps = MR.experiments.filter(e => currentCat === 'all' || e.category === currentCat);
+  document.getElementById('cat-count').textContent = exps.length + ' 实验';
+  cat.innerHTML = exps.map(e => `
+    <div class="exp-card" data-slug="${e.slug}">
+      <div class="exp-card__badge">${e.category} · ${e.difficulty} · ${e.estimatedMinutes}min</div>
+      <div class="exp-card__title">${e.title}</div>
+      <div class="exp-card__desc">${e.description}</div>
+      <div class="exp-card__meta">
+        <b>试剂</b>${e.reagents.slice(0,2).join('、')}${e.reagents.length>2?'…':''}
+      </div>
+    </div>`).join('');
+  cat.querySelectorAll('.exp-card').forEach(el => el.addEventListener('click', () => loadExperiment(el.dataset.slug)));
+}
+function loadExperiment(slug){
+  const e = MR.experiments.find(x => x.slug === slug);
+  if (!e) return;
+  console.log('[loadExperiment]', slug, 'reagents:', e.reagents);
+  /* 自动装入试剂 */
+  clearBeaker();
+  let added = 0;
+  e.reagents.forEach(name => {
+    /* 找匹配的试剂（含别名）*/
+    const aliases = MR.chem.NAME_ALIASES;
+    let matched = REAGENT_DISPLAY.find(r => r.name === name || r.formula === name);
+    if (!matched) {
+      /* 反向查 aliases：name → formula → 匹配 display.formula */
+      const formula = aliases[name];
+      if (formula) matched = REAGENT_DISPLAY.find(r => r.formula === formula);
+    }
+    /* 最后兜底：用化学引擎的 resolveSubstance */
+    if (!matched) {
+      const resolved = MR.chem.resolveSubstance(name);
+      if (resolved) matched = REAGENT_DISPLAY.find(r => r.formula === resolved.formula);
+    }
+    console.log('  match', name, '→', matched ? matched.name : 'NULL');
+    if (matched && added < 4) {
+      addToBeaker(matched, document.querySelector(`.reagent[data-name="${matched.name}"]`));
+      added++;
+    }
+  });
+  console.log('  added=', added);
+  if (added >= 2) runReaction();
+  else flashResult('该实验的试剂暂未在架', 'warning');
+}
+
+renderCatTabs();
+renderCatalog();
+
+/* ================== 文献识别 ================== */
+const litInput = document.getElementById('litInput');
+const btnScan = document.getElementById('btnScan');
+const btnSample = document.getElementById('btnSample');
+const litFound = document.getElementById('litFound');
+
+btnSample.addEventListener('click', () => {
+  litInput.value = '本研究采用标准盐酸滴定未知浓度的氢氧化钠溶液，以酚酞为指示剂判断终点；随后使用 NaCl 与 CuSO₄ 反应验证沉淀原理；最后用锌粒与稀盐酸制取氢气，验纯后点燃。';
+});
+
+btnScan.addEventListener('click', () => {
+  const text = litInput.value.trim();
+  if (!text) { flashResult('请输入文献文本', 'warning'); return; }
+  const scores = [];
+  for (const [slug, kws] of Object.entries(MR.experimentKeywords)) {
+    let score = 0;
+    let matched = [];
+    kws.forEach(kw => {
+      const idx = text.indexOf(kw);
+      if (idx !== -1) {
+        score += kw.length * 2 + 5;
+        matched.push(kw);
+      }
+    });
+    if (score > 0) scores.push({ slug, score, matched });
+  }
+  scores.sort((a, b) => b.score - a.score);
+  const top = scores.slice(0, 5);
+  if (top.length === 0) {
+    litFound.innerHTML = '<div class="added-list__head">⚠ 未匹配到已知实验关键词，请尝试更专业的方法节描述</div>';
+    litFound.style.display = 'block';
+    return;
+  }
+  litFound.innerHTML = `
+    <div class="lit-found__head">识别到 ${top.length} 个候选实验（按相关度）</div>
+    ${top.map(s => {
+      const e = MR.experiments.find(x => x.slug === s.slug);
+      return `
+      <div class="lit-found__item" data-slug="${s.slug}">
+        <span class="lit-found__score">${s.score}</span>
+        <span class="lit-found__name">${e ? e.title : s.slug}</span>
+        <button class="lit-found__add" data-add="${s.slug}">布置</button>
+      </div>`;
+    }).join('')}`;
+  litFound.style.display = 'flex';
+  litFound.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => loadExperiment(b.dataset.add)));
+});
+
+</script>
+</body>
+</html>

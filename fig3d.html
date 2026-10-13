@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LATTICE · 3D 科研绘图与分支机制</title>
+<meta name="description" content="LATTICE 3D 科研绘图：产物 3D 结构 + 反应路径树 + 分支机制 + 误差可视化。">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+:root{
+  --bg:#08080a; --surface:#121215; --surface-2:#1a1a1e; --surface-3:#232329;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.18);
+  --ink:#f4f4f5; --ink-2:#a1a1aa; --ink-3:#6b6b74;
+  --acc:#2dd4bf; --acc-dim:#0d9488; --acc-ink:#03201d;
+  --pink:#fb7185; --violet:#a78bfa; --amber:#fbbf24; --blue:#60a5fa;
+  --r:14px; --r-lg:18px; --r-pill:999px;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+[data-theme="light"]{
+  --bg:#fafaf8; --surface:#ffffff; --surface-2:#f3f3f0; --surface-3:#e9e9e5;
+  --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.20);
+  --ink:#17171a; --ink-2:#5c5c66; --ink-3:#8e8e99;
+  --acc:#0f766e; --acc-dim:#115e59; --acc-ink:#e7fffb;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+canvas#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none}
+main{position:relative;z-index:1}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:20px;border:2px solid var(--bg)}
+
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav__in{max-width:1640px;margin:0 auto;padding:13px 32px;display:flex;align-items:center;gap:22px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.02em;font-size:15px}
+.brand svg{width:22px;height:22px;color:var(--acc)}
+.nav__links{display:flex;gap:4px;margin-left:6px}
+.nav__links a{padding:7px 12px;border-radius:var(--r-pill);font-size:13.5px;color:var(--ink-2);
+  transition:background .16s,color .16s}
+.nav__links a:hover{background:var(--surface-2);color:var(--ink)}
+.nav__links a.on{color:var(--ink);background:var(--surface-2)}
+.nav__spacer{flex:1}
+.iconbtn{width:36px;height:36px;display:grid;place-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-pill);cursor:pointer;transition:background .16s,border-color .16s}
+.iconbtn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.iconbtn svg{width:16px;height:16px}
+
+.wrap{max-width:1640px;margin:0 auto;padding:0 32px}
+.hero{padding:36px 0 18px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--acc);
+  font-family:var(--mono);letter-spacing:.1em;margin-bottom:12px}
+.eyebrow .d{width:6px;height:6px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 0 3px rgba(45,212,191,.18);animation:pulse 2.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(45,212,191,0)}}
+h1{margin:0;font-size:clamp(26px,3.5vw,40px);font-weight:600;letter-spacing:-.018em;line-height:1.1}
+p.lead{margin:14px 0 0;max-width:780px;color:var(--ink-2);font-size:14.5px;line-height:1.7}
+
+/* ========= 主区 ========= */
+.workspace{display:grid;grid-template-columns:1fr 380px;gap:18px;padding-bottom:48px;align-items:start}
+@media(max-width:1100px){ .workspace{grid-template-columns:1fr} }
+
+.col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+     padding:18px;display:flex;flex-direction:column;min-height:520px}
+.col__head{display:flex;align-items:center;justify-content:space-between;
+          margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.col__title{font-size:13px;font-weight:600;letter-spacing:-.01em;
+           display:flex;align-items:center;gap:8px}
+.col__title svg{width:16px;height:16px;color:var(--acc)}
+.col__meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-3)}
+
+/* ========= 3D 反应路径树 ========= */
+.tree3d{position:relative;background:linear-gradient(180deg,#0c0c10 0%,#08080a 100%);
+        border-radius:14px;overflow:hidden;min-height:560px}
+#treeHost{position:relative;width:100%;min-height:560px}
+#treeHost canvas{display:block;width:100%;height:100%}
+.tree3d__legend{position:absolute;top:14px;left:14px;display:flex;flex-direction:column;gap:7px;
+                  background:rgba(0,0,0,.55);border:1px solid var(--line-2);border-radius:10px;
+                  padding:10px 12px;backdrop-filter:blur(8px);font-size:11px;max-width:200px}
+.tree3d__legend h4{margin:0 0 4px;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+                 text-transform:uppercase;color:var(--ink-3)}
+.tree3d__legend .item{display:flex;align-items:center;gap:7px;color:var(--ink-2)}
+.tree3d__legend .dot{width:9px;height:9px;border-radius:50%;flex:none}
+
+/* ========= 副屏：右侧控件 ========= */
+.controls{display:flex;flex-direction:column;gap:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;
+     border-radius:var(--r-pill);font-size:13px;font-weight:600;border:1px solid transparent;cursor:pointer;
+     transition:transform .15s,filter .15s,background .15s;white-space:nowrap}
+.btn--primary{background:var(--acc);color:var(--acc-ink)}
+.btn--primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn--ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn--ghost:hover{background:var(--surface-2)}
+.btn--full{width:100%}
+
+/* ========= 误差分析 ========= */
+.error-bar{position:relative;background:var(--surface-2);border:1px solid var(--line);
+          border-radius:10px;padding:12px;margin-top:10px}
+.error-bar h5{margin:0 0 6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+             text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.error-bar .row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:12px}
+.error-bar .label{flex:1;color:var(--ink-2)}
+.error-bar .pct{font-family:var(--mono);color:var(--amber);width:50px;text-align:right}
+.error-bar .track{flex:2;height:6px;background:var(--surface-3);border-radius:3px;overflow:hidden;
+                  position:relative}
+.error-bar .fill{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--amber),var(--pink));
+                border-radius:3px}
+.error-bar .summary{padding-top:8px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);
+                   display:flex;justify-content:space-between;margin-top:4px}
+.error-bar .summary b{color:var(--ink-2);font-family:var(--mono)}
+
+/* ========= 3D 产物 + 作用力类型图例 ========= */
+.mol3d{margin-top:18px}
+.mol3d__host{position:relative;width:100%;min-height:280px;background:linear-gradient(180deg,var(--surface-2),var(--surface));
+            border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+#molHost{position:relative;width:100%;min-height:280px}
+#molHost canvas{display:block;width:100%;height:100%}
+
+/* ========= 案例选择 ========= */
+.recipes-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.recipe-btn{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+            padding:9px 11px;cursor:pointer;transition:background .15s,border-color .15s;
+            text-align:left;font-size:11.5px;line-height:1.4}
+.recipe-btn:hover{background:var(--surface-3);border-color:var(--line-2)}
+.recipe-btn.on{background:var(--acc);color:var(--accent-ink);border-color:var(--accent)}
+.recipe-btn b{font-weight:600;display:block;margin-bottom:3px;font-size:12.5px}
+.recipe-btn.on b{color:var(--acc-ink)}
+.recipe-btn .badge{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--ink-3);
+                  text-transform:uppercase}
+.recipe-btn.on .badge{color:var(--acc-ink);opacity:.7}
+
+/* ========= 分支信息列表 ========= */
+.branch-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.branch{display:flex;gap:9px;padding:9px 11px;background:var(--surface-2);border:1px solid var(--line);
+        border-radius:10px;font-size:12px;line-height:1.45}
+.branch__ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;
+            background:rgba(45,212,191,.1);color:var(--accent);flex:none;font-size:11px;
+            font-weight:600;font-family:var(--mono)}
+.branch__ic.is-err{background:rgba(251,113,133,.1);color:var(--pink)}
+.branch__ic.is-warn{background:rgba(251,191,36,.1);color:var(--amber)}
+.branch__txt{flex:1}
+.branch__txt b{color:var(--ink);font-weight:600}
+
+/* ========= 导出按钮 ========= */
+.export-row{display:flex;gap:8px;margin-top:14px}
+.export-row .btn{flex:1;padding:9px 12px;font-size:12px}
+
+.foot{margin-top:32px;padding:24px 0;border-top:1px solid var(--line);font-size:12px;
+     color:var(--ink-3);text-align:center}
+
+@media(prefers-reduced-motion: reduce){
+  *{animation-duration:.001s !important;transition-duration:.001s !important}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<header class="nav">
+  <div class="nav__in">
+    <a class="brand" href="https://klein-kk.github.io/LATTICE-materials/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      LATTICE
+    </a>
+    <nav class="nav__links">
+      <a href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">主站</a>
+      <a href="./intro.html">入门页</a>
+      <a href="./lab.html">实验台</a>
+      <a href="./fig3d.html" class="on">3D 绘图</a>
+    </nav>
+    <span class="nav__spacer"></span>
+    <button class="iconbtn" id="themeToggle" aria-label="切换主题">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<section class="wrap hero">
+  <div class="eyebrow"><span class="d"></span>LATTICE · 3D 科研绘图 · 分支机制图</div>
+  <h1>把实验产物放进 <em>3D 反应路径树</em></h1>
+  <p class="lead">从反应树出发：左侧 3D 视图展示「反应物 → 中间体 → 主产物 + 副产物」的多级分支；右侧列出每个分支的作用力类型 / 误差 / 副反应；底部展示主产物 3D 结构（球棍模型，按元素着色 + 共价键圆柱）。</p>
+</section>
+
+<section class="wrap workspace">
+
+  <!-- 主 3D 区 -->
+  <div>
+    <div class="col tree3d">
+      <div id="treeHost"></div>
+      <div class="tree3d__legend">
+        <h4>反应路径图例</h4>
+        <div class="item"><span class="dot" style="background:#6ba6ff"></span>反应物</div>
+        <div class="item"><span class="dot" style="background:var(--amber)"></span>中间体</div>
+        <div class="item"><span class="dot" style="background:var(--accent)"></span>主产物</div>
+        <div class="item"><span class="dot" style="background:var(--pink)"></span>副产物</div>
+        <div class="item"><span class="dot" style="background:var(--violet)"></span>误差因素</div>
+        <div class="item" style="margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--ink-3)">虚线 = 副反应；实线 = 主反应</div>
+      </div>
+    </div>
+
+    <div class="col mol3d" style="margin-top:18px">
+      <div class="col__head">
+        <div class="col__title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg>
+          主产物 3D 结构
+        </div>
+        <div class="col__meta" id="molFormula">—</div>
+      </div>
+      <div class="mol3d__host"><div id="molHost"></div></div>
+    </div>
+  </div>
+
+  <!-- 右侧 -->
+  <div>
+    <div class="col">
+      <div class="col__head">
+        <div class="col__title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-9 6 18 3-9h0"/></svg>
+          案例选择
+        </div>
+        <div class="col__meta" id="caseCount">—</div>
+      </div>
+      <div class="recipes-grid" id="recipesGrid"></div>
+      <div class="ctrl-row" style="display:flex;gap:8px">
+        <button class="btn btn--primary btn--full" id="btnRender">▶ 渲染路径树</button>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="error-bar">
+          <h5>误差来源分解</h5>
+          <div id="errorBars"></div>
+          <div class="summary">
+            <span>累计偏差</span>
+            <b id="totalError">±—%</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="branch-list" id="branchList"></div>
+
+      <div class="export-row">
+        <button class="btn btn--ghost" id="btnExportPNG">📷 导出 PNG</button>
+        <button class="btn btn--ghost" id="btnExportJSON">⬇ 导出 JSON</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  LATTICE · 3D 科研绘图 · 反应路径树 + 产物结构 + 误差分解 · <a href="./lab.html" style="color:var(--accent)">实验台</a> · <a href="https://github.com/Klein-kk/LATTICE-materials" style="color:var(--accent)">主站</a>
+</footer>
+</main>
+
+<script>
+/* ================== 主题 ================== */
+const html=document.documentElement;
+document.getElementById('themeToggle').addEventListener('click',()=>{
+  const cur=html.getAttribute('data-theme');
+  html.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  try{localStorage.setItem('lattice.theme',html.getAttribute('data-theme'))}catch(e){}
+});
+try{const t=localStorage.getItem('lattice.theme');if(t)html.setAttribute('data-theme',t)}catch(e){}
+
+/* ================== 背景 ================== */
+const bgCanvas=document.getElementById('bg');
+const bgRenderer=new THREE.WebGLRenderer({canvas:bgCanvas,antialias:true,alpha:true});
+bgRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+bgRenderer.setSize(innerWidth,innerHeight);
+const bgScene=new THREE.Scene();
+const bgCamera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,100);
+bgCamera.position.z=9;
+const W=18,H=11,D=6,NX=32,NY=20,NZ=10,N=NX*NY*NZ;
+const positions=new Float32Array(N*3),seeds=new Float32Array(N);
+let idx=0;
+for(let x=0;x<NX;x++) for(let y=0;y<NY;y++) for(let z=0;z<NZ;z++){
+  positions[idx*3]=(x/(NX-1)-0.5)*W+(Math.random()-0.5)*0.35;
+  positions[idx*3+1]=(y/(NY-1)-0.5)*H+(Math.random()-0.5)*0.35;
+  positions[idx*3+2]=(z/(NZ-1)-0.5)*D+(Math.random()-0.5)*0.35;
+  seeds[idx]=Math.random();idx++;
+}
+const bgGeo=new THREE.BufferGeometry();
+bgGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+bgGeo.setAttribute('aSeed',new THREE.BufferAttribute(seeds,1));
+const bgU={uTime:{value:0},uMouse3:{value:new THREE.Vector3(0,0,0)},uPx:{value:innerHeight},uReduce:{value:0}};
+const bgMat=new THREE.ShaderMaterial({uniforms:bgU,transparent:true,depthWrite:false,
+  vertexShader:`attribute float aSeed;uniform float uTime;uniform vec3 uMouse3;uniform float uPx;uniform float uReduce;
+    varying float vSeed;varying float vGlow;
+    void main(){vec3 p=position;float t=uTime;
+      if(uReduce<0.5){p.y+=sin(t*0.5+aSeed*6.283)*0.10;p.x+=cos(t*0.35+aSeed*4.0)*0.08;}
+      vec2 d=uMouse3.xy-p.xy;float dist=length(d);float f=exp(-dist*0.55)*1.1;
+      p.xy+=normalize(d+1e-5)*f;p.z+=f*0.35*sin(t*1.4+aSeed*9.0);vGlow=f;
+      vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+      gl_PointSize=(1.4+aSeed*2.2+f*9.0)*(uPx/max(-mv.z,0.1))*0.012;vSeed=aSeed;}`,
+  fragmentShader:`varying float vSeed;varying float vGlow;
+    void main(){vec2 c=gl_PointCoord-0.5;float d=length(c);if(d>0.5)discard;
+      float a=smoothstep(0.5,0.05,d)*(0.18+vSeed*0.32+vGlow*0.9);
+      vec3 col=mix(vec3(0.18,0.83,0.75),vec3(0.78,0.88,0.92),vSeed*0.7)+vGlow*vec3(0.4,0.95,0.85);
+      gl_FragColor=vec4(col,a);}`,blending:THREE.AdditiveBlending});
+bgScene.add(new THREE.Points(bgGeo,bgMat));
+const mNDC=new THREE.Vector2(0,0),mW=new THREE.Vector3(0,0,0);
+const rc=new THREE.Raycaster(),pl=new THREE.Plane(new THREE.Vector3(0,0,1),0);
+function uMW(){rc.setFromCamera(mNDC,bgCamera);rc.ray.intersectPlane(pl,mW);bgU.uMouse3.value.copy(mW);}
+addEventListener('pointermove',e=>{mNDC.x=(e.clientX/innerWidth)*2-1;mNDC.y=-(e.clientY/innerHeight)*2+1;uMW();},{passive:true});
+const clock=new THREE.Clock();
+!function tickBg(){bgU.uTime.value=clock.getElapsedTime();bgRenderer.render(bgScene,bgCamera);requestAnimationFrame(tickBg);}();
+addEventListener('resize',()=>{bgRenderer.setSize(innerWidth,innerHeight);bgCamera.aspect=innerWidth/innerHeight;bgCamera.updateProjectionMatrix();bgU.uPx.value=innerHeight;});
+bgU.uReduce.value=matchMedia('(prefers-reduced-motion: reduce)').matches?1:0;
+
+/* ================== 数据：5 个案例 ================== */
+const CASES = [
+  {
+    id:'hcl-naoh',
+    name:'酸碱中和 · 盐酸·NaOH',
+    badge:'酸碱 / 放热',
+    /* 反应树：节点 */
+    nodes:[
+      { id:'r1', label:'HCl', type:'reagent', pos:[-2.8, 1.8, 0] },
+      { id:'r2', label:'NaOH', type:'reagent', pos:[-2.8, -0.6, 0] },
+      { id:'i1', label:'Na+ + OH-', type:'intermediate', pos:[-1.0, 1.5, 0.3] },
+      { id:'i2', label:'H+ + Cl-', type:'intermediate', pos:[-1.0, -0.3, 0.3] },
+      { id:'m1', label:'NaCl (盐)', type:'main', pos:[0.8, 0.6, 0] },
+      { id:'m2', label:'H2O', type:'main', pos:[0.8, -0.6, 0] },
+      { id:'e1', label:'ΔH=-57.3 kJ/mol', type:'error', pos:[2.4, 1.5, 0] },
+      { id:'e2', label:'温度漂移', type:'error', pos:[2.4, -0.6, 0] }
+    ],
+    edges:[
+      {from:'r1', to:'i2',     solid:'solid'},
+      {from:'r2', to:'i1',     solid:'solid'},
+      {from:'i1', to:'m1',     solid:'solid'},
+      {from:'i2', to:'m1',     solid:'solid'},
+      {from:'i1', to:'m2',     solid:'solid'},
+      {from:'i2', to:'m2',     solid:'solid'},
+      {from:'m1', to:'e1',     solid:'dashed'},
+      {from:'m2', to:'e2',     solid:'dashed'}
+    ],
+    mainProduct:'NaCl',
+    /* 误差分解（基于文献常见滴定假设的偏差） */
+    errors:[
+      { name:'滴定终点判断', pct:3.5 },
+      { name:'滴定管读数', pct:1.2 },
+      { name:'指示剂用量', pct:0.8 },
+      { name:'温度变化', pct:1.5 },
+      { name:'浓度标定', pct:2.0 }
+    ],
+    branches:[
+      { ic:'!', kind:'warn', body:'<b>主要误差</b> 终点判断主观差 ±0.1 mL（影响结果 ±0.4%）' },
+      { ic:'i', kind:'info', body:'<b>次要</b> 温度每升高 10°C，NaOH 浓度下降 0.3%' }
+    ]
+  },
+  {
+    id:'cuo-h2',
+    name:'氧化还原 · H₂ 还原 CuO',
+    badge:'氧化还原 / 放热',
+    nodes:[
+      { id:'r1', label:'H2', type:'reagent', pos:[-2.8, 1.5, 0] },
+      { id:'r2', label:'CuO', type:'reagent', pos:[-2.8, -1.0, 0] },
+      { id:'i1', label:'H· + CuO', type:'intermediate', pos:[-1.0, 0.5, 0.4] },
+      { id:'m1', label:'Cu (主产物)', type:'main', pos:[0.6, 0.5, 0] },
+      { id:'m2', label:'H2O', type:'main', pos:[0.6, -0.7, 0] },
+      { id:'s1', label:'Cu2O (副)', type:'error', pos:[2.2, 1.5, 0] },
+      { id:'e1', label:'H₂ 不纯混入 N₂', type:'error', pos:[2.2, -0.7, 0] }
+    ],
+    edges:[
+      {from:'r1', to:'i1',     solid:'solid'},
+      {from:'r2', to:'i1',     solid:'solid'},
+      {from:'i1', to:'m1',     solid:'solid'},
+      {from:'i1', to:'m2',     solid:'solid'},
+      {from:'i1', to:'s1',     solid:'dashed'},
+      {from:'r2', to:'e1',     solid:'dashed'}
+    ],
+    mainProduct:'Cu',
+    errors:[
+      { name:'H₂ 不纯混入 N₂', pct:8.0 },
+      { name:'加热不充分', pct:5.5 },
+      { name:'空气进入产物', pct:2.5 },
+      { name:'尾气处理损失', pct:1.0 }
+    ],
+    branches:[
+      { ic:'⚠', kind:'err', body:'<b>严重风险</b> 先撤 H₂ 后撤灯 → 产物被空气氧化，需严格"先撤灯后撤 H₂"' },
+      { ic:'i', kind:'info', body:'<b>副反应</b> 还原不充分 → Cu₂O 中间体（红色粉末）' }
+    ]
+  },
+  {
+    id:'agcl-ppt',
+    name:'沉淀反应 · AgNO₃+NaCl',
+    badge:'沉淀 / 不溶于酸',
+    nodes:[
+      { id:'r1', label:'AgNO3', type:'reagent', pos:[-2.8, 1.2, 0] },
+      { id:'r2', label:'NaCl', type:'reagent', pos:[-2.8, -1.2, 0] },
+      { id:'i1', label:'Ag+ + Cl-', type:'intermediate', pos:[-1.0, 0, 0.4] },
+      { id:'m1', label:'AgCl ↓', type:'main', pos:[0.8, 0.4, 0] },
+      { id:'m2', label:'NaNO3', type:'main', pos:[0.8, -0.5, 0] },
+      { id:'e1', label:'光照分解 Ag', type:'AgCl', type:'error', pos:[2.2, 0.7, 0] },
+      { id:'e2', label:'Ag₂CrO₄ 干扰', type:'error', pos:[2.2, -0.7, 0] }
+    ],
+    edges:[
+      {from:'r1', to:'i1',     solid:'solid'},
+      {from:'r2', to:'i1',     solid:'solid'},
+      {from:'i1', to:'m1',     solid:'solid'},
+      {from:'i1', to:'m2',     solid:'solid'},
+      {from:'m1', to:'e1',     solid:'dashed'},
+      {from:'m1', to:'e2',     solid:'dashed'}
+    ],
+    mainProduct:'AgCl',
+    errors:[
+      { name:'光照分解 Ag', pct:4.2 },
+      { name:'CrO₄²⁻ 干扰', pct:1.8 },
+      { name:'指示剂用量', pct:0.5 }
+    ],
+    branches:[
+      { ic:'i', kind:'info', body:'<b>关键点</b> 沉淀不溶于稀硝酸 → 加稀 HNO₃ 验证' },
+      { ic:'⚠', kind:'warn', body:'<b>副反应</b> 铬酸盐共存 → 生成砖红色 Ag₂CrO₄' }
+    ]
+  },
+  {
+    id:'zn-cu',
+    name:'原电池 · Zn-CuZn 原电池',
+    badge:'电化学 / 自发',
+    nodes:[
+      { id:'r1', label:'Zn', type:'reagent', pos:[-2.8, 1.5, 0] },
+      { id:'r2', label:'Cu', type:'reagent', pos:[-2.8, -1.5, 0] },
+      { id:'r3', label:'稀 H₂SO₄', type:'reagent', pos:[-2.8, 0, 0] },
+      { id:'i1', label:'Zn²⁺ + 2e⁻', type:'intermediate', pos:[-1.0, 1.5, 0.3] },
+      { id:'i2', label:'2H⁺ + 2e⁻', type:'intermediate', pos:[-1.0, -1.5, 0.3] },
+      { id:'m1', label:'Zn²⁺ + SO₄²⁻', type:'main', pos:[0.6, 1.5, 0] },
+      { id:'m2', label:'H₂↑', type:'main', pos:[0.6, -1.5, 0] },
+      { id:'e1', label:'极化 / 内阻', type:'error', pos:[2.2, 1.5, 0] },
+      { id:'e2', label:'Zn 杂质极化', type:'error', pos:[2.2, -1.5, 0] }
+    ],
+    edges:[
+      {from:'r1', to:'i1',     solid:'solid'},
+      {from:'r3', to:'i2',     solid:'solid'},
+      {from:'r2', to:'i2',     solid:'solid'},
+      {from:'i1', to:'m1',     solid:'solid'},
+      {from:'i2', to:'m2',     solid:'solid'},
+      {from:'m1', to:'e1',     solid:'dashed'},
+      {from:'i2', to:'e2',     solid:'dashed'}
+    ],
+    mainProduct:'ZnSO4',
+    errors:[
+      { name:'电极极化', pct:2.0 },
+      { name:'Zn 杂质（Fe）', pct:1.2 },
+      { name:'内阻损失', pct:0.8 },
+      { name:'浓度极化', pct:1.5 }
+    ],
+    branches:[
+      { ic:'i', kind:'info', body:'<b>主反应</b> Zn - 2e⁻ → Zn²⁺（负极）；2H⁺ + 2e⁻ → H₂↑（正极）' },
+      { ic:'⚠', kind:'warn', body:'<b>副反应</b> Zn 中含 Fe 杂质 → 形成微电池，加速 Zn 溶解' }
+    ]
+  },
+  {
+    id:'silver-mirror',
+    name:'有机 · 葡萄糖银镜反应',
+    badge:'有机 / 配位',
+    nodes:[
+      { id:'r1', label:'葡萄糖', type:'reagent', pos:[-2.8, 1.5, 0] },
+      { id:'r2', label:'银氨溶液', type:'reagent', pos:[-2.8, -1.5, 0] },
+      { id:'i1', label:'[Ag(NH3)2]+', type:'intermediate', pos:[-1.0, 0, 0.4] },
+      { id:'i2', label:'葡萄糖酸根', type:'intermediate', pos:[0.0, 0.6, 0] },
+      { id:'m1', label:'Ag (银镜)', type:'main', pos:[1.2, 1.2, 0] },
+      { id:'m2', label:'CH3COONH4', type:'main', pos:[1.2, -1.2, 0] },
+      { id:'e1', label:'银镜不全', type:'error', pos:[2.6, 0, 0] }
+    ],
+    edges:[
+      {from:'r1', to:'i2',     solid:'solid'},
+      {from:'r2', to:'i1',     solid:'solid'},
+      {from:'i1', to:'i2',     solid:'solid'},
+      {from:'i2', to:'m1',     solid:'solid'},
+      {from:'i2', to:'m2',     solid:'solid'},
+      {from:'m1', to:'e1',     solid:'dashed'}
+    ],
+    mainProduct:'Ag',
+    errors:[
+      { name:'试管不洁净', pct:8.0 },
+      { name:'水浴温度不稳', pct:3.5 },
+      { name:'银氨失效', pct:5.0 },
+      { name:'时间不足', pct:2.5 }
+    ],
+    branches:[
+      { ic:'⚠', kind:'err', body:'<b>严重风险</b> 银氨溶液久置会爆炸，必须现配现用' },
+      { ic:'i', kind:'info', body:'<b>关键点</b> 葡萄糖含醛基 → 氧化为葡萄糖酸根' }
+    ]
+  }
+];
+
+let currentCase = CASES[0];
+
+/* ================== 案例按钮 ================== */
+const recipesGrid = document.getElementById('recipesGrid');
+document.getElementById('caseCount').textContent = CASES.length + ' 案例';
+recipesGrid.innerHTML = CASES.map((c,i) => `
+  <button class="recipe-btn ${i===0?'on':''}" data-i="${i}">
+    <b>${c.name}</b>
+    <span class="badge">${c.badge}</span>
+  </button>`).join('');
+recipesGrid.querySelectorAll('.recipe-btn').forEach(b => b.addEventListener('click', () => {
+  recipesGrid.querySelectorAll('.recipe-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  currentCase = CASES[+b.dataset.i];
+  renderTree();
+  renderMolecule3D();
+  renderErrorBars();
+  renderBranches();
+}));
+
+/* ================== 3D 反应路径树 ================== */
+const treeHost = document.getElementById('treeHost');
+const treeRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+treeRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+treeHost.appendChild(treeRenderer.domElement);
+const treeScene = new THREE.Scene();
+const treeCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+treeCamera.position.set(0, 0.5, 8);
+treeScene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dL4 = new THREE.DirectionalLight(0xffffff, 1.0); dL4.position.set(4, 6, 5); treeScene.add(dL4);
+const treeControls = new THREE.OrbitControls(treeCamera, treeRenderer.domElement);
+treeControls.enableDamping = true;
+treeControls.autoRotate = true;
+treeControls.autoRotateSpeed = 0.5;
+
+const NODE_COLORS = {
+  reagent: 0x6ba6ff,
+  intermediate: 0xfbbf24,
+  main: 0x2dd4bf,
+  error: 0xa78bfa
+};
+const NODE_RADIUS = { reagent: 0.32, intermediate: 0.28, main: 0.34, error: 0.26 };
+
+let treeGroup = null;
+function clearTree(){
+  if (treeGroup) {
+    treeGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    treeScene.remove(treeGroup);
+    treeGroup = null;
+  }
+}
+function makeLabel(text, color = '#fff'){
+  const cvs = document.createElement('canvas');
+  const ctx = cvs.getContext('2d');
+  const dpr = 2;
+  cvs.width = 480; cvs.height = 96;
+  ctx.scale(dpr, dpr);
+  ctx.font = '600 22px -apple-system, "PingFang SC", sans-serif';
+  const metrics = ctx.measureText(text);
+  const pad = 18;
+  const w = Math.min(440, metrics.width + pad*2);
+  const h = 40;
+  const x = (480 - w)/2, y = (96 - h)/2;
+  ctx.fillStyle = 'rgba(10,10,14,0.85)';
+  const r = 12;
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = color; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  ctx.fillText(text, 480/2, 96/2);
+  const tex = new THREE.CanvasTexture(cvs);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false }));
+  sp.scale.set(2.2, 0.45, 1);
+  return sp;
+}
+function renderTree(){
+  clearTree();
+  treeGroup = new THREE.Group();
+  /* 节点 */
+  const sphereGeo = new THREE.SphereGeometry(0.5, 24, 16);
+  currentCase.nodes.forEach(n => {
+    const color = NODE_COLORS[n.type] || 0xffffff;
+    const m = new THREE.Mesh(
+      sphereGeo,
+      new THREE.MeshStandardMaterial({
+        color, emissive:color, emissiveIntensity:0.3,
+        roughness:0.4, metalness:0.2
+      })
+    );
+    m.position.set(n.pos[0], n.pos[1], n.pos[2]);
+    m.scale.setScalar(NODE_RADIUS[n.type] || 0.3);
+    treeGroup.add(m);
+    /* 标签 */
+    const colorHex = '#' + color.toString(16).padStart(6,'0');
+    const lbl = makeLabel(n.label, colorHex);
+    lbl.position.set(n.pos[0], n.pos[1] + 0.5, n.pos[2]);
+    treeGroup.add(lbl);
+  });
+  /* 边（节点连接线） */
+  currentCase.edges.forEach(e => {
+    const from = currentCase.nodes.find(n => n.id === e.from);
+    const to = currentCase.nodes.find(n => n.id === e.to);
+    if (!from || !to) return;
+    const isDash = e.solid === 'dashed';
+    if (isDash) {
+      /* 虚线：多个小圆柱 */
+      const start = new THREE.Vector3(from.pos[0], from.pos[1], from.pos[2]);
+      const end = new THREE.Vector3(to.pos[0], to.pos[1], to.pos[2]);
+      const mid = start.clone().add(end).multiplyScalar(0.5);
+      const dir = end.clone().sub(start);
+      const len = dir.length();
+      const segLen = 0.15;
+      const nSeg = Math.max(3, Math.floor(len / (segLen + 0.12)));
+      const color = 0x56a8ff;
+      for (let i = 0; i < nSeg; i++) {
+        const t = (i + 0.5) / nSeg;
+        const p = start.clone().lerp(end, t);
+        const seg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.04, segLen, 8),
+          new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.7 })
+        );
+        seg.position.copy(p);
+        seg.lookAt(end); seg.rotateX(Math.PI/2);
+        treeGroup.add(seg);
+      }
+    } else {
+      /* 实线：单个圆柱 */
+      const start = new THREE.Vector3(from.pos[0], from.pos[1], from.pos[2]);
+      const end = new THREE.Vector3(to.pos[0], to.pos[1], to.pos[2]);
+      const mid = start.clone().add(end).multiplyScalar(0.5);
+      const len = start.distanceTo(end);
+      const dir = end.clone().sub(start).normalize();
+      const cyl = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, len, 10),
+        new THREE.MeshStandardMaterial({ color:0x56a8ff, emissive:0x56a8ff, emissiveIntensity:0.4 })
+      );
+      cyl.position.copy(mid);
+      cyl.scale.set(1, len, 1);
+      cyl.lookAt(end); cyl.rotateX(Math.PI/2);
+      treeGroup.add(cyl);
+      /* 箭头 */
+      const arrowHead = new THREE.Mesh(
+        new THREE.ConeGeometry(0.12, 0.25, 8),
+        new THREE.MeshStandardMaterial({ color:0x56a8ff })
+      );
+      arrowHead.position.copy(end).addScaledVector(dir, -0.2);
+      arrowHead.lookAt(end.clone().add(dir));
+      arrowHead.rotateX(Math.PI/2);
+      treeGroup.add(arrowHead);
+    }
+  });
+  treeScene.add(treeGroup);
+  /* 自动居中 */
+  const box = new THREE.Box3().setFromObject(treeGroup);
+  treeControls.target.copy(box.getCenter(new THREE.Vector3()));
+  treeControls.update();
+}
+
+function resizeTree(){
+  const r = treeHost.getBoundingClientRect();
+  treeRenderer.setSize(r.width, r.height);
+  treeCamera.aspect = r.width / Math.max(r.height, 1);
+  treeCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeTree).observe(treeHost);
+resizeTree();
+!function tickTree(){requestAnimationFrame(tickTree);treeControls.update();treeRenderer.render(treeScene,treeCamera);}();
+renderTree();
+
+/* ================== 主产物 3D ================== */
+const molHost = document.getElementById('molHost');
+const molRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+molRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+molHost.appendChild(molRenderer.domElement);
+const molScene = new THREE.Scene();
+const molCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+molCamera.position.set(2.5, 1.5, 3.5);
+molScene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dL5 = new THREE.DirectionalLight(0xffffff, 0.9); dL5.position.set(3,5,4); molScene.add(dL5);
+const molControls = new THREE.OrbitControls(molCamera, molRenderer.domElement);
+molControls.enableDamping = true;
+
+const ELEMENTS_COLORS = { H:0xf5f5f5, C:0x3a3a3a, N:0x3050ff, O:0xff4040, Cl:0x4ade80, Na:0xb05cf2, Cu:0xc08060, Fe:0xe06633, Ba:0xd0c0a0, Mn:0xa04030, S:0xe0d030, Ag:0xc0c0d0, Zn:0xa8a8b0, Mg:0xc0c0c8 };
+const ATOM_SCALE = { H:0.3, C:0.5, N:0.5, O:0.5, Cl:0.5, Na:0.7, Cu:0.6, Fe:0.6, Ba:0.7, Mn:0.55, S:0.55, Ag:0.6, Zn:0.6, Mg:0.55 };
+
+let molGroup = null;
+function clearMol(){
+  if (molGroup) {
+    molGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    molScene.remove(molGroup);
+    molGroup = null;
+  }
+}
+function buildMolecule3D(formula){
+  if (!formula) return [{el:'C',pos:[0,0,0]}];
+  const TEMPLATES = {
+    'NaCl': [{el:'Na',pos:[1.0,0,0]}, {el:'Cl',pos:[-1.0,0,0]}],
+    'H2O': [{el:'O',pos:[0,0,0]}, {el:'H',pos:[0.78,0.6,0]}, {el:'H',pos:[-0.78,0.6,0]}],
+    'CO2': [{el:'C',pos:[0,0,0]}, {el:'O',pos:[-1.2,0,0]}, {el:'O',pos:[1.2,0,0]}],
+    'Cu': [{el:'Cu',pos:[0,0,0]}],
+    'Ag': [{el:'Ag',pos:[0,0,0]}],
+    'NaCl': [{el:'Na',pos:[1.0,0,0]}, {el:'Cl',pos:[-1.0,0,0]}],
+    'AgCl': [{el:'Ag',pos:[1.0,0,0]}, {el:'Cl',pos:[-1.0,0,0]}],
+    'ZnSO4': [{el:'Zn',pos:[1.4,0,0]}, {el:'S',pos:[-0.4,0,0]}, {el:'O',pos:[-1.6,0.6,0]}, {el:'O',pos:[-1.6,-0.6,0]}, {el:'O',pos:[0.2,1.0,0]}, {el:'O',pos:[0.2,-1.0,0]}]
+  };
+  if (TEMPLATES[formula]) return TEMPLATES[formula];
+  const re = /([A-Z][a-z]?)/g; const atoms = []; let i = 0;
+  const s = formula; let m;
+  while ((m = re.exec(s)) !== null) {
+    const r = 0.9;
+    const a = i / Math.max(1, s.length/2);
+    atoms.push({ el:m[1], pos:[Math.cos(a*Math.PI)*r, Math.sin(a*Math.PI)*r, 0] });
+    i++;
+  }
+  if (atoms.length === 0) return [{el:'C',pos:[0,0,0]}];
+  return atoms;
+}
+function renderMolecule3D(){
+  clearMol();
+  molGroup = new THREE.Group();
+  const formula = currentCase.mainProduct;
+  document.getElementById('molFormula').textContent = formula;
+  const atoms = buildMolecule3D(formula);
+  const sphereGeo = new THREE.SphereGeometry(0.5, 22, 14);
+  atoms.forEach(a => {
+    const m = new THREE.Mesh(
+      sphereGeo,
+      new THREE.MeshStandardMaterial({
+        color: ELEMENTS_COLORS[a.el] || 0xaaaaaa,
+        roughness:0.4, metalness:0.2
+      })
+    );
+    m.position.set(a.pos[0], a.pos[1], a.pos[2]);
+    m.scale.setScalar(ATOM_SCALE[a.el] || 0.5);
+    molGroup.add(m);
+  });
+  for (let i = 0; i < atoms.length; i++) {
+    for (let j = i+1; j < atoms.length; j++) {
+      const a = atoms[i], b = atoms[j];
+      const d = Math.sqrt((a.pos[0]-b.pos[0])**2 + (a.pos[1]-b.pos[1])**2 + (a.pos[2]-b.pos[2])**2);
+      if (d < 1.6) {
+        const mid = [(a.pos[0]+b.pos[0])/2, (a.pos[1]+b.pos[1])/2, (a.pos[2]+b.pos[2])/2];
+        const cyl = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.1, d, 12),
+          new THREE.MeshStandardMaterial({ color:0xcfd3d8, roughness:0.5 })
+        );
+        cyl.position.set(mid[0], mid[1], mid[2]);
+        cyl.scale.set(1, d, 1);
+        cyl.lookAt(b.pos[0], b.pos[1], b.pos[2]);
+        cyl.rotateX(Math.PI/2);
+        molGroup.add(cyl);
+      }
+    }
+  }
+  molScene.add(molGroup);
+  molControls.target.set(0, 0, 0);
+  molControls.update();
+}
+function resizeMol(){
+  const r = molHost.getBoundingClientRect();
+  molRenderer.setSize(r.width, r.height);
+  molCamera.aspect = r.width / Math.max(r.height, 1);
+  molCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeMol).observe(molHost);
+resizeMol();
+!function tickMol(){requestAnimationFrame(tickMol);if(molGroup) molGroup.rotation.y += 0.008;molControls.update();molRenderer.render(molScene, molCamera);}();
+renderMolecule3D();
+
+/* ================== 误差分解 + 分支 ================== */
+function renderErrorBars(){
+  const list = document.getElementById('errorBars');
+  const total = currentCase.errors.reduce((s,e) => s + e.pct, 0);
+  const max = Math.max(...currentCase.errors.map(e => e.pct));
+  list.innerHTML = currentCase.errors.map(e => `
+    <div class="row">
+      <span class="label">${e.name}</span>
+      <span class="track"><span class="fill" style="width:${e.pct/max*100}%"></span></span>
+      <span class="pct">±${e.pct.toFixed(1)}%</span>
+    </div>`).join('');
+  document.getElementById('totalError').textContent = '±' + total.toFixed(1) + '%';
+}
+function renderBranches(){
+  const list = document.getElementById('branchList');
+  list.innerHTML = currentCase.branches.map(b => `
+    <div class="branch">
+      <div class="branch__ic ${b.kind}">${b.ic}</div>
+      <div class="branch__txt">${b.body}</div>
+    </div>`).join('');
+}
+renderErrorBars();
+renderBranches();
+
+/* ================== 渲染按钮 ================== */
+document.getElementById('btnRender').addEventListener('click', () => {
+  renderTree();
+  renderMolecule3D();
+  renderErrorBars();
+  renderBranches();
+});
+
+/* ================== 导出 ================== */
+document.getElementById('btnExportPNG').addEventListener('click', () => {
+  treeRenderer.render(treeScene, treeCamera);
+  const url = treeRenderer.domElement.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'lattice-fig3d-tree-' + currentCase.id + '.png';
+  link.click();
+});
+document.getElementById('btnExportJSON').addEventListener('click', () => {
+  const data = {
+    case: currentCase.id, name: currentCase.name,
+    nodes: currentCase.nodes, edges: currentCase.edges,
+    errors: currentCase.errors, branches: currentCase.branches,
+    mainProduct: currentCase.mainProduct,
+    exportTime: new Date().toISOString(),
+    platform: 'LATTICE'
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'lattice-fig3d-' + currentCase.id + '.json';
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+</script>
+</body>
+</html>
