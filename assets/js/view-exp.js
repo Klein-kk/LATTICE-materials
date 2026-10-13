@@ -25,35 +25,41 @@
     var iw = w - pad * 2;
     var bw = (iw - gap * 3) / 4;
     var h = 2 * (bh + labelH + 30) + 26;
-    var steps = [
-      ['前驱体共沉淀', 'pH 11.0 · 60 °C'],
-      ['洗涤 / 干燥', '水洗 ×3 · 醇洗 ×2'],
-      ['混钠球磨', '300 rpm · 4 h'],
-      ['预烧 500 °C', '5 h · 3 °C/min'],
-      ['烧结 900 °C', '12 h · 5 °C/min'],
-      ['结构与成分表征', 'XRD/SEM/ICP'],
-      ['极片与电池装配', 'CR2032 · 手套箱'],
-      ['电化学测试', '0.1C–2C · 100 圈']
-    ];
+    /* 优先使用导入论文的真实工艺步骤；否则保留内置的电池制备示例 */
+    var dynamic = !!(MR.state.profile && MR.state.profile.steps && MR.state.profile.steps.length);
+    var steps = dynamic
+      ? MR.state.profile.steps.slice(0, 8).map(function (st) { return [st.t || '步骤', (st.cond || '').replace(/\s*\/\s*/g, ' · ')]; })
+      : [
+        ['前驱体共沉淀', 'pH 11.0 · 60 °C'],
+        ['洗涤 / 干燥', '水洗 ×3 · 醇洗 ×2'],
+        ['混钠球磨', '300 rpm · 4 h'],
+        ['预烧 500 °C', '5 h · 3 °C/min'],
+        ['烧结 900 °C', '12 h · 5 °C/min'],
+        ['结构与成分表征', 'XRD/SEM/ICP'],
+        ['极片与电池装配', 'CR2032 · 手套箱'],
+        ['电化学测试', '0.1C–2C · 100 圈']
+      ];
     function box(i) {
       var row = Math.floor(i / 4), col = i % 4;
       var x = pad + col * (bw + gap);
       var y = pad + row * (bh + labelH + 30) + (row === 1 ? 20 : 0);
       return { x: x, y: y, i: i };
     }
-    var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
+    var FONT = "'IBM Plex Sans','Microsoft YaHei',sans-serif";
+    var MONO = "'IBM Plex Mono',Consolas,monospace";
+    var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
     /* 框 */
     steps.forEach(function (st, i) {
       var b = box(i);
       var key = i === 4;
       s += '<rect x="' + b.x.toFixed(1) + '" y="' + b.y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh +
         '" rx="4" fill="' + (key ? 'var(--acc-tint)' : 'var(--surface)') + '" stroke="' + (key ? 'var(--acc)' : 'var(--line)') + '" stroke-width="' + (key ? 1.4 : 1) + '"/>';
-      s += '<text x="' + (b.x + 10).toFixed(1) + '" y="' + (b.y + 19).toFixed(1) + '" font-family="var(--f-sans)" font-size="11" font-weight="600" fill="var(--ink)">' + st[0] + '</text>';
-      s += '<text x="' + (b.x + 10).toFixed(1) + '" y="' + (b.y + 33).toFixed(1) + '" font-family="var(--f-mono)" font-size="8.5" fill="var(--ink-3)">' + st[1] + '</text>';
-      s += '<text x="' + (b.x + bw - 9).toFixed(1) + '" y="' + (b.y + 14).toFixed(1) + '" font-family="var(--f-mono)" font-size="8.5" fill="var(--ink-4)" text-anchor="end">P' + (i + 1) + '</text>';
+      s += '<text x="' + (b.x + 10).toFixed(1) + '" y="' + (b.y + 19).toFixed(1) + '" font-family="' + FONT + '" font-size="11" font-weight="600" fill="var(--ink)">' + st[0] + '</text>';
+      s += '<text x="' + (b.x + 10).toFixed(1) + '" y="' + (b.y + 33).toFixed(1) + '" font-family="' + MONO + '" font-size="8.5" fill="var(--ink-3)">' + st[1] + '</text>';
+      s += '<text x="' + (b.x + bw - 9).toFixed(1) + '" y="' + (b.y + 14).toFixed(1) + '" font-family="' + MONO + '" font-size="8.5" fill="var(--ink-4)" text-anchor="end">P' + (i + 1) + '</text>';
     });
     /* 横向箭头 */
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < steps.length; i++) {
       if (i % 4 === 3) continue;
       var a = box(i), c = box(i + 1);
       var y = a.y + bh / 2;
@@ -62,19 +68,13 @@
       s += '<path d="M' + (x2 - 6).toFixed(1) + ' ' + (y - 3.5) + ' L' + x2.toFixed(1) + ' ' + y + ' L' + (x2 - 6).toFixed(1) + ' ' + (y + 3.5) + ' Z" fill="var(--ink-4)"/>';
     }
     /* 换行连接 */
-    var e1 = box(3), s1 = box(4);
-    var midX = (e1.x + bw / 2 + s1.x + bw / 2) / 2;
-    s += '<path d="M' + (e1.x + bw / 2).toFixed(1) + ' ' + (e1.y + bh) + ' V' + (e1.y + bh + 14) + ' H' + (s1.x + bw / 2).toFixed(1) + ' V' + (s1.y - 6) +
-      '" fill="none" stroke="var(--ink-4)" stroke-width="1"/>';
-    s += '<path d="M' + ((s1.x + bw / 2) - 3.5).toFixed(1) + ' ' + (s1.y - 7) + ' L' + (s1.x + bw / 2).toFixed(1) + ' ' + s1.y + ' L' + ((s1.x + bw / 2) + 3.5).toFixed(1) + ' ' + (s1.y - 7) + ' Z" fill="var(--ink-4)"/>';
-    /* 对比组分支（虚线） */
-    var sb = box(4);
-    s += '<path d="M' + (sb.x + bw / 2).toFixed(1) + ' ' + (sb.y + bh) + ' V' + (sb.y + bh + 15) +
-      '" fill="none" stroke="var(--sig)" stroke-width="1" stroke-dasharray="3 3"/>';
-    s += '<text x="' + (sb.x + bw / 2 + 5).toFixed(1) + '" y="' + (sb.y + bh + 25) + '" font-family="var(--f-mono)" font-size="8.5" fill="var(--sig)">↳ 淬火对比组（必改 #1）</text>';
-    s += '<text x="' + pad + '" y="' + (h - 4) + '" font-family="var(--f-mono)" font-size="8.5" fill="var(--ink-4)">图 A · 制备与测试流程图 · 由环节 04 自动生成，供论文引用</text>';
-    void midX;
-    s += '</svg>';
+    if (steps.length > 4) {
+      var e1 = box(3), s1 = box(4);
+      s += '<path d="M' + (e1.x + bw / 2).toFixed(1) + ' ' + (e1.y + bh) + ' V' + (e1.y + bh + 14) + ' H' + (s1.x + bw / 2).toFixed(1) + ' V' + (s1.y - 6) +
+        '" fill="none" stroke="var(--ink-4)" stroke-width="1"/>';
+      s += '<path d="M' + ((s1.x + bw / 2) - 3.5).toFixed(1) + ' ' + (s1.y - 7) + ' L' + (s1.x + bw / 2).toFixed(1) + ' ' + s1.y + ' L' + ((s1.x + bw / 2) + 3.5).toFixed(1) + ' ' + (s1.y - 7) + ' Z" fill="var(--ink-4)"/>';
+    }
+    s += '<text x="' + pad + '" y="' + (h - 4) + '" font-family="' + MONO + '" font-size="8.5" fill="var(--ink-4)">图 A · 制备与测试流程图 · ' + (dynamic ? '由导入论文步骤生成' : '内置电池示例（导入论文后自动替换）') + '</text>';
     return s;
   }
 
@@ -239,7 +239,7 @@
             title: '科研流程图（可导出）', meta: '图 A · FIGURE', icon: 'paper', pad: true,
             acts: '<button class="btn btn--sm" type="button" data-act="exfig">导出 SVG</button>',
             body: '<div class="chart" id="flowChart"></div>',
-            note: '该流程图由环节 04 自动生成并写入图库；环节 06 的论文评审会用它做「文段 ↔ 流程图 ↔ 数据」三方一致性核对。虚线分支为评审必改项引入的淬火对比组（随炉冷却 / 冰水淬火）。'
+            note: '该流程图由实际工艺步骤生成：导入论文后自动替换为论文步骤，未导入时显示内置电池示例。环节 06 的论文评审会用它做「文段 ↔ 流程图 ↔ 数据」三方一致性核对。'
           }) + '</div>';
       }
 

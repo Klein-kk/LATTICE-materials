@@ -50,15 +50,45 @@ MR.extract = (function () {
     { k: '紫外可见', t: '紫外-可见分光光度', unit: 'nm', kind: '光学表征', re: /(紫外|\bUV-?Vis\b|分光光度)/ }
   ];
   var DIR_PATTERNS = [
-    { d: 'rise-fall', re: /先(上升|增加|增大|提高|升高)[^。；]{0,12}后(下降|降低|减小|回落)/ },
-    { d: 'fall-rise', re: /先(下降|降低|减小)[^。；]{0,12}后(上升|增加|增大|提高)/ },
-    { d: 'mono-up', re: /(随着|随)[^。；]{0,30}(提高|增加|增大|升高|提升)[^。；]{0,30}(上升|增加|增大|提高|增强|升高)/ },
-    { d: 'mono-down', re: /(随着|随)[^。；]{0,30}(提高|增加|增大|升高)[^。；]{0,30}(下降|降低|减小|减弱)/ }
+    { d: 'rise-fall', re: /先(上升|增加|增大|提高|升高)[^。；]{0,12}后(下降|降低|减小|回落)|(?:increase|rise|grow|improve)[^。；]{0,30}?(?:then|before|followed by)[^。；]{0,12}?(?:decrease|drop|fall|reduce|decline|lower)/i },
+    { d: 'fall-rise', re: /先(下降|降低|减小)[^。；]{0,12}后(上升|增加|增大|提高)|(?:decrease|drop|fall|reduce)[^。；]{0,30}?(?:then|before|followed by)[^。；]{0,12}?(?:increase|rise|grow|improve)/i },
+    { d: 'mono-up', re: /(随着|随)[^。；]{0,30}(提高|增加|增大|升高|提升)[^。；]{0,30}(上升|增加|增大|提高|增强|升高)|(?:increase|rise|grow|improve|enhance)[^。；]{0,12}?(?:with|as)[^。；]{0,30}(increase|rise|grow|improve|enhance)/i },
+    { d: 'mono-down', re: /(随着|随)[^。；]{0,30}(提高|增加|增大|升高)[^。；]{0,30}(下降|降低|减小|减弱)|(?:increase|rise|grow|improve)[^。；]{0,12}?(?:with|as)[^。；]{0,30}(decrease|drop|fall|reduce|decline|lower)/i }
   ];
   var LINK_WORDS = ['且', '并', '同时', '使', '从而', '进而', '导致', '因为', '由于', '说明', '表明', '因为'];
 
   function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
   function uniq(a) { var o = {}, r = []; a.forEach(function (x) { if (!o[x]) { o[x] = 1; r.push(x); } }); return r; }
+
+  /* ---------- 双语分句 ----------
+     同时按中文句末（。！？）与英文句末（. ! ? 后接空格+大写/数字/中文 或 行尾）切分。
+     英文/PDF 抽出的正文常是"一整段一行"，若不切分，变量 / 指标 / 方向抽取会完全失效。 */
+  function splitSentences(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return [];
+    var segs = t.split(/[。！？\n]/);
+    var out = [];
+    segs.forEach(function (seg) {
+      var re = /(.+?[.!?])(?=\s+(?:[A-Z0-9\u4e00-\u9fa5"“（(]|$))/g, last = 0, m;
+      while ((m = re.exec(seg))) { out.push(seg.slice(last, re.lastIndex).trim()); last = re.lastIndex; }
+      var tail = seg.slice(last).trim();
+      if (tail) out.push(tail);
+    });
+    return out.filter(function (s) { return s.length > 1; });
+  }
+  /* ---------- 行 → 抽取单元 ----------
+     短行原样保留；超长行（英文 / PDF 常见的"一整段一行"）按双语分句拆开，
+     否则会被长度闸门整行丢弃，导致英文原料 / 仪器完全识别不到。 */
+  function lineUnits(lines) {
+    var out = [];
+    (lines || []).forEach(function (l) {
+      l = String(l || '').trim();
+      if (!l) return;
+      if (l.length <= 160) { out.push(l); return; }
+      splitSentences(l).forEach(function (s) { if (s.length > 1) out.push(s); });
+    });
+    return out;
+  }
 
   /* ---------- 上标引用清理 ----------
      Nature 系期刊把引用编号排成上标，PDF 抽文字时会内联成 "breath68" "nanoparticles80"。
@@ -193,19 +223,21 @@ MR.extract = (function () {
       var low1 = l.toLowerCase();
       var hitTail = LEXR.some(function (t) { return t.length > 3 ? low1.indexOf(t.toLowerCase()) >= 0 : l.indexOf(t) >= 0; });
       var hitChem = CHEM_RE.test(l); CHEM_RE.lastIndex = 0;
-      /* 通用启发式：材料类论文的标准写法「名称（规格），购自/采购于厂家」 */
-      var canonical = /^[\u4e00-\u9fa5A-Za-z0-9\s\-·\.]{2,40}[（(][^）)]{1,40}[）)][\s]*[，,；;][\s]*(?:购自|采购于|来源于|由.*?提供)/.test(l);
+      /* 通用启发式：材料类论文的标准写法「名称（规格），购自/采购于厂家」（中英文通用） */
+      var canonical = /^[\u4e00-\u9fa5A-Za-z0-9\s\-·\.]{2,40}[（(][^）)]{1,40}[）)][\s]*[，,；;][\s]*(?:购自|采购于|来源于|由.*?提供|purchased\s+from|obtained\s+from|supplied\s+by|provided\s+by)/i.test(l);
       /* 英文正文句子的误判护栏：一句正常英文叙述里会出现多个功能词，
          而"试剂清单行"不会。没有采购/厂家线索时直接否决，避免把论文句子当试剂。 */
       var enProcure = /(purchased|obtained|supplied|bought|\bSigma-?Aldrich\b|\bMerck\b|\bThermo\s?Fisher\b|\bAladdin\b|\bMacklin\b|\bTCI\b|\bAcros\b|\bAlfa\s?Aesar\b|Fisher Scientific|\bMillipore\b|\bInvitrogen\b|analytical grade|reagent grade)/i.test(l);
       var isProse = (l.match(/\s(?:the|of|and|to|in|that|is|are|was|were|been|have|has|with|from|for|by|as|at|on|this|these|its|it)\s/gi) || []).length >= 3;
       if (isProse && !enProcure && !canonical) return;
       if (!(hitTail || hitChem || canonical) || !isBuy) return;
-      /* 名称：取到括号/逗号前 */
+      /* 名称：取到括号/逗号前（中英文通用） */
       var nameM = l.match(/^([\u4e00-\u9fa5A-Za-z0-9\-（）()·]{2,28})(?:（|\()/);
-      var name = nameM ? nameM[1] : l.split(/[，,；;]/)[0].slice(0, 24);
+      if (!nameM) nameM = l.match(/^([A-Za-z][A-Za-z\- ]{1,40}?)\s*[（(]/);
+      var name = nameM ? nameM[1].replace(/^(the|a|an)\s+/i, '').trim() : l.split(/[，,；;]/)[0].slice(0, 24);
       var spec = (l.match(/[（(]([^）)]{2,40})[）)]/) || [])[1] || '';
       var sup = (l.match(/(?:购自|采购于|来源于)([^，,；;。]{2,30})/) || [])[1] || '';
+      if (!sup) { var supEn = l.match(/\b(?:purchased|obtained|supplied|bought|provided|from)\s+(?:the\s+)?([A-Z][\w&.\- ]{2,32}?(?:\bInc\b|\bLtd\b|\bCorp\b|\bGmbH\b|\bCo\b|Laborator(?:y|ies)|University|Institute|Company)?)/i); if (supEn) sup = supEn[1].replace(/\s+and\s+.*$/, '').trim(); }
       var pure = (l.match(/([≥>≧]\s*[\d.]+\s*%|分析纯|化学纯|AR|CP|GR)/) || [])[1] || '';
       out.push({
         name: clean(name), spec: clean(spec), purity: clean(pure), supplier: clean(sup),
@@ -223,9 +255,11 @@ MR.extract = (function () {
       var LEXI = ((MR.domain && MR.domain.INSTRUMENT_LEX) ? MR.domain.INSTRUMENT_LEX : INSTR_TAIL)
         .concat((MR.domain && MR.domain.INSTRUMENT_LEX_EN) ? MR.domain.INSTRUMENT_LEX_EN : []);
       var low0 = l.toLowerCase();
-      var hitLex = LEXI.some(function (t) {
-        if (t.length > 3) return low0.indexOf(t.toLowerCase()) >= 0;
-        return new RegExp('(^|[^A-Za-z])' + t + '([^A-Za-z]|$)').test(l);   /* 短缩写必须整词命中 */
+      var hitTerms = {};
+      var hitLex = false;
+      LEXI.forEach(function (t) {   /* 用 forEach 而非 some：some 会短路，导致一行里的多个仪器只记到第一个 */
+        var ok = t.length > 3 ? low0.indexOf(t.toLowerCase()) >= 0 : new RegExp('(^|[^A-Za-z])' + t + '([^A-Za-z]|$)').test(l);   /* 短缩写必须整词命中 */
+        if (ok) { hitTerms[t.toLowerCase()] = t; hitLex = true; }
       });
       /* 通用启发式：以仪器类后缀收尾 + 行内出现明显型号 */
       var SUF = /(?:机|仪|仪|器|镜|锅|炉|箱|台|设备|系统|装置|分析仪|测试仪|试验机|工作站|反应釜|槽|缸|泵)$/;
@@ -255,7 +289,23 @@ MR.extract = (function () {
       if (/公司|大学|研究所|厂|Inc|Ltd|Corp/.test(next)) vendor = clean(next);
       else if (/公司|大学|研究所|厂|Inc|Ltd|Corp/.test(next2)) vendor = clean(next2);
       var model = modelM ? clean(modelM[1]) : (next.length <= 24 ? clean(next) : '');
-      out.push({ name: clean(name), model: model, vendor: vendor, evidence: clean(l + (model ? ' / ' + model : '')) });
+      /* 命中词表：逐词输出，避免一行里的 XRD + SEM 被合并成一条而漏掉另一个仪器 */
+      var LATIN_FILLER = /^(an?|the|this|these|we|they|it|our|samples?|a)\b/i;
+      if (hitLex) {
+        Object.keys(hitTerms).forEach(function (tk) {
+          var t = hitTerms[tk];
+          var nm = t;
+          if (/[A-Za-z]/.test(t)) {
+            var wm = l.match(new RegExp('\\b(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\b', 'i'));
+            nm = wm ? wm[1] : t;
+          } else if (name && !LATIN_FILLER.test(name) && name.length <= 20) {
+            nm = name;
+          }
+          out.push({ name: clean(nm), model: model, vendor: vendor, evidence: clean(l + (nm && model ? ' / ' + model : '')) });
+        });
+      } else {
+        out.push({ name: clean(name), model: model, vendor: vendor, evidence: clean(l + (model ? ' / ' + model : '')) });
+      }
     });
     void tables;
     return out.filter(function (o, i, a) { return o.name && a.findIndex(function (x) { return x.name === o.name; }) === i; });
@@ -300,15 +350,15 @@ MR.extract = (function () {
       var before = win.slice(Math.max(0, at - 12), at);
       var after = win.slice(at + len, at + len + 8);
       /* 只把"提升/降低"类动词视为幅度描述；「分别为」是正常的水平枚举，不能当幅度 */
-      if (/提高|提升|增加|增大|降低|减少|上升|下降|高约|低了|高了/.test(before)) return true;
-      if (/^\s*(?:左右|以上|以下)\s*[)）]?/.test(after) && /提高|提升|降低/.test(before)) return true;
+      if (/提高|提升|增加|增大|降低|减少|上升|下降|高约|低了|高了|increase|decrease|reduced?|improved?|enhanced|rose|fell|dropped|grew|gain|loss/i.test(before)) return true;
+      if (/^\s*(?:左右|以上|以下)\s*[)）]?/.test(after) && /提高|提升|降低|increase|decrease/i.test(before)) return true;
       return false;
     }
     function isTolerance(win, at) {
       return /±/.test(win.slice(Math.max(0, at - 4), at + 4));
     }
     var out = [];
-    var sentences = fullText.replace(/\n/g, '。').split(/[。；;\n]/).map(clean).filter(function (x) { return x.length > 6; });
+    var sentences = splitSentences(fullText).map(clean).filter(function (x) { return x.length > 6; });
     sentences.forEach(function (sent) {
       var m;
       NOUN_RE.lastIndex = 0;
@@ -406,7 +456,7 @@ MR.extract = (function () {
     var lines = fullText.split('\n');
     /* 1) 章节标题命中（最可靠） */
     secs.forEach(function (sec) {
-      if (!/方法|测定|测试|表征|分析|结果|讨论|性能|评价/.test(sec.k)) return;
+      if (!/方法|测定|测试|表征|分析|结果|讨论|性能|评价|method|test|characteriz|analys|result|discuss|perform|measur|evaluat/i.test(sec.k)) return;
       LEX.forEach(function (ind) {
         if (sec.k.indexOf(ind) < 0) return;
         if (out.some(function (o) { return o.name === ind; })) return;
@@ -417,7 +467,7 @@ MR.extract = (function () {
     /* 2) 正文命中：统计出现次数，并要求"在测量语境中出现"或"出现 ≥3 次" */
     var counts = {};
     LEX.forEach(function (ind) {
-      var re = new RegExp(ind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      var re = new RegExp(ind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
       var n = (fullText.match(re) || []).length;
       if (n) counts[ind] = n;
     });
@@ -427,18 +477,18 @@ MR.extract = (function () {
       var ctx = null;
       for (var i = 0; i < lines.length; i++) {
         if (lines[i].indexOf(ind) < 0) continue;
-        if (/(测定|测试|检测|评价|表征|测量|分析|计算|结果|如表|如图)/.test(lines[i]) && lines[i].length < 400) { ctx = lines[i]; break; }
+        if (/(测定|测试|检测|评价|表征|测量|分析|计算|结果|如表|如图|measur|test|characteriz|analys|evaluat|determin|shown in (?:Table|Fig)|presented in|reported in)/i.test(lines[i]) && lines[i].length < 400) { ctx = lines[i]; break; }
       }
       if (!ctx && counts[ind] < 3) return;
       var unit = '';
       if (ctx) {
-        var um = ctx.match(new RegExp(ind + '[^。；]{0,14}?[（(]([^）)]{1,10})[）)]'));
+        var um = ctx.match(new RegExp(ind + '[^。；]{0,14}?[（(]([^）)]{1,10})[）)]', 'i'));
         if (um) unit = um[1];
-        else if (/MPa|GPa/.test(ctx) && /强度|模量/.test(ind)) unit = 'MPa';
+        else if (/MPa|GPa/.test(ctx) && /强度|模量|strength|modulus/i.test(ind)) unit = 'MPa';
         else if (/(率|度)$/.test(ind) && /%/.test(ctx)) unit = '%';
-        else if (/cm-?1|cm⁻¹/.test(ctx) && /波数|位移/.test(ind)) unit = 'cm⁻¹';
-        else if (/℃|°C/.test(ctx) && /温度/.test(ind)) unit = '°C';
-        else if (/mAh/.test(ctx) && /容量/.test(ind)) unit = 'mAh/g';
+        else if (/cm-?1|cm⁻¹/.test(ctx) && /波数|位移|wavenumber|shift/i.test(ind)) unit = 'cm⁻¹';
+        else if (/℃|°C/.test(ctx) && /温度|temperature/i.test(ind)) unit = '°C';
+        else if (/mAh/.test(ctx) && /容量|capacity/i.test(ind)) unit = 'mAh/g';
       }
       out.push({ name: ind, kind: '性能指标', unit: unit, direction: '', optimum: null, improvement: null,
         evidence: clean(ctx || ('全文出现 ' + counts[ind] + ' 次')).slice(0, 200), source: '正文', hits: counts[ind] });
@@ -450,16 +500,16 @@ MR.extract = (function () {
         direction: '', optimum: null, improvement: null, evidence: '正文中出现 ' + c.k + ' 相关表述', source: '表征手段' });
     });
     /* 4) 方向 / 最优值 / 提升幅度 */
-    var sents = fullText.split(/[。；\n]/).map(clean).filter(function (x) { return x.length > 8; });
+    var sents = splitSentences(fullText).map(clean).filter(function (x) { return x.length > 8; });
     out.forEach(function (o) {
-      var near = sents.filter(function (x) { return x.indexOf(o.name) >= 0 || (o.isChar && x.indexOf(o.method || '') >= 0); });
+      var near = sents.filter(function (x) { return x.toLowerCase().indexOf(o.name.toLowerCase()) >= 0 || (o.isChar && x.toLowerCase().indexOf((o.method || '').toLowerCase()) >= 0); });
       near.forEach(function (x) {
         DIR_PATTERNS.forEach(function (p) { if (!o.direction && p.re.test(x)) o.direction = p.d; });
-        var mm = x.match(new RegExp(o.name + '[^。；]{0,40}?(?:为|达|超过|达到)\\s*(?:最大|最高)[^。；]{0,20}?([\\d.]+)\\s*(%|％|℃|°C|MPa|h|min|g\\/cm3|mm)?'));
-        if (!mm) mm = x.match(new RegExp('([\\d.]+)\\s*(%|％|℃|°C|MPa|h|min|g\\/cm3|mm)?[^。；]{0,24}?' + o.name + '[^。；]{0,24}?(?:最大|最高)'));
+        var mm = x.match(new RegExp(o.name + '[^。；]{0,40}?(?:为|达|超过|达到|measured|reached|achieved|of)\\s*(?:最大|最高|maximum|highest|peak)[^。；]{0,20}?([\\d.]+)\\s*(%|％|℃|°C|MPa|h|min|g\\/cm3|mm)?', 'i'));
+        if (!mm) mm = x.match(new RegExp('([\\d.]+)\\s*(%|％|℃|°C|MPa|h|min|g\\/cm3|mm)?[^。；]{0,24}?' + o.name + '[^。；]{0,24}?(?:最大|最高|maximum|highest|peak)', 'i'));
         if (mm && o.optimum == null) { o.optimum = parseFloat(mm[1]); o.optimumFrom = clean(x).slice(0, 180); }
-        var im = x.match(new RegExp(o.name + '[^。；]{0,50}?(?:提高|提升|增加|增大|降低|减少)[了]?\\s*([\\d.]+)\\s*%'));
-        if (!im) im = x.match(new RegExp('(?:提高|提升|增加|增大|降低|减少)[了]?[^。；]{0,24}?' + o.name + '[^。；]{0,20}?([\\d.]+)\\s*%'));
+        var im = x.match(new RegExp(o.name + '[^。；]{0,50}?(?:提高|提升|增加|增大|降低|减少|increased|decreased|reduced|improved|enhanced|raised|lowered)[了]?\\s*([\\d.]+)\\s*%', 'i'));
+        if (!im) im = x.match(new RegExp('(?:提高|提升|增加|增大|降低|减少|increased|decreased|reduced|improved|enhanced|raised|lowered)[了]?[^。；]{0,24}?' + o.name + '[^。；]{0,20}?([\\d.]+)\\s*%', 'i'));
         if (im && o.improvement == null) { o.improvement = parseFloat(im[1]); o.improvementFrom = clean(x).slice(0, 180); }
       });
     });
@@ -504,8 +554,8 @@ MR.extract = (function () {
     var steps = [];
     var VERBS = STEP_VERBS.concat((MR.domain && MR.domain.PROCESS_VERBS) ? MR.domain.PROCESS_VERBS : [],
       (MR.domain && MR.domain.PROCESS_VERBS_EN) ? MR.domain.PROCESS_VERBS_EN : []);
-    var para = lines.filter(function (l) { return l.length > 30 && VERBS.some(function (v) { return vbHit(l, v); }); });
-    var sentencePool = para.join('。').split(/[。；]/).map(clean).filter(function (s) { return s.length > 12; });
+    var para = lineUnits(lines).filter(function (l) { return l.length > 30 && VERBS.some(function (v) { return vbHit(l, v); }); });
+    var sentencePool = splitSentences(para.join(' ')).map(clean).filter(function (s) { return s.length > 12; });
     sentencePool.slice(0, 26).forEach(function (s) {
       /* 取句中"最靠后的动词"作为该步的主操作（更贴近真实工艺顺序） */
       var hits = VERBS.filter(function (x) { return vbHit(s, x); });
@@ -605,7 +655,7 @@ MR.extract = (function () {
       /* 英文期刊常见写法：Authors. Title. Journal, 2020, 12(3): 45-58. */
       hits = exploded.filter(function (l) {
         return l.length > 40 && l.length < 400 &&
-          /\b(19|20)\d{2}\b/.test(l) && /[,;(]\s*(19|20)\d{2}/.test(l) &&
+          /\b(19|20)\d{2}\b/.test(l) && /[,;.(]\s*(?:19|20)\d{2}/.test(l) &&
           /[A-Z][a-z]+,?\s+[A-Z]/.test(l) &&
           !/^(figure|fig\.|table|scheme|box|abstract|introduction|we |the |in |this )/i.test(l);
       });
@@ -901,8 +951,8 @@ MR.extract = (function () {
       if (derived.length >= 3) { keywords = derived; kwSource = 'derived'; }
     }
 
-    var materials = extractMaterials(lines);
-    var instruments = extractInstruments(lines);
+    var materials = extractMaterials(lineUnits(lines));
+    var instruments = extractInstruments(lineUnits(lines));
     var standards = extractStandards(fullText);
     var variables = extractVariables(secs, fullText);
     var indicators = extractIndicators(secs, fullText);
@@ -912,19 +962,65 @@ MR.extract = (function () {
     var numbers = extractNumbers(fullText);
 
     /* 论文类型判定：研究论文 / 综述 / 临床研究
-       原则：以**结构证据**为主（有没有变量、工序、材料清单、方法学章节），
-       再用标题 / 文件名 / 正文措辞佐证。只看关键词会误判 —— Trends、Nature Reviews
-       这类刊的标题里往往没有 "review" 字样。 */
+       以**结构证据**为主（有无变量、工序、材料清单、方法学章节、参考量），
+       再用标题 / 文件名 / 摘要措辞佐证。只看关键词会误判 —— Trends、Nature Reviews
+       这类刊的标题里往往没有 "review" 字样，但文件名 / 页眉多有 Review / Trends。
+       判定结果会直接决定后续环节走"变量—指标"还是"概念路线"，并解释空字段是否正常。 */
     var lowerAll = fullText.toLowerCase();
-    var reviewSignals = /(this review|in this review|we review|review summari|overview of|perspectives|challenges and opportunities|future directions|has been widely|are summarized|review article|here we discuss|we discuss|this article reviews)/.test(lowerAll);
+    var reviewSignals = /(this review|in this review|we review|review summari|review of|review the|overview of|perspectives|challenges and opportunities|future directions|are summarized|review article|here we discuss|we discuss|this article reviews|reviewed here|we survey)/i.test(lowerAll);
+    var researchSignals = /(in this study|we report|we present|we demonstrate|we develop|we synthes|we prepar|we fabricat|we investigat|we measured|we characterized|this paper reports|we propose|we evaluated|we examined|we analysed|we analyzed|we compare|本研究|我们制备|我们合成|本文报道|本文研究|本文采用)/i.test(lowerAll);
     var clinicalSignals = /(patients|clinical trial|cohort|randomized|participants|informed consent|ethics committee|healthy volunteers)/.test(lowerAll);
-    var hasMethodsSec = secs.some(function (s) { return /材料与方法|试验方法|实验方法|测试方法|表征方法|methods?|experimental|protocol|procedure|preparation|fabrication/i.test(s.k); });
-    var nameAll = String(meta.name || '') + ' ' + String(title || '');
-    var reviewNameHit = /review|综述|trends|perspectives|progress\s+in|advances\s+in|述评|评论|进展/i.test(nameAll);
-    var paperType = 'research';
-    if (!variables.length && (reviewNameHit || reviewSignals) && !hasMethodsSec) paperType = 'review';
-    else if (!variables.length && !steps.length && !hasMethodsSec && !materials.length) paperType = 'review';
-    else if (!variables.length && clinicalSignals && !steps.length) paperType = 'clinical';
+    var hasMethodsSec = secs.some(function (s) { return /材料与方法|试验方法|实验方法|测试方法|表征方法|method|experimental|protocol|procedure|preparation|fabrication|材料与试剂|材料和方法/i.test(s.k); });
+    var hasResultsSec = secs.some(function (s) { return /结果与讨论|结果|讨论|results|discussion|findings/i.test(s.k); });
+    var nameAll = String(meta.name || '') + ' ' + String(title || '') + ' ' + String(titleEn || '');
+    var reviewNameHit = /review|综述|trends|perspectives|progress\s+in|advances\s+in|述评|minireview|mini-review|评论|进展|展望/i.test(nameAll);
+
+    var reviewScore = 0, researchScore = 0;
+    if (reviewSignals) reviewScore += 2;
+    if (researchSignals) researchScore += 2;
+    if (reviewNameHit) reviewScore += 2;
+    if (hasMethodsSec) researchScore += 3;
+    if (hasResultsSec) researchScore += 1;
+    if (references.length >= 60) reviewScore += 1;
+    if (variables.length) researchScore += 2;
+    if (materials.length) researchScore += 1;
+    if (steps.length) researchScore += 1;
+    if (indicators.filter(function (i) { return !i.isChar; }).length >= 3) researchScore += 1;
+
+    var paperType = 'research', typeLabel = '研究论文', typeReason = '';
+    if (reviewScore > researchScore + 1 || (reviewNameHit && !hasMethodsSec && !variables.length && !materials.length)) {
+      paperType = 'review'; typeLabel = '综述 / 展望';
+      typeReason = '未检出方法学章节与变量，且文件名 / 页眉含 Review / Trends 等综述标识，判定为综述类。';
+    } else if (clinicalSignals && !hasMethodsSec && !variables.length) {
+      paperType = 'clinical'; typeLabel = '临床研究';
+      typeReason = '正文含受试者 / 临床试验措辞且无可变变量，判定为临床研究类。';
+    } else {
+      typeReason = '检出方法学章节或变量 / 材料，判定为原创研究论文。';
+    }
+    var typeNote = paperType === 'review'
+      ? '综述 / 展望类文献本身不报告具体实验材料、工艺变量与步骤，下方"原料/试剂""变量""工艺步骤"为空属正常（并非抽取失败），平台会自动切换为"技术概念路线"。'
+      : (paperType === 'clinical'
+        ? '临床研究类文献以受试者与临床终点为主，材料 / 变量的抽取口径与基础实验论文不同。'
+        : '原创研究论文：下方各字段应能从原文抽取；若某项为空，多为数值未以「参数 + 数值 + 单位」形式出现，或原文未报告。');
+
+    /* 空字段的类型感知解释：说明"为什么提取不到"，并区分"正常（综述）"与"异常（研究但缺失）" */
+    var perfN = indicators.filter(function (i) { return !i.isChar; }).length;
+    var emptyReasons = {};
+    emptyReasons.materials = (!materials.length)
+      ? (paperType === 'review' ? '综述类文献一般不设"材料与试剂"段落，为空属正常。' : '未识别到「名称（规格），购自厂家」格式的描述；可能以表格给出，或本文未报告。')
+      : '';
+    emptyReasons.instruments = (!instruments.length)
+      ? (paperType === 'review' ? '综述类文献一般不罗列具体仪器。' : '未识别到仪器清单；可能仪器名未与型号 / 厂家同句出现。')
+      : '';
+    emptyReasons.variables = (!variables.length)
+      ? (paperType === 'review' ? '综述类文献不含可控变量 / 工艺水平，为空属正常。' : '未识别到"同一参数出现≥2个取值"的变量；可能数值未以「参数 + 数值 + 单位」形式出现，或本文非控制变量式研究。')
+      : '';
+    emptyReasons.indicators = (!perfN)
+      ? (paperType === 'review' ? '综述类文献多为定性讨论，未报告具体性能指标。' : '未识别到可测性能指标；可能指标名 / 单位未明确出现。')
+      : '';
+    emptyReasons.references = (!references.length)
+      ? '未识别到参考文献条目；PDF 参考文献可能未按行分条，或为非编号格式。'
+      : '';
 
     /* 概念（综述类文献的"变量"替代物） */
     var concepts = extractConcepts(fullText, title + ' ' + (titleEn || ''));
@@ -946,13 +1042,37 @@ MR.extract = (function () {
 
     /* 抽取可信度自检：把"可能被误读"的点显式告知用户，而不是默默给一份看起来完整的结果 */
     var warnings = [];
-    if (!materials.length) warnings.push('未识别到原料/试剂：原文可能未设"材料与试剂"段落，或以表格给出。');
-    if (!variables.length) warnings.push('未识别到变量与水平：该文可能不是"控制变量式"研究（综述/临床类常见）。');
-    if (!indicators.filter(function (i) { return !i.isChar; }).length) warnings.push('未识别到可测性能指标。');
-    if (!references.length) warnings.push('未识别到参考文献条目：PDF 参考文献可能未按行分条。');
+    if (!materials.length) warnings.push(emptyReasons.materials);
+    if (!instruments.length) warnings.push(emptyReasons.instruments);
+    if (!variables.length) warnings.push(emptyReasons.variables);
+    if (!perfN) warnings.push(emptyReasons.indicators);
+    if (!references.length) warnings.push(emptyReasons.references);
+    if (paperType === 'research' && !variables.length && !materials.length && !perfN)
+      warnings.push('本文判定为研究论文，却没有任何材料 / 变量 / 指标 —— 请确认：① 是否扫描件（无文字层）；② 数值是否以「参数 + 数值 + 单位」形式出现；③ 是否在环节 01 用「粘贴正文」重试。');
     if (abstractSource === 'inferred') warnings.push('摘要为"推断"（原文无 Abstract 标题，取自正文首段）。');
     if (kwSource === 'derived') warnings.push('关键词为"自动归纳"（原文无关键词字段，取自标题与摘要高频词）。');
-    if (paperType === 'review') warnings.push('本文判定为综述/展望类：没有变量与实验步骤，流程将按"技术概念路线"呈现。');
+    if (paperType === 'review') warnings.push('本文判定为综述 / 展望类：没有变量与实验步骤，流程将按"技术概念路线"呈现。');
+
+    /* 研究对象 / 界面结构类型识别：决定环节 04 生成哪一类"界面 / 结构机理"示意图，
+       避免对所有文献套用同一张竹纤维-水泥界面图。 */
+    var mechScope = (title + ' ' + (abstract || '') + ' ' + fullText + ' ' + materials.map(function (m) { return m.name || ''; }).join(' ')).toLowerCase();
+    function mechScore(pats) { var s = 0; pats.forEach(function (pt) { if (new RegExp(pt, 'i').test(mechScope)) s++; }); return s; }
+    var scCell = mechScore(['细胞', '干细胞', '分化', '转分化', '重编程', 'cell', 'stem', 'differentiat', 'transdifferentiat', 'mesenchym', 'fibroblast', 'cytokine']);
+    var scPolymer = mechScore(['高分子', '聚合物', '树脂', '凝胶', '交联', '网络', 'polymer', 'resin', 'gel', 'crosslink', 'network', 'copolymer']);
+    var scCoat = mechScore(['涂层', '镀层', '薄膜', '膜层', '包覆', '涂覆', 'coating', 'film', 'deposition', 'cladding']);
+    var scMol = mechScore(['催化', '聚合', '缩合', '水解', '配位', '络合', 'catalys', 'polymeriz', 'hydroly', 'coordinat', 'condensat', '分子', 'molecule', '官能团']);
+    var scPlanar = mechScore(['纤维', '增强', '基体', '复合', '界面', '填料', 'reinforce', 'matrix', 'composite', 'interface', 'filler', 'fiber', '水泥', 'cement', '混凝土', 'concrete']);
+    var mechCands = [
+      { k: 'cell-transform', s: scCell }, { k: 'polymer-network', s: scPolymer }, { k: 'coating', s: scCoat },
+      { k: 'molecular', s: scMol }, { k: 'planar-interface', s: scPlanar }
+    ].sort(function (a, b) { return b.s - a.s; });
+    var mechType = 'none', mechReason = '';
+    if (mechCands[0].s >= 2 && mechCands[0].s > (mechCands[1] ? mechCands[1].s : 0)) {
+      mechType = mechCands[0].k;
+      mechReason = '识别到研究对象偏向「' + ({ 'cell-transform': '细胞 / 转分化', 'polymer-network': '高分子网络 / 交联', 'coating': '涂层 / 薄膜', 'molecular': '分子 / 化学反应', 'planar-interface': '纤维-基体界面' }[mechType]) + '」，将生成对应类型的结构示意。';
+    } else {
+      mechReason = '未检出明确的材料界面 / 结构对象关键词（纤维-基体、涂层、高分子网络、细胞转化、分子反应），故不生成固定模式的界面结合示意图。';
+    }
 
     return {
       meta: { name: meta.name || '', size: meta.size || 0, chars: raw.length, paragraphs: lines.length, sections: secs.length },
@@ -963,7 +1083,9 @@ MR.extract = (function () {
       materials: materials, instruments: instruments, standards: standards,
       variables: variables, indicators: indicators, steps: steps,
       formulation: formulation, references: references, numbers: numbers,
-      paperType: paperType, concepts: concepts, timeline: timeline,
+      paperType: paperType, typeLabel: typeLabel, typeReason: typeReason, typeNote: typeNote, emptyReasons: emptyReasons,
+      mechType: mechType, mechReason: mechReason,
+      concepts: concepts, timeline: timeline,
       confidence: score, warnings: warnings
     };
   }

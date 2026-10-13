@@ -764,3 +764,16 @@ button:focus-visible, a:focus-visible{ outline-offset:2px; }
   .app{ height:auto; display:block; }
   body{ overflow:visible; background:#fff; }
 }
+
+/* ---------- 微型试验台（结果分析·实验选择） ---------- */
+.bench-intro{ font-size:12px; line-height:1.6; color:var(--ink-2,#4B535B); margin-bottom:11px; }
+.bench-intro b{ color:var(--ink,#22262A); }
+.bench-rows{ display:flex; flex-direction:column; gap:7px; }
+.bench-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:6px 2px; border-bottom:1px dashed var(--line,#e4dfd5); }
+.bench-row:last-child{ border-bottom:0; }
+.bench-chk{ display:flex; align-items:center; gap:7px; min-width:210px; font-size:12.5px; cursor:pointer; }
+.bench-chk input{ width:15px; height:15px; accent-color:var(--acc,#0E5C56); cursor:pointer; }
+.bench-res{ display:flex; }
+.bench-base{ margin-left:auto; color:var(--ink-3,#6B7278); }
+.bench-foot{ display:flex; align-items:center; gap:10px; margin-top:12px; }
+.bench-foot input[type=range]{ flex:1; accent-color:var(--acc,#0E5C56); cursor:pointer; }

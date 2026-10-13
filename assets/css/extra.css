@@ -104,6 +104,11 @@
 .metric.is-ok{ border-color:var(--ok-line); background:var(--ok-tint); }
 .metric.is-bad{ border-color:var(--risk-line); background:var(--risk-tint); }
 .metric.is-warn{ border-color:var(--sig-line); background:var(--sig-tint); }
+/* 中性态：综述等体裁本就不含该字段，空属正常，不标红 */
+.metric.is-info{ border-color:var(--line-strong); background:var(--surface-2); }
+.metric.is-info .metric__v{ color:var(--ink-3); }
+.metric.is-info .metric__k{ color:var(--ink-4); }
+.metric__t b{ color:var(--acc-ink); }
 
 /* ---------- 文件列表 ---------- */
 .filelist{ display:flex; flex-direction:column; }

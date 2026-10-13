@@ -112,6 +112,7 @@ MR.paper = (function () {
       formulation: an.formulation, references: an.references, numbers: an.numbers,
       peakData: pk, ftir: fb, sem: sem,
       matrix: matrix,
+      mechType: an.mechType, mechReason: an.mechReason, rawText: text,
       stats: an.meta, confidence: an.confidence,
       missing: []
     };

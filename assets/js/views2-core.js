@@ -91,6 +91,7 @@ MR.state.styleLearned = false;
 MR.state.styleTarget = null;
 MR.state.deAIResult = null;
 MR.state.figs = {};
+MR.state.bench = { on: {}, res: {}, n: 24 };   /* 微型试验台：勾选的实验 / 分辨率(原文水平|加密扫描) / 加密点数 */
 
 MR.rebuild = function () {
   var p = MR.state.paper;
