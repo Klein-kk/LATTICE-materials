@@ -93,6 +93,114 @@ MR.state.deAIResult = null;
 MR.state.figs = {};
 MR.state.bench = { on: {}, res: {}, n: 24 };   /* 微型试验台：勾选的实验 / 分辨率(原文水平|加密扫描) / 加密点数 */
 
+/* 用户自定义课题标题（覆盖 paper.name） */
+MR.state.projectTitle = '';
+try {
+  MR.state.projectTitle = localStorage.getItem('lattice.project.title') || '';
+} catch (e) {}
+MR.project = {
+  KEY: 'lattice.project.title',
+  get: function () { return MR.state.projectTitle || ''; },
+  set: function (t) {
+    MR.state.projectTitle = (t || '').trim();
+    try {
+      if (MR.state.projectTitle) localStorage.setItem(MR.project.KEY, MR.state.projectTitle);
+      else localStorage.removeItem(MR.project.KEY);
+    } catch (e) {}
+    MR.project.render();
+  },
+  clear: function () { MR.project.set(''); },
+  baseName: function () {
+    var p = MR.state.paper;
+    if (p && p.name) return p.name;
+    return '';
+  },
+  display: function () {
+    var t = MR.project.get();
+    if (t) return t;
+    var n = MR.project.baseName();
+    if (n) return n;
+    return '未命名课题 · 请先导入文献';
+  },
+  render: function () {
+    var el = document.getElementById('projTitle');
+    if (!el) return;
+    var txt = MR.project.display();
+    if (el.textContent !== txt) el.textContent = txt;
+    if (MR.project.get()) el.classList.add('proj__btn--custom');
+    else el.classList.remove('proj__btn--custom');
+    el.setAttribute('title', MR.project.get()
+      ? '已自定义课题名 · 点击修改 · 右键清除'
+      : (MR.project.baseName() ? '当前文献：' + MR.project.baseName() + '\n点击修改课题名' : '点击为课题命名'));
+  },
+  bind: function () {
+    var el = document.getElementById('projTitle');
+    if (!el || el.__projBound) return;
+    el.__projBound = true;
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    var beginEdit = function () {
+      var cur = MR.project.get() || MR.project.baseName() || '';
+      var orig = cur;
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'proj__edit';
+      input.value = cur;
+      input.placeholder = '为课题命名（例如：石墨烯/MXene 复合气凝胶）';
+      input.maxLength = 60;
+      var done = function (commit) {
+        var v = (input.value || '').trim();
+        if (commit) MR.project.set(v);
+        else if (el.parentNode) { el.textContent = MR.project.display(); }
+        el.__editing = false;
+        if (MR.toast) MR.toast(commit && v ? '已保存课题名：' + v : '已取消编辑', 'ok', 1400);
+      };
+      el.textContent = '';
+      el.appendChild(input);
+      el.__editing = true;
+      input.focus();
+      input.select();
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); done(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); done(false); }
+      });
+      input.addEventListener('blur', function () { if (el.__editing) done(true); });
+    };
+    el.addEventListener('click', function (e) {
+      if (el.__editing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      beginEdit();
+    });
+    el.addEventListener('keydown', function (e) {
+      if (el.__editing) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); beginEdit(); }
+    });
+    el.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+      if (MR.project.get()) {
+        if (window.confirm('清除自定义课题名，回到默认（' + (MR.project.baseName() || '未命名') + '）？')) {
+          MR.project.clear();
+          if (MR.toast) MR.toast('已清除自定义课题名', 'ok', 1400);
+        }
+      } else {
+        beginEdit();
+      }
+    });
+    var icon = document.getElementById('projEditIcon');
+    if (icon && !icon.__projBound) {
+      icon.__projBound = true;
+      icon.addEventListener('click', function (e) {
+        if (el.__editing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        beginEdit();
+      });
+    }
+    MR.project.render();
+  }
+};
+
 MR.rebuild = function () {
   var p = MR.state.paper;
   if (!p) return;
@@ -125,6 +233,7 @@ MR.loadPaper = function (id) {
   MR.state.paper = p;
   if (p.domain && !MR.state.domain) MR.state.domain = p.domain;
   MR.log('OK', '载入论文 <b>' + MR.esc(p.name) + '</b>（' + (p.text ? (p.text.length / 1000).toFixed(1) + ' 千字符' : '无文字层') + '）');
+  try { if (MR.project) MR.project.render(); } catch (e) {}
   MR.rebuild();
   if (!p.text) {
     MR.log('WARN', '该文件没有可提取的文字层（扫描版），抽取结果为空 —— 平台不会因此臆造内容');
@@ -138,6 +247,7 @@ MR.loadText = function (text, name) {
   MR.state.paper = { id: 'U' + Date.now(), label: '用户上传', name: name || '粘贴文本', kind: '上传文献', text: text };
   MR.state.paperId = MR.state.paper.id;
   MR.log('OK', '载入文本 <b>' + MR.esc(name || '粘贴文本') + '</b>：' + (text.length / 1000).toFixed(1) + ' 千字符');
+  try { if (MR.project) MR.project.render(); } catch (e) {}
   MR.rebuild();
 };
 

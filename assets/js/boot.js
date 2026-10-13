@@ -6,6 +6,7 @@
   function start() {
     try {
       MR.boot();
+      try { if (MR.project) MR.project.bind(); } catch (e) { console.warn('[project.bind]', e); }
       MR.log('INFO', '流水线引擎就绪 · 10 个环节 · 材料方向 ' + MR.domain.MATERIAL_DOMAINS.length + ' 类 · 性能指标词表 ' + MR.domain.ALL_IND.length + ' 项 · 本地文献库 ' + MR.lib.rows.length + ' 条');
       /* 深链：#imp / #feedback / #review 等 */
       function goHash() {

@@ -167,6 +167,16 @@ button:focus-visible, a:focus-visible{ outline-offset:2px; }
 .proj__btn{ display:flex; align-items:center; gap:6px; color:var(--ink); font-weight:600; font-size:13px; max-width:330px; }
 .proj__btn:hover{ color:var(--acc); }
 .proj__title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.proj__btn--editable{ cursor:pointer; padding:2px 6px; margin-left:-6px; border-radius:4px; transition:background-color .15s ease, color .15s ease; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; max-width:330px; }
+.proj__btn--editable:hover{ background:var(--acc-bg, rgba(59,130,246,.08)); color:var(--acc); }
+.proj__btn--editable:focus-visible{ outline:1px solid var(--acc); outline-offset:2px; background:var(--acc-bg, rgba(59,130,246,.08)); }
+.proj__btn--custom{ color:var(--acc); }
+.proj__btn--custom::before{ content:"★ "; color:var(--acc); font-size:11px; }
+.proj__edit-icon{ display:inline-flex; align-items:center; color:var(--ink-4); opacity:0; transition:opacity .15s ease, color .15s ease; margin-left:-2px; }
+.proj:hover .proj__edit-icon{ opacity:.85; }
+.proj__edit-icon:hover{ color:var(--acc); opacity:1; cursor:pointer; }
+.proj__edit{ font:inherit; color:inherit; background:#fff; border:1px solid var(--acc); border-radius:4px; padding:2px 6px; margin-left:-6px; width:280px; max-width:60vw; outline:none; box-shadow:0 0 0 3px var(--acc-bg, rgba(59,130,246,.12)); }
+.proj__edit:focus{ border-color:var(--acc); }
 
 .demo-badge{
   display:flex; align-items:center; gap:6px;
