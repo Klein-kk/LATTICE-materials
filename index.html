@@ -64,6 +64,15 @@ main{position:relative;z-index:1}
   filter:blur(8px);
 }
 #cursorGlow.is-on{opacity:1}
+/* 亮色模式：mix-blend-mode: multiply 让青绿光晕在白底上显形（screen 在白底无效） */
+[data-theme="light"] #cursorGlow{
+  mix-blend-mode:multiply;
+  background:radial-gradient(circle,
+    color-mix(in srgb,var(--acc) 40%,transparent) 0%,
+    color-mix(in srgb,var(--acc) 18%,transparent) 35%,
+    transparent 70%);
+  filter:blur(6px);
+}
 
 /* ---------- Hero 3D 视差（鼠标移动 → 整体轻微倾斜） ---------- */
 .hero{position:relative;transform-style:preserve-3d;transition:transform .15s cubic-bezier(.2,.7,.3,1)}
@@ -84,6 +93,17 @@ main{position:relative;z-index:1}
   border-radius:50%;transform:translate(-50%,-50%);
   transition:width .4s,height .4s;pointer-events:none}
 .btn.is-ripple::after{width:240px;height:240px}
+/* 亮色模式：白涟漪在白底看不见，改用品牌青绿（对普通白底按钮和绿色主按钮都可见） */
+[data-theme="light"] .btn::after{
+  background:radial-gradient(circle,
+    color-mix(in srgb,var(--acc) 36%,transparent) 0%,
+    transparent 70%);
+}
+[data-theme="light"] .btn--primary::after{
+  background:radial-gradient(circle,
+    color-mix(in srgb,#ffffff 42%,transparent) 0%,
+    transparent 70%);
+}
 
 /* ---------- Hero 鼠标坐标光标（自定义光标） ---------- */
 .hero{cursor:default}
@@ -91,7 +111,7 @@ main{position:relative;z-index:1}
 /* ---------- 卡片微动（登录卡随鼠标轻微旋转） ---------- */
 .authcard{transition:transform .2s,border-color .2s,box-shadow .2s}
 .authcard.is-tilt{transform:perspective(1200px) rotateX(var(--ty,0deg)) rotateY(var(--tx,0deg))}
-.authcard.is-tilt:hover{border-color:var(--line-2);box-shadow:0 22px 50px rgba(0,0,0,.45),0 0 0 1px var(--acc-ink)}
+.authcard.is-tilt:hover{border-color:var(--line-2);box-shadow:0 22px 50px color-mix(in srgb,var(--ink) 16%,transparent),0 0 0 1px color-mix(in srgb,var(--acc) 40%,transparent)}
 
 /* ---------- Stats 数值卡片 hover 高亮 ---------- */
 .hero__stat{transition:transform .25s,background .25s,border-color .25s}
@@ -429,7 +449,7 @@ main{position:relative;z-index:1}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
         立即登录 / 注册
       </button>
-      <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">
+      <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_self">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
         直接访问主站（本地模式）
       </a>
@@ -472,7 +492,7 @@ main{position:relative;z-index:1}
           <button class="auth__signout" id="signOutBtn">退出</button>
         </div>
         <a class="btn btn--primary" id="enterAppBtn" style="display:flex;justify-content:center;margin-top:18px"
-           href="https://klein-kk.github.io/LATTICE-materials/">
+           href="https://klein-kk.github.io/LATTICE-materials/app.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           进入 LATTICE 主站
         </a>
@@ -717,7 +737,7 @@ main{position:relative;z-index:1}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
           登录 / 注册
         </button>
-        <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">
+        <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_self">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H6V9h6M15 3h6v6M21 3l-9 9"/></svg>
           跳过登录 · 本地模式
         </a>
@@ -742,7 +762,7 @@ main{position:relative;z-index:1}
     </div>
     <div class="foot__col">
       <h5>平台</h5>
-      <a href="https://klein-kk.github.io/LATTICE-materials/">主站入口</a>
+      <a href="https://klein-kk.github.io/LATTICE-materials/app.html">主站入口</a>
       <a href="#features">核心能力</a>
       <a href="#molecular">3D 可视化</a>
     </div>
@@ -978,7 +998,9 @@ themeBtn.addEventListener('click', () => {
   html.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
   try { localStorage.setItem('lattice.theme', html.getAttribute('data-theme')); } catch(e){}
 });
-try { const t = localStorage.getItem('lattice.theme'); if (t) html.setAttribute('data-theme', t); } catch(e){}
+// intro 页强制暗夜模式：忽略 localStorage 中可能保存的亮色偏好（用户要求"一打开就是暗夜模式"）。
+// 右上角切换按钮仍可在当前会话中临时切到亮色查看，但下次刷新仍回到暗色。
+// try { const t = localStorage.getItem('lattice.theme'); if (t) html.setAttribute('data-theme', t); } catch(e){}
 
 /* === FAQ 手风琴 === */
 document.querySelectorAll('#faqList .faq__q').forEach(q => {
@@ -1131,7 +1153,7 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
 
 /* === 跳过登录 · 进入本地模式主站 === */
 document.getElementById('skipLogin').addEventListener('click', () => {
-  location.href = 'https://klein-kk.github.io/LATTICE-materials/?mode=local';
+  location.href = 'https://klein-kk.github.io/LATTICE-materials/app.html?mode=local';
 });
 
 /* === 初始状态恢复 === */
