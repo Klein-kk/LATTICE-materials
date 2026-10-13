@@ -146,9 +146,9 @@ MR.views2 = {};
     var rows = all.map(function (s) {
       var on = MR.state.bench.on[s.key] !== false;
       var res = MR.state.bench.res[s.key] || 'reported';
-      var base = (MR.state.params[s.v] != null) ? ('基准 ' + MR.paper.shortVar(s.v) + '=' + MR.state.params[s.v] + (s.model.unit ? ' ' + s.model.unit : '')) : '';
+      var base = (MR.state.params[s.v] != null) ? ('基准 ' + MR.paper.shortVarBilingual(s.v, MR.cn ? MR.cn(s.v) : '') + '=' + MR.state.params[s.v] + (s.model.unit ? ' ' + s.model.unit : '')) : '';
       return '<div class="bench-row">' +
-        '<label class="bench-chk"><input type="checkbox" data-bench-on="' + MR.esc(s.key) + '"' + (on ? ' checked' : '') + '><span>' + MR.esc(s.i) + ' @ ' + MR.esc(MR.paper.shortVar(s.v)) + '</span></label>' +
+        '<label class="bench-chk"><input type="checkbox" data-bench-on="' + MR.esc(s.key) + '"' + (on ? ' checked' : '') + '><span>' + MR.bilingual(s.i, s.cn || (MR.cn ? MR.cn(s.i) : '')) + ' @ ' + MR.esc(MR.paper.shortVarBilingual(s.v, MR.cn ? MR.cn(s.v) : '')) + '</span></label>' +
         '<div class="seg bench-res">' +
           '<button type="button" data-bench-res="' + MR.esc(s.key) + '" data-v="reported"' + (res === 'reported' ? ' class="is-on"' : '') + '>原文水平</button>' +
           '<button type="button" data-bench-res="' + MR.esc(s.key) + '" data-v="dense"' + (res === 'dense' ? ' is-on' : '') + '>加密扫描</button>' +
@@ -439,7 +439,7 @@ MR.views2 = {};
         MR.panel({
           title: '解析出的题录信息', meta: '标题 · 摘要 · 关键词', icon: 'imp', pad: true,
           body: '<div class="switchline" style="align-items:flex-start"><span class="switchline__k"><b>标题</b>' +
-            '<span class="mono-xs" style="display:block;text-transform:none">' + MR.esc(an.title || '（未识别）') + '</span></span>' + srcChip(an.titleSource) + '</div>' +
+            '<span class="mono-xs" style="display:block;text-transform:none">' + MR.bilingual(an.title || '（未识别）', (MR.cn ? MR.cn(an.title) : ''), 'en') + '</span></span>' + srcChip(an.titleSource) + '</div>' +
             (an.titleEn && an.titleEn !== an.title ? '<div class="switchline" style="align-items:flex-start"><span class="switchline__k"><b>English title</b>' +
               '<span class="mono-xs" style="display:block;text-transform:none">' + MR.esc(an.titleEn) + '</span></span></div>' : '') +
             '<div class="switchline" style="align-items:flex-start"><span class="switchline__k"><b>摘要</b>' +
@@ -496,7 +496,7 @@ MR.views2 = {};
           title: '原料与试剂', meta: an.materials.length + ' 种', icon: 'exp', pad: true, flush: true,
           body: an.materials.length ? '<div class="tbl-wrap"><table class="tbl tbl--sm"><thead><tr><th>名称</th><th>规格/纯度</th><th>供应</th><th>类别</th></tr></thead><tbody>' +
             an.materials.map(function (m) {
-              return '<tr><td class="strong wrap">' + MR.esc(m.name) + ev('…' + MR.esc((m.evidence || '').slice(0, 58))) + '</td>' +
+              return '<tr><td class="strong wrap">' + MR.bilingual(m.name, m.cn) + ev('…' + MR.esc((m.evidence || '').slice(0, 58))) + '</td>' +
                 '<td class="wrap" style="font-size:11px;color:var(--ink-3)">' + (MR.esc(m.spec || m.purity) || '—') + '</td>' +
                 '<td class="wrap" style="font-size:11px;color:var(--ink-3)">' + (MR.esc(m.supplier) || '—') + '</td>' +
                 '<td>' + MR.chip(m.kind, 'line') + '</td></tr>';
@@ -506,7 +506,7 @@ MR.views2 = {};
           title: '仪器设备', meta: an.instruments.length + ' 台', icon: 'exp', pad: true, flush: true,
           body: an.instruments.length ? '<div class="tbl-wrap" style="max-height:340px;overflow-y:auto"><table class="tbl tbl--sm"><thead><tr><th>名称</th><th>型号</th><th>厂家</th></tr></thead><tbody>' +
             an.instruments.map(function (i) {
-              return '<tr><td class="strong wrap">' + MR.esc(i.name) + '</td><td class="wrap" style="font-size:11px">' + (MR.esc(i.model) || '<span style="color:var(--sig)">未报告</span>') + '</td>' +
+              return '<tr><td class="strong wrap">' + MR.bilingual(i.name, i.cn) + '</td><td class="wrap" style="font-size:11px">' + (MR.esc(i.model) || '<span style="color:var(--sig)">未报告</span>') + '</td>' +
                 '<td class="wrap" style="font-size:11px;color:var(--ink-3)">' + (MR.esc(i.vendor) || '—') + '</td></tr>';
             }).join('') + '</tbody></table></div>' : noneNote('原文中未识别到仪器清单。')
         }) + '</div>';
@@ -516,7 +516,7 @@ MR.views2 = {};
           title: '变量与水平', meta: an.variables.length + ' 个', icon: 'design', pad: true, flush: true,
           body: an.variables.length ? '<div class="rowlist">' + an.variables.map(function (v) {
             return '<div class="rowitem" style="grid-template-columns:1fr auto;cursor:default">' +
-              '<span><span class="rowitem__title">' + MR.esc(v.key) + '</span>' +
+              '<span><span class="rowitem__title">' + MR.bilingual(v.key, v.cn || (MR.cn ? MR.cn(v.noun) : '')) + '</span>' +
               '<span class="rowitem__sub">取值：' + v.levels.join('、') + '（共 ' + v.levels.length + ' 个水平）</span>' + ev(MR.esc(v.evidence.slice(0, 88))) + '</span>' +
               '<span class="rowitem__side">' + MR.chip(v.sec || '原文', 'line') + '</span></div>';
           }).join('') + '</div>' : noneNote('原文中未识别到"同一参数出现两个以上取值"的变量描述 —— 后续环节无法做变量分析。')
@@ -526,7 +526,7 @@ MR.views2 = {};
           body: (pf.perf.length || pf.chars.length) ? '<div class="rowlist" style="max-height:340px;overflow-y:auto">' +
             pf.perf.map(function (i) {
               return '<div class="rowitem" style="grid-template-columns:1fr auto;cursor:default">' +
-                '<span><span class="rowitem__title">' + MR.esc(i.name) +
+                '<span><span class="rowitem__title">' + MR.bilingual(i.name, i.cn || (MR.cn ? MR.cn(i.name) : '')) +
                 (i.family ? MR.chip(i.family, 'acc') : '') +
                 (i.polarity === 'min' ? MR.chip('越小越优', 'sig') : MR.chip('越大越优', 'ok')) +
                 (i.optimum != null ? MR.chip('原文最优 ' + i.optimum, 'acc') : '') +
@@ -537,7 +537,7 @@ MR.views2 = {};
             }).join('') +
             pf.chars.map(function (c) {
               return '<div class="rowitem" style="grid-template-columns:1fr auto;cursor:default">' +
-                '<span><span class="rowitem__title">' + MR.esc(c.name) + '</span>' +
+                '<span><span class="rowitem__title">' + MR.bilingual(c.name, c.cn || (MR.cn ? MR.cn(c.name) : '')) + '</span>' +
                 '<span class="rowitem__sub">表征手段 · 用于结构/界面归因</span>' + ev(MR.esc((c.evidence || '').slice(0, 78))) + '</span>' +
                 '<span class="rowitem__side">' + indKindChip(c.kind) + '</span></div>';
             }).join('') + '</div>' : noneNote('原文中未识别到可测性能指标与表征手段。')
@@ -686,7 +686,7 @@ MR.views2 = {};
           '<div class="recipe mb-4">' + (an.materials.length ? an.materials.map(function (m) {
             var on = MR.state.sel.material === m.name;
             return '<button type="button" class="rc' + (on ? ' is-on' : '') + '" data-mat="' + MR.esc(m.name) + '">' +
-              '<div class="rc__t">' + MR.esc(m.name) + '</div><div class="rc__d">' + (MR.esc(m.spec || m.purity) || '原文未给规格') + '</div></button>';
+              '<div class="rc__t">' + MR.bilingual(m.name, m.cn) + '</div><div class="rc__d">' + (MR.esc(m.spec || m.purity) || '原文未给规格') + '</div></button>';
           }).join('') : '<span class="mono-xs">原文未报告原料清单</span>') + '</div>' +
           '<div class="mono-xs" style="margin-bottom:7px">工艺步骤（可作为研究对象）</div>' +
           '<div class="hflow">' + (an.steps.length ? an.steps.map(function (s, i) {
@@ -702,14 +702,14 @@ MR.views2 = {};
           body: '<div class="mono-xs" style="margin-bottom:7px">变量（原文出现的水平）</div>' +
             (vars.length ? vars.map(function (v) {
               var on = MR.state.sel.vars.indexOf(v.key) >= 0;
-              return '<div class="switchline"><span class="switchline__k">' + MR.esc(v.key) +
+              return '<div class="switchline"><span class="switchline__k">' + MR.bilingual(v.key, v.cn || (MR.cn ? MR.cn(v.noun) : '')) +
                 '<span class="mono-xs" style="display:block;text-transform:none">取值 ' + v.levels.join(' / ') + '</span></span>' +
                 '<button class="btn btn--sm" data-var="' + MR.esc(v.key) + '">' + (on ? '已选' : '选择') + '</button></div>';
             }).join('') : noneNote('原文未报告变量，无法进行变量分析。')) +
             '<div class="mono-xs" style="margin:14px 0 7px">指标（原文实际测量的）</div>' +
             (inds.length ? inds.map(function (i) {
               var on = MR.state.sel.inds.indexOf(i.name) >= 0;
-              return '<div class="switchline"><span class="switchline__k">' + MR.esc(i.name) +
+              return '<div class="switchline"><span class="switchline__k">' + MR.bilingual(i.name, i.cn || (MR.cn ? MR.cn(i.name) : '')) +
                 '<span class="mono-xs" style="display:block;text-transform:none">' + (i.unit || '原文未给单位') + (i.optimum != null ? ' · 原文最优 ' + i.optimum : '') + '</span></span>' +
                 '<button class="btn btn--sm" data-ind="' + MR.esc(i.name) + '">' + (on ? '已选' : '选择') + '</button></div>';
             }).join('') : noneNote('原文未报告可测指标。')),
@@ -747,7 +747,7 @@ MR.views2 = {};
         title: '第 4 步 · 研究空白与新方向', meta: '原文未覆盖的组合 ' + blanks.length + ' 处', icon: 'feedback', cls: 'panel--acc', pad: true,
         body: '<div class="mono-xs" style="margin-bottom:8px">原文已建立定量关系的组合（' + matrix.length + ' 处）</div>' +
           (matrix.length ? '<div class="chips mb-4">' + matrix.map(function (m) {
-            return '<span class="chip chip--ok">' + MR.paper.shortVar(m.v) + ' → ' + m.i + (m.opt != null ? '（最优 ' + m.opt + '）' : '') + '</span>';
+            return '<span class="chip chip--ok">' + MR.bilingual(m.i, MR.cn ? MR.cn(m.i) : '') + ' → ' + MR.paper.shortVarBilingual(m.v, MR.cn ? MR.cn(m.v) : '') + (m.opt != null ? '（最优 ' + m.opt + '）' : '') + '</span>';
           }).join('') + '</div>' : '<div class="mb-4">' + noneNote('原文未建立明确的变量—指标对应关系。') + '</div>') +
           '<div class="mono-xs" style="margin-bottom:8px">原文未覆盖的组合 → 可作为继续研究的方向</div>' +
           (blanks.length ? '<div class="chips mb-4">' + blanks.slice(0, 10).map(function (b) { return '<span class="chip chip--sig">' + b + '</span>'; }).join('') + '</div>'
@@ -797,7 +797,7 @@ MR.views2 = {};
       html += MR.panel({
         title: '变量水平（来自原文）', meta: chosen.length + ' 个变量', icon: 'design', pad: true,
         body: chosen.length ? chosen.map(function (v) {
-          return '<div class="param"><div class="param__k">' + MR.esc(v.key) +
+          return '<div class="param"><div class="param__k">' + MR.bilingual(v.key, v.cn || (MR.cn ? MR.cn(v.noun) : '')) +
             '<b>' + (MR.state.params[v.key] != null ? MR.state.params[v.key] : '—') + (v.unit ? ' ' + v.unit : '') + '</b></div>' +
             '<div class="seg" style="display:flex;flex-wrap:wrap;width:100%">' + v.levels.map(function (L) {
               return '<button type="button" data-level="' + MR.esc(v.key) + '|' + L + '" class="' + (MR.state.params[v.key] === L ? 'is-on' : '') + '" style="flex:1">' + L + '</button>';
@@ -820,7 +820,7 @@ MR.views2 = {};
           body: an.materials.length ? '<div class="tbl-wrap" style="max-height:320px;overflow-y:auto"><table class="tbl tbl--sm"><tbody>' +
             an.materials.map(function (m) {
               var g = MR.ghsOf(m.name);
-              return '<tr><td class="strong wrap">' + MR.esc(m.name) + '</td>' +
+              return '<tr><td class="strong wrap">' + MR.bilingual(m.name, m.cn) + '</td>' +
                 '<td class="wrap" style="font-size:11px;color:' + (g.known ? 'var(--ink-2)' : 'var(--sig)') + '">' + g.ghs + '</td>' +
                 '<td style="width:44px">' + (g.known ? MR.chip(g.score, g.score >= 3 ? 'risk' : 'sig') : MR.chip('?', 'line')) + '</td></tr>';
             }).join('') + '</tbody></table></div>' : noneNote('原文未报告试剂，无法评估安全性。'),
@@ -926,8 +926,8 @@ MR.views2 = {};
         body: rows.length ? '<div class="tbl-wrap"><table class="tbl tbl--sm"><thead><tr>' +
           '<th>变量</th><th>水平</th><th>指标</th><th class="num">原文最优</th><th class="num">原文报道幅度</th><th>变化方向</th></tr></thead><tbody>' +
           rows.map(function (r) {
-            return '<tr><td class="strong wrap">' + MR.esc(MR.paper.shortVar(r.v)) + '</td>' +
-              '<td class="num wrap">' + r.model.levels.join(' / ') + '</td><td class="wrap">' + MR.esc(r.i) + '</td>' +
+            return '<tr><td class="strong wrap">' + MR.esc(MR.paper.shortVarBilingual(r.v, MR.cn ? MR.cn(r.v) : '')) + '</td>' +
+              '<td class="num wrap">' + r.model.levels.join(' / ') + '</td><td class="wrap">' + MR.bilingual(r.i, MR.cn ? MR.cn(r.i) : '') + '</td>' +
               '<td class="num">' + (r.m.opt != null ? r.m.opt : '<span style="color:var(--sig)">未报告</span>') + '</td>' +
               '<td class="num">' + (r.m.amp != null ? (r.m.amp > 0 ? '+' : '') + r.m.amp + '%' : '<span style="color:var(--sig)">未报告</span>') + '</td>' +
               '<td>' + ({ 'rise-fall': '先升后降', 'mono-up': '单调上升', 'mono-down': '单调下降' }[r.m.dir] || '按最优值推断') + '</td></tr>';
@@ -1079,9 +1079,9 @@ MR.views2 = {};
         for (i = 0; i < n; i++) for (j = 0; j < n; j++) if (z[i][j] > bv) { bv = z[i][j]; bi = i; bj = j; }
         return S.surface3d(w, {
           height: 320, z: z, palette: MR.state.figStyle === 'glm' ? 'glm' : 'okabe-ito',
-          title: mats[0].m.i + ' 的三维响应面（以 ' + MR.paper.shortVar(mats[0].m.v) + ' 与第二因素为自变量）',
+          title: MR.bilingual(mats[0].m.i, MR.cn ? MR.cn(mats[0].m.i) : '') + ' 的三维响应面（以 ' + MR.paper.shortVarBilingual(mats[0].m.v, MR.cn ? MR.cn(mats[0].m.v) : '') + ' 与第二因素为自变量）',
           note: '峰值取自原文最优值 ' + (mats[0].m.opt != null ? mats[0].m.opt : '（原文未报告）'),
-          xlabel: MR.paper.shortVar(mats[0].m.v), ylabel: '第二因素（交互项）', zlabel: mats[0].m.i + ' 相对变化 (%)',
+          xlabel: MR.paper.shortVarBilingual(mats[0].m.v, MR.cn ? MR.cn(mats[0].m.v) : ''), ylabel: '第二因素（交互项）', zlabel: MR.bilingual(mats[0].m.i, MR.cn ? MR.cn(mats[0].m.i) : '') + ' 相对变化 (%)',
           opt: { i: bi, j: bj, label: '峰值 ' + bv.toFixed(1) + '%' }
         });
       });
@@ -1119,7 +1119,7 @@ MR.views2 = {};
         return S.bars3d(w, {
           height: 300, rows: indNames.map(function (s2) { return s2.slice(0, 6); }), cols: lv2.map(String), z: z2,
           palette: MR.state.figStyle === 'glm' ? 'glm' : 'npg',
-          title: '三维柱状：' + indNames.join(' / ') + ' × ' + MR.paper.shortVar(v0.key),
+          title: '三维柱状：' + indNames.map(function (n) { return MR.bilingual(n, MR.cn ? MR.cn(n) : ''); }).join(' / ') + ' × ' + MR.paper.shortVarBilingual(v0.key, MR.cn ? MR.cn(v0.key) : ''),
           note: '柱高 = 相对变化幅度（%）'
         });
       });
@@ -1268,8 +1268,8 @@ MR.views2 = {};
         }
         MR.figs.renderDualLine(fig1Host, {
           x: lv, y1: y1, y2: y2,
-          xLabel: MR.paper.shortVar(m.v) + ' (' + (model.unit || '') + ')',
-          y1Label: m.i + ' (MPa)',
+          xLabel: MR.paper.shortVarBilingual(m.v, MR.cn ? MR.cn(m.v) : '') + ' (' + (model.unit || '') + ')',
+          y1Label: MR.bilingual(m.i, MR.cn ? MR.cn(m.i) : '') + ' (MPa)',
           y2Label: (secondInd || '辅助指标') + ' (MPa)',
           xUnit: '', title: '变量对力学性能的影响（双 Y 轴）',
           optX: model.opt, optLabel: '最优 ' + model.opt
@@ -1375,7 +1375,7 @@ MR.views2 = {};
       }
 
       html += '<div class="grid g-4 mb-4">' + sel.slice(0, 4).map(function (s) {
-        return MR.metric((s.i + ' @ ' + MR.paper.shortVar(s.v)),
+        return MR.metric(MR.bilingual(s.i, s.icn || (MR.cn ? MR.cn(s.i) : '')) + ' @ ' + MR.paper.shortVarBilingual(s.v, s.vcn || (MR.cn ? MR.cn(s.v) : '')),
           (s.m.opt != null ? s.m.opt : '—'),
           s.model.unit ? ' ' + s.model.unit : '',
           s.model.amp != null ? '原文报道 ' + (s.m.amp > 0 ? '+' : '') + s.m.amp + '%' : '幅度未报告',
@@ -1396,7 +1396,7 @@ MR.views2 = {};
         var levels = (s.res === 'dense') ? denseLevels(s.model, s.n) : s.model.levels.slice();
         tblRows += levels.map(function (L) {
           var rep = isReported(L, s.model);
-          return '<tr><td class="wrap">' + MR.esc(MR.paper.shortVar(s.v)) + '</td><td class="wrap">' + MR.esc(s.i) + '</td>' +
+          return '<tr><td class="wrap">' + MR.esc(MR.paper.shortVarBilingual(s.v, s.vcn || (MR.cn ? MR.cn(s.v) : ''))) + '</td><td class="wrap">' + MR.bilingual(s.i, s.icn || (MR.cn ? MR.cn(s.i) : '')) + '</td>' +
             '<td class="num">' + (+L.toFixed(3)) + '</td><td class="num">' + s.model.f(L).toFixed(2) + '</td>' +
             '<td style="font-size:10.5px;color:var(--ink-3)">' + (Math.abs(L - s.m.opt) < 1e-6 ? '原文最优' : (rep ? '原文水平' : '预测·插值')) + '</td></tr>';
         }).join('');
@@ -1436,12 +1436,12 @@ MR.views2 = {};
             type: 'scatterErr', height: 250, x0: lv2[0] - 1, x1: lv2[lv2.length - 1] + 1,
             y0: Math.floor(Math.min.apply(null, lv2.map(function (x) { return s.model.f(x); })) / 5) * 5 - 5,
             y1: Math.ceil(Math.max.apply(null, lv2.map(function (x) { return s.model.f(x); })) / 5) * 5 + 5,
-            xlabel: MR.paper.shortVar(s.v), ylabel: s.i + ' 相对变化 (%)',
-            points: lv2.map(function (x) { return { x: x, y: s.model.f(x), ey: 1.8, color: '--sub', tip: MR.paper.shortVar(s.v) + ' = ' + (+x.toFixed(3)) + '<br>' + s.i + ' ' + s.model.f(x).toFixed(1) + '%' }; })
+            xlabel: MR.paper.shortVarBilingual(s.v, s.vcn || (MR.cn ? MR.cn(s.v) : '')), ylabel: MR.bilingual(s.i, s.icn || (MR.cn ? MR.cn(s.i) : '')) + ' 相对变化 (%)',
+            points: lv2.map(function (x) { return { x: x, y: s.model.f(x), ey: 1.8, color: '--sub', tip: MR.paper.shortVarBilingual(s.v, s.vcn || (MR.cn ? MR.cn(s.v) : '')) + ' = ' + (+x.toFixed(3)) + '<br>' + MR.bilingual(s.i, s.icn || (MR.cn ? MR.cn(s.i) : '')) + ' ' + s.model.f(x).toFixed(1) + '%' }; })
           });
         }
         var tEl = host.querySelector('#figT'), cEl = host.querySelector('#figCap'), iEl = host.querySelector('#figIdx');
-        if (tEl) tEl.textContent = '图 · ' + s.i + ' 随 ' + MR.paper.shortVar(s.v) + ' 的变化' + (s.res === 'dense' ? '（加密扫描·预测）' : '');
+        if (tEl) tEl.textContent = '图 · ' + MR.bilingual(s.i, s.icn || (MR.cn ? MR.cn(s.i) : '')) + ' 随 ' + MR.paper.shortVarBilingual(s.v, s.vcn || (MR.cn ? MR.cn(s.v) : '')) + ' 的变化' + (s.res === 'dense' ? '（加密扫描·预测）' : '');
         if (iEl) iEl.textContent = (i + 1) + ' / ' + sel.length;
         if (cEl) cEl.textContent = '数据来源：原文报告的变量水平（' + s.model.levels.join('、') + '）' +
           (s.m.opt != null ? '与最优值 ' + s.m.opt : '；原文未报告最优值') +
@@ -1496,7 +1496,7 @@ MR.views2 = {};
           title: '试剂与原料', meta: an.materials.length + ' 种', icon: 'exp', pad: true, flush: true,
           body: an.materials.length ? '<table class="tbl tbl--sm"><tbody>' + an.materials.map(function (m) {
             var g = MR.ghsOf(m.name);
-            return '<tr><td class="strong wrap">' + MR.esc(m.name) + '</td>' +
+            return '<tr><td class="strong wrap">' + MR.bilingual(m.name, m.cn) + '</td>' +
               '<td class="wrap" style="font-size:11px;color:var(--ink-3)">' + (MR.esc(m.spec || m.purity) || '规格未报告') + '<br>' + (MR.esc(m.supplier) || '') + '</td>' +
               '<td class="wrap" style="font-size:11px;color:' + (g.known ? 'var(--ink-2)' : 'var(--sig)') + '">' + g.ghs + '</td></tr>';
           }).join('') + '</tbody></table>' : noneNote('原文未报告试剂清单。')
@@ -1598,12 +1598,12 @@ MR.views2 = {};
             '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
             '<button class="btn" data-act="use">使用粘贴数据</button><button class="btn" data-act="demo">填入示例值</button>' +
             '<button class="btn" data-act="clear">清空</button></div>',
-          note: '指标清单来自原文：' + inds.map(function (i) { return i.name; }).join('、')
+          note: '指标清单来自原文：' + inds.map(function (i) { return MR.bilingual(i.name, i.cn || (MR.cn ? MR.cn(i.name) : '')); }).join('、')
         }) +
         '<div class="col">' + MR.panel({
           title: '原文报告的基准', meta: '来自抽取结果', icon: 'analysis', pad: true, tight: true,
           body: '<table class="tbl tbl--sm"><tbody>' + inds.map(function (i) {
-            return '<tr><td class="strong wrap">' + MR.esc(i.name) + '</td>' +
+            return '<tr><td class="strong wrap">' + MR.bilingual(i.name, i.cn || (MR.cn ? MR.cn(i.name) : '')) + '</td>' +
               '<td class="num">' + (i.optimum != null ? i.optimum : '—') + '</td>' +
               '<td class="num" style="font-size:10.5px;color:var(--ink-3)">' + (i.improvement != null ? (i.improvement > 0 ? '+' : '') + i.improvement + '%' : '幅度未报告') + '</td></tr>';
           }).join('') + '</tbody></table>',

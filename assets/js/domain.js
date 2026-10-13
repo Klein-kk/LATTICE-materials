@@ -136,7 +136,19 @@ MR.domain = (function () {
     'hydrogel', 'chitosan', 'alginate', 'cellulose', 'collagen', 'gelatin', 'serum albumin', 'bovine serum albumin', 'DNA', 'RNA', 'aptamer', 'antibody',
     'enzyme', 'glucose oxidase', 'lactate oxidase', 'horseradish peroxidase', 'protein', 'peptide', 'lipid', 'cholesterol', 'cortisol', 'insulin',
     'ionic liquid', 'eutectic solvent', 'electrolyte', 'buffer', 'phosphate-buffered saline', 'PBS', 'surfactant', 'crosslinker', 'initiator', 'monomer',
-    'silane', 'thiol', 'amine', 'carboxyl', 'hydroxyl', 'aldehyde', 'substrate', 'electrode', 'microelectrode', 'precursor', 'catalyst'];
+    'silane', 'thiol', 'amine', 'carboxyl', 'hydroxyl', 'aldehyde', 'substrate', 'electrode', 'microelectrode', 'precursor', 'catalyst',
+    /* 通用化学品 —— 论文最常见的英文试剂写法 */
+    'sodium chloride', 'sodium hydroxide', 'potassium hydroxide', 'sodium carbonate', 'sodium bicarbonate', 'sodium nitrate', 'sodium sulfate',
+    'potassium chloride', 'potassium nitrate', 'ammonium chloride', 'ammonium nitrate', 'ammonium sulfate', 'ammonium hydroxide',
+    'calcium chloride', 'calcium carbonate', 'calcium hydroxide', 'magnesium chloride', 'magnesium hydroxide', 'magnesium sulfate',
+    'zinc oxide', 'zinc sulfate', 'copper sulfate', 'iron sulfate', 'ferrous sulfate', 'ferric chloride',
+    'hydrochloric acid', 'sulfuric acid', 'nitric acid', 'phosphoric acid', 'acetic acid', 'citric acid', 'oxalic acid', 'tartaric acid',
+    'absolute ethanol', 'anhydrous ethanol', 'ethanol', 'methanol', 'isopropanol', 'butanol', 'ethylene glycol', 'propylene glycol',
+    'glycerol', 'glycerin', 'acetone', 'toluene', 'xylene', 'hexane', 'cyclohexane', 'chloroform', 'dichloromethane',
+    'dimethyl sulfoxide', 'DMSO', 'N-methyl-2-pyrrolidone', 'NMP', 'dimethylformamide', 'DMF', 'tetrahydrofuran', 'THF',
+    'deionized water', 'distilled water', 'argon', 'nitrogen', 'oxygen', 'hydrogen',
+    'vanadium pentoxide', 'ammonium dihydrogen phosphate', 'sodium perchlorate', 'ethylene carbonate', 'propylene carbonate',
+    'sodium metal', 'aluminum foil'];
 
   /* ---------- 英文材料名词 ---------- */
   var MATERIAL_NOUN_EN = ['steel', 'alloy', 'aluminium alloy', 'magnesium alloy', 'titanium alloy', 'stainless steel', 'ceramic', 'alumina', 'zirconia',

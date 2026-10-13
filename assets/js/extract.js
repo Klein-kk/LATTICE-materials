@@ -85,7 +85,17 @@ MR.extract = (function () {
       l = String(l || '').trim();
       if (!l) return;
       if (l.length <= 160) { out.push(l); return; }
-      splitSentences(l).forEach(function (s) { if (s.length > 1) out.push(s); });
+      /* 长行先用分号拆分（英文文献常见 "A (x%); Supplier1; B (y%); Supplier2" 黏在一行）；
+         拆分后再按句子边界二次切。空段丢弃。 */
+      var segs = l.split(/[;；]/);
+      var pieces = [];
+      segs.forEach(function (seg) {
+        var t = seg.trim();
+        if (!t) return;
+        if (t.length <= 160) { pieces.push(t); return; }
+        splitSentences(t).forEach(function (s) { if (s.length > 1) pieces.push(s); });
+      });
+      pieces.forEach(function (s) { out.push(s); });
     });
     return out;
   }
@@ -211,11 +221,14 @@ MR.extract = (function () {
   function extractMaterials(lines) {
     var out = [];
     lines.forEach(function (l) {
-      if (l.length > 160) return;
+      /* 长行：可能是多个分号分隔的试剂条目一起黏上来（英文 PDF 复制粘贴常见）。
+         只要带"购自/供应商/Co., Ltd./purity%"等任一采购线索，就放过去让正则继续匹配。 */
+      if (l.length > 160 && !/(有限公司|公司|集团|试剂|\bAladdin\b|\bMacklin\b|\bSinopharm\b|\bSigma\b|\bMerck\b|\bTCI\b|\bAlfa\b|\bFisher\b|\bAcros\b|\bMillipore\b|\bJ&K\b|purchased|obtained|supplied|\d{2,3}\s*%)/i.test(l)) return;
       /* 品牌名必须整词匹配：旧版 Acros（试剂商）会命中英文单词 "across"，
          导致正文句子被当成试剂清单（"…vancomycin across the membrane…"）。 */
       var isBuy = /(购自|采购|来源于|有限公司|公司|集团|试剂|分析纯|\bAR\b|纯度|含量\s*[≥>≧])/.test(l) ||
-        /(purchased from|obtained from|supplied by|\bSigma-?Aldrich\b|\bMerck\b|\bThermo\s?Fisher\b|\bAladdin\b|\bMacklin\b|\bTCI\b|\bAcros\b|\bAlfa\s?Aesar\b|Fisher Scientific|\bMillipore\b|\bInvitrogen\b|\bBecton\b|\bCorning\b|analytical grade|reagent grade|\b99(?:\.\d+)?%|\b98(?:\.\d+)?%)/i.test(l);
+        /(purchased from|obtained from|supplied by|provided by|\bSigma-?Aldrich\b|\bMerck\b|\bThermo\s?Fisher\b|\bAladdin\b|\bMacklin\b|\bTCI\b|\bAcros\b|\bAlfa\s?Aesar\b|Fisher Scientific|\bMillipore\b|\bInvitrogen\b|\bBecton\b|\bCorning\b|\bSinopharm\b|\bXilong\b|\bKejing\b|\bKejing Materials\b|\bDuoduo\b|\bRhawn\b|\bBide Pharmatech\b|\bJ&K Scientific\b|\bJ\s*&\s*K\b|\bEnergy Chemical\b|\bSCR\b|\bSinoreagent\b|\bTitan Scientific\b|analytical grade|reagent grade|\b99(?:\.\d+)?%|\b98(?:\.\d+)?%|\b97(?:\.\d+)?%|\b96(?:\.\d+)?%|\b95(?:\.\d+)?%|\bAR\b|\bCP\b|analytical reagent|chemical reagent)/i.test(l) ||
+        /[A-Z][A-Za-z&\.\- ]{2,40}(?:\bCo(?:mpany)?\b\.?|\bLtd\b\.?|\bInc\b\.?|\bCorp(?:oration)?\b|\bGmbH\b|\bS\.?A\.?\b)/.test(l);
       var LEXR = REAGENT_TAIL.concat((MR.domain && MR.domain.REAGENT_LEX) ? MR.domain.REAGENT_LEX : [],
         (MR.domain && MR.domain.MATERIAL_NOUN) ? MR.domain.MATERIAL_NOUN : [],
         (MR.domain && MR.domain.REAGENT_LEX_EN) ? MR.domain.REAGENT_LEX_EN : [],
@@ -223,8 +236,10 @@ MR.extract = (function () {
       var low1 = l.toLowerCase();
       var hitTail = LEXR.some(function (t) { return t.length > 3 ? low1.indexOf(t.toLowerCase()) >= 0 : l.indexOf(t) >= 0; });
       var hitChem = CHEM_RE.test(l); CHEM_RE.lastIndex = 0;
-      /* 通用启发式：材料类论文的标准写法「名称（规格），购自/采购于厂家」（中英文通用） */
-      var canonical = /^[\u4e00-\u9fa5A-Za-z0-9\s\-·\.]{2,40}[（(][^）)]{1,40}[）)][\s]*[，,；;][\s]*(?:购自|采购于|来源于|由.*?提供|purchased\s+from|obtained\s+from|supplied\s+by|provided\s+by)/i.test(l);
+      /* 通用启发式：材料类论文的标准写法「名称（规格），购自/采购于厂家」（中英文通用）；
+         兼容英文里只用厂商后缀、不写 "purchased from" 的写法：xxx (spec), Xxx Co., Ltd.; */
+      var canonical = /^[\u4e00-\u9fa5A-Za-z0-9\s\-·\.]{2,40}[（(][^）)]{1,40}[）)][\s]*[，,；;][\s]*(?:购自|采购于|来源于|由.*?提供|purchased\s+from|obtained\s+from|supplied\s+by|provided\s+by)/i.test(l) ||
+        /^[\u4e00-\u9fa5A-Za-z0-9\s\-·\.]{2,40}[（(][^）)]{1,40}[）)][\s]*[，,;][\s]*[A-Z][A-Za-z&\.\- ]{2,40}(?:\bCo(?:mpany)?\b\.?|\bLtd\b\.?|\bInc\b\.?|\bCorp\b\.?|\bGmbH\b)/.test(l);
       /* 英文正文句子的误判护栏：一句正常英文叙述里会出现多个功能词，
          而"试剂清单行"不会。没有采购/厂家线索时直接否决，避免把论文句子当试剂。 */
       var enProcure = /(purchased|obtained|supplied|bought|\bSigma-?Aldrich\b|\bMerck\b|\bThermo\s?Fisher\b|\bAladdin\b|\bMacklin\b|\bTCI\b|\bAcros\b|\bAlfa\s?Aesar\b|Fisher Scientific|\bMillipore\b|\bInvitrogen\b|analytical grade|reagent grade)/i.test(l);
@@ -242,6 +257,7 @@ MR.extract = (function () {
       out.push({
         name: clean(name), spec: clean(spec), purity: clean(pure), supplier: clean(sup),
         kind: /偶联剂|硅烷|树脂|乳液/.test(l) ? '改性剂' : (/竹粉|木粉|秸秆|纤维|水泥|粉煤灰|矿渣/.test(name) ? '基体/增强体' : '化学试剂'),
+        cn: (MR.cn ? (MR.cn(name) || MR.cn(spec) || '') : ''),
         evidence: clean(l)
       });
     });
@@ -301,13 +317,43 @@ MR.extract = (function () {
           } else if (name && !LATIN_FILLER.test(name) && name.length <= 20) {
             nm = name;
           }
-          out.push({ name: clean(nm), model: model, vendor: vendor, evidence: clean(l + (nm && model ? ' / ' + model : '')) });
+          out.push({ name: clean(nm), model: model, vendor: vendor, cn: (MR.cn ? (MR.cn(nm) || MR.cn(name) || '') : ''), evidence: clean(l + (nm && model ? ' / ' + model : '')) });
         });
       } else {
-        out.push({ name: clean(name), model: model, vendor: vendor, evidence: clean(l + (model ? ' / ' + model : '')) });
+        out.push({ name: clean(name), model: model, vendor: vendor, cn: (MR.cn ? (MR.cn(name) || '') : ''), evidence: clean(l + (model ? ' / ' + model : '')) });
       }
     });
     void tables;
+    /* 去重：
+       1) 完全同名 → 合并
+       2) cn 字段相同的同义条目（XRD = X-ray diffraction）合并
+       3) 缩写与全称的字串包含（去 - _ . 空白后再判） */
+    function norm(s) { return (s || '').toLowerCase().replace(/[\s\-._]/g, ''); }
+    var drop = {};
+    for (var i = 0; i < out.length; i++) {
+      if (drop[i]) continue;
+      for (var j = i + 1; j < out.length; j++) {
+        if (drop[j]) continue;
+        var a = out[i], b = out[j];
+        var an = norm(a.name), bn = norm(b.name);
+        if (!an || !bn) continue;
+        var sameKind = (a.cn && b.cn && a.cn === b.cn);
+        var contains = (an.length >= 3 && bn.length >= 3 && (an.indexOf(bn) >= 0 || bn.indexOf(an) >= 0));
+        var exact = (an === bn);
+        if (!exact && !sameKind && !contains) continue;
+        /* 保留更长（更具体）的名字；字段合并到保留项 */
+        if ((b.name || '').length > (a.name || '').length) {
+          var tmp = a; a = b; b = tmp;
+          drop[j] = true; drop[i] = false;
+        } else {
+          drop[j] = true;
+        }
+        a.model = a.model || b.model;
+        a.vendor = a.vendor || b.vendor;
+        a.evidence = (a.evidence || '') + ' | ' + (b.evidence || '');
+      }
+    }
+    out = out.filter(function (_, i) { return !drop[i]; });
     return out.filter(function (o, i, a) { return o.name && a.findIndex(function (x) { return x.name === o.name; }) === i; });
   }
 
@@ -331,18 +377,31 @@ MR.extract = (function () {
      这样能天然排除页码、目录、化学计量比等非变量数字。 */
   function extractVariables(secs, fullText) {
     var UNIT_RE = '(?:%|％|℃|°C|MPa|kPa|GPa|h|min|s|ms|µs|us|Hz|kHz|nM|µM|uM|mM|M|mg\\/mL|mg\\/dL|mmol\\/L|mol\\/L|mol·L-1|nA|µA|uA|mA|mV|V|Ω|kΩ|nm|µm|um|μm|mm|cm|mL|µL|uL|L|g\\/cm3|g\\/cm³|mg|µg|ug|ng|pg|wt%|vol%|ppm|ppb|目|r\\/min|rpm|ph|pH)';
-    var SUFFIX = '(?:添加质量|质量比|固液比|掺量|添加量|加入量|用量|浓度|含量|比例|温度|时间|压力|转速|密度|取代度|pH值|pH|负载量|接枝率|包覆量|质量|量|concentration|concentrations|content|ratio|temperature|time|pressure|speed|density|loading|amount|level|levels|mol%)';
+    var SUFFIX = '(?:添加质量|质量比|固液比|掺量|添加量|加入量|用量|浓度|含量|比例|温度|时间|压力|转速|密度|取代度|pH值|pH|负载量|接枝率|包覆量|质量|量|concentrations?|contents?|ratios?|temperatures?|times?|pressures?|speeds?|densit(?:y|ies)|loadings?|amounts?|levels?|mol%)';
     /* 注意：\b 对中文无效 —— 汉字在 JS 正则里是非单词字符，后缀后加 \b 会让
        所有中文变量都匹配不上（曾导致四个中文示例变量全部为 0）。这里不加 \b，
        改为用 NOUN_TAIL 校验词尾。 */
     var NOUN_RE = new RegExp('([\\u4e00-\\u9fa5A-Za-z0-9\\-\\s]{0,22}?' + SUFFIX + ')', 'gi');
     var NOUN_TAIL = new RegExp(SUFFIX + '$');
     function tidyNoun(n) {
-      var t = n.replace(/^(其中|随着|按|称|当|在|由|将|对|与|和|及|把|以|用|加|加入|称量|测试|试件|设计|分别|再|先|后|均|各|的|中|at|of|the|a|an|with|for)+/i, '').trim();
-      var m2 = t.match(new RegExp('((?:[\\u4e00-\\u9fa5]{2,6}|[A-Za-z][A-Za-z\\- ]{1,18}?)' + SUFFIX + ')$', 'i'));
+      /* 循环剥前导功能词（英文 / 中文 / 数字混排都允许；英文小写限定避免吃掉"C content"里的C） */
+      var LEAD_RE = /^(?:\s*(?:其中|随着|按|称|当|在|由|将|对|与|和|及|把|以|用|加|加入|称量|测试|试件|设计|分别|再|先|后|均|各|的|中|the|a|an|of|to|in|at|on|for|with|by|as|from|that|this|these|those|its|it|are|is|was|were|be|been|being|have|has|had|do|does|did|will|would|should|may|might|can|could|and|or|but|so|because|since|than)\b\s*)+/i;
+      var t = String(n || '').replace(LEAD_RE, '').trim();
+      /* 再剥三轮：剩余若仍以小写功能词或中文虚词开头，继续剥 */
+      for (var i = 0; i < 3; i++) {
+        var t2 = t.replace(LEAD_RE, '').trim();
+        if (t2 === t) break;
+        t = t2;
+      }
+      /* 兜底取最短的「首词（可含 - / 空格） + SUFFIX」 */
+      var m2 = t.match(new RegExp('([A-Z]?[A-Za-z][A-Za-z\\- ]*?' + SUFFIX + '|[\\u4e00-\u9fa5]{2,6}' + SUFFIX + ')$', 'i'));
       t = m2 ? m2[1] : t;
       /* 工序动词短语常以「量」收尾（按配合比称量 / 按化学计量），它们不是变量 */
       if (/称量|称取|量取|计量|搅拌|球磨|干燥|浸渍|洗涤|制备/.test(t)) return '';
+      /* 章节号 + 节标题残留（如 "3 Results" / "Abstract" / "Results Carbon"）应丢弃 */
+      var SECTION_WORDS = /^(?:abstract|summary|introduction|background|experimental(?:\s+section)?|methods?|materials(?:\s+and\s+methods)?|results?(?:\s+and\s+discussion)?|discussion|conclusions?|references|acknowledg(?:e?ments?)|future\s+(?:work|perspectives?)|perspectives?|supplementary|appendix|results?\s*&?\s*discussion|摘\s*要|引\s*言|实验|试验|方法|结果(?:\s*与\s*讨论)?|结论|参考文献|致谢|结果分析|结果与讨论|材料与方法|实验方法|试验方法)\s*/i;
+      t = t.replace(SECTION_WORDS, '').trim();
+      if (!t || SECTION_WORDS.test(t)) return '';
       return t;
     }
     /* 是否为"提升幅度"式数字（应排除，它不是变量水平） */
@@ -389,7 +448,8 @@ MR.extract = (function () {
           var hit = out.filter(function (o) { return o.key === key; })[0];
           if (hit) { if (nums.length > hit.levels.length) { hit.levels = nums; hit.evidence = clean(sent).slice(0, 220); } return; }
           out.push({ key: key, noun: mk.noun, unit: unit, levels: nums, evidence: clean(sent).slice(0, 220), sec: '正文',
-            suffix: (mk.noun.match(NOUN_TAIL) || [''])[0] });
+            suffix: (mk.noun.match(NOUN_TAIL) || [''])[0],
+            cn: (MR.cn ? (MR.cn(mk.noun) || '') : '') });
         }
       });
     });
@@ -461,6 +521,7 @@ MR.extract = (function () {
         if (sec.k.indexOf(ind) < 0) return;
         if (out.some(function (o) { return o.name === ind; })) return;
         out.push({ name: ind, kind: '性能指标', unit: '', direction: '', optimum: null, improvement: null,
+          cn: (MR.cn ? (MR.cn(ind) || '') : ''),
           evidence: sec.no + ' ' + sec.k, source: '章节标题', hits: 1 });
       });
     });
@@ -491,12 +552,14 @@ MR.extract = (function () {
         else if (/mAh/.test(ctx) && /容量|capacity/i.test(ind)) unit = 'mAh/g';
       }
       out.push({ name: ind, kind: '性能指标', unit: unit, direction: '', optimum: null, improvement: null,
+        cn: (MR.cn ? (MR.cn(ind) || '') : ''),
         evidence: clean(ctx || ('全文出现 ' + counts[ind] + ' 次')).slice(0, 200), source: '正文', hits: counts[ind] });
     });
     /* 3) 表征手段 */
     CHAR_METHOD.forEach(function (c) {
       var hit = c.re.test(fullText); c.re.lastIndex = 0;
-      if (hit) out.push({ name: c.t, kind: c.kind, unit: c.unit, method: c.k, isChar: true,
+      if (hit)       out.push({ name: c.t, kind: c.kind, unit: c.unit, method: c.k, isChar: true,
+        cn: (MR.cn ? (MR.cn(c.t) || MR.cn(c.k) || '') : ''),
         direction: '', optimum: null, improvement: null, evidence: '正文中出现 ' + c.k + ' 相关表述', source: '表征手段' });
     });
     /* 4) 方向 / 最优值 / 提升幅度 */

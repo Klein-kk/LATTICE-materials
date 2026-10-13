@@ -551,7 +551,7 @@ MR.figs2 = (function () {
     var X = function (i) { return pad.l + (lv.length === 1 ? iw / 2 : iw * i / (lv.length - 1)); };
     var Y = function (v) { return pad.t + ih - ih * (v - lo) / ((hi - lo) || 1); };
     var s = frame(w, h);
-    s += caption(w, 20, '图 6', spec.ind + ' 随' + MR.paper.shortVar(spec.varKey) + '的变化（' + (m.ampReported ? '峰值幅度取自原文报道' : '幅度待实测标定') + '）');
+    s += caption(w, 20, '图 6', (MR.bilingual ? MR.bilingual(spec.ind, MR.cn ? MR.cn(spec.ind) : '') : spec.ind) + ' 随' + MR.paper.shortVarBilingual(spec.varKey, MR.cn ? MR.cn(spec.varKey) : '') + '的变化（' + (m.ampReported ? '峰值幅度取自原文报道' : '幅度待实测标定') + '）');
     for (var t = 0; t <= 4; t++) {
       var yv = lo + (hi - lo) * t / 4;
       s += L(pad.l, Y(yv), w - pad.r, Y(yv), { c: '#EFECE5', w: 0.8 });
@@ -561,7 +561,7 @@ MR.figs2 = (function () {
     s += T(w - pad.r + 3, Y(0) + 3, '对照', { size: 8, fill: '#8C949C' });
     s += L(pad.l, pad.t + ih, w - pad.r, pad.t + ih, { c: '#B9BFC5', w: 1 });
     lv.forEach(function (x, i) { s += T(X(i), h - 26, x + '', { size: 9, fill: '#4B535B', anchor: 'middle' }); });
-    s += T(pad.l + iw / 2, h - 8, MR.paper.shortVar(spec.varKey) + (m.unit ? ' (' + m.unit + ')' : ''), { size: 9.5, fill: '#4B535B', anchor: 'middle' });
+    s += T(pad.l + iw / 2, h - 8, MR.paper.shortVarBilingual(spec.varKey, MR.cn ? MR.cn(spec.varKey) : '') + (m.unit ? ' (' + m.unit + ')' : ''), { size: 9.5, fill: '#4B535B', anchor: 'middle' });
     s += T(12, pad.t + ih / 2, (spec.polarity === 'min' ? '相对变化率 (%) ↓越优' : '相对变化率 (%) ↑越优'), { size: 9, fill: '#4B535B', anchor: 'middle', rot: -90 });
     /* 曲线 + 数据点 + 误差棒 */
     var pts = lv.map(function (x, i) { return [X(i), Y(m.f(x))]; });

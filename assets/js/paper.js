@@ -12,6 +12,27 @@ window.MR = window.MR || {};
 
 MR.paper = (function () {
 
+  /* 双语呈现：英文 (中文) 或 中文 (英文)，按 prefer 决定顺序。
+     - prefer='cn'：中文在前
+     - prefer='en'：英文在前
+     - 默认 cn-first 但括号附英文（用户原话："英文题目，括号，中文翻译在里面"）
+     - 若 cn 字段为空或等于 name，直接返回 name
+     - 若 name 已是中文，直接返回 name
+     - HTML 安全：自动转义 < > & " '（避免 XSS 注入） */
+  function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&', '<': '<', '>': '>', '"': '"', "'": '&#39;' })[c]; }); }
+  MR.bilingual = function (name, cn, prefer) {
+    var n = String(name == null ? '' : name);
+    var c = String(cn == null ? '' : cn).trim();
+    if (!n) return c || '';
+    /* 已是中文：直接返回（不再翻译） */
+    if (/[\u4e00-\u9fa5]/.test(n)) return escHtml(n);
+    /* cn 空 / 等于 name：仅显示英文 */
+    if (!c || c.toLowerCase() === n.toLowerCase()) return escHtml(n);
+    if (prefer === 'en') return escHtml(n + '（' + c + '）');
+    return escHtml(c + '（' + n + '）');
+  };
+  MR.bilingualHtml = MR.bilingual;   /* 保留别名，含义即"已转义 HTML" */
+
   var MIN_POLARITY = /(膨胀率|含水率|收缩率|孔隙率|吸水率|透湿率|透气|损失率|损耗|开裂|缺陷|降解率|脱落率|迁移率|电阻|阻抗|导热系数|热导率|接触角$)/;
   var CHAR_LIKE = /(?:\u8868\u5f81|\u5f62\u8c8c|\u8c31|\u6676|\u7ed3\u6784|\u6210\u5206|\u5149\u8c31|\u7535\u955c|\u884d\u5c04|\u7ea2\u5916|\u80fd\u8c31)/;
 
@@ -105,7 +126,8 @@ MR.paper = (function () {
     });
 
     var profile = {
-      title: an.title, titleEn: an.titleEn, abstract: an.abstract, keywords: an.keywords,
+      title: an.title, titleEn: an.titleEn, titleCn: (MR.cn ? MR.cn(an.title) : ''),
+      abstract: an.abstract, keywords: an.keywords,
       domain: guessDomain(an),
       materials: an.materials, instruments: an.instruments, standards: an.standards,
       variables: an.variables, perf: perf, chars: chars, steps: an.steps,
@@ -199,7 +221,7 @@ MR.paper = (function () {
       });
     });
     if (!specs.length && perf.length && vars.length) {
-      specs.push({ type: 'trend', varKey: vars[0].key, ind: perf[0].name, unit: perf[0].unit, polarity: perf[0].polarity, levels: vars[0].levels, title: perf[0].name + ' 随' + shortVar(vars[0].key) + '的变化' });
+      specs.push({ type: 'trend', varKey: vars[0].key, ind: perf[0].name, unit: perf[0].unit, polarity: perf[0].polarity, levels: vars[0].levels, title: (perf[0].cn || (MR.cn ? MR.cn(perf[0].name) : '') || perf[0].name) + ' 随' + shortVar(vars[0].key) + '的变化' });
     }
     /* 表征类图 */
     if ((profile.peakData.theta || []).length >= 3) specs.push({ type: 'xrd', title: 'XRD 衍射图谱（峰位取自原文）' });
@@ -208,6 +230,15 @@ MR.paper = (function () {
     return specs;
   }
   function shortVar(k) { return String(k).split(' / ')[0]; }
+  /* 与 shortVar 配套：若变量名可翻译，返回「中文（英文）」，否则原样。
+     给 chip / 标题这种"短文本"渲染用。 */
+  function shortVarBilingual(k, cn) {
+    var name = shortVar(k);
+    var c = String(cn || '').trim();
+    if (!c || c.toLowerCase() === name.toLowerCase()) return name;
+    if (/[\u4e00-\u9fa5]/.test(name)) return name;
+    return c + '（' + name + '）';
+  }
 
-  return { build: build, makeModel: makeModel, chartSpecs: chartSpecs, peaks: peaks, ftirBands: ftirBands, shortVar: shortVar, MIN_POLARITY: MIN_POLARITY };
+  return { build: build, makeModel: makeModel, chartSpecs: chartSpecs, peaks: peaks, ftirBands: ftirBands, shortVar: shortVar, shortVarBilingual: shortVarBilingual, MIN_POLARITY: MIN_POLARITY };
 })();
