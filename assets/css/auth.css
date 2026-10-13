@@ -50,6 +50,17 @@ input:focus-visible, textarea:focus-visible, .eq:focus-visible {
 .auth__sep { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--ink-3, #999); font-size: 11px; }
 .auth__sep::before, .auth__sep::after { content: ""; flex: 1; height: 1px; background: var(--line, #e3e3df); }
 
+/* —— 忘记密码链接 —— */
+.auth__links { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
+.auth__forgot {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font: 500 12px/1 var(--sans, inherit);
+  color: var(--acc, #0E5C56); text-decoration: underline;
+  transition: color .14s var(--ease, ease);
+}
+.auth__forgot:hover { color: var(--sig, #B4761F); }
+.auth__forgot:disabled { color: var(--ink-3, #999); cursor: not-allowed; text-decoration: none; }
+
 /* —— 我的论文库条目 —— */
 .librow {
   display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;

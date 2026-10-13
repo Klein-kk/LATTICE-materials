@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设置新密码 · LATTICE</title>
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230E5C56'/><text x='50' y='65' font-size='52' font-family='monospace' fill='%23E7EAE6' text-anchor='middle' font-weight='700'>L</text></svg>">
+<script src="supabase-config.js"></script>
+<style>
+  :root {
+    --bg: #F7F8F6;
+    --surface: #ffffff;
+    --ink: #1c1f1d;
+    --ink-2: #555;
+    --ink-3: #999;
+    --line: #e3e3df;
+    --line-2: #d3d6d1;
+    --acc: #0E5C56;
+    --sig: #B4761F;
+    --pink: #c84b4b;
+    --shadow: 0 14px 40px rgba(20, 30, 28, 0.08);
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card {
+    width: 100%; max-width: 420px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 32px 32px 28px; box-shadow: var(--shadow);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .brand__mark { width: 36px; height: 36px; border-radius: 8px; background: var(--acc); color: #fff;
+    display: flex; align-items: center; justify-content: center; font: 700 18px/1 var(--mono, monospace); }
+  .brand__name { font: 700 16px/1 var(--sans, inherit); letter-spacing: 0.04em; }
+  .brand__name b { color: var(--acc); }
+  h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
+  .sub { margin: 0 0 22px; font-size: 13px; color: var(--ink-3); line-height: 1.55; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 5px; font-weight: 600; }
+  .field input { width: 100%; box-sizing: border-box;
+    background: var(--bg); border: 1px solid var(--line-2); border-radius: 10px;
+    padding: 10px 12px; font: 14px/1.4 var(--sans, inherit); color: var(--ink); outline: none;
+    transition: border-color .14s ease; }
+  .field input:focus { border-color: var(--acc); }
+  .field input:disabled { background: var(--line); color: var(--ink-3); cursor: not-allowed; }
+  .hint { font-size: 12.5px; color: var(--ink-3); min-height: 18px; margin: -4px 0 6px; }
+  .hint.is-err { color: var(--pink); }
+  .hint.is-ok { color: var(--acc); }
+  .submit {
+    width: 100%; box-sizing: border-box;
+    background: var(--acc); color: #fff; border: none;
+    padding: 11px; border-radius: 10px; cursor: pointer;
+    font: 600 14px/1 var(--sans, inherit);
+    transition: background .14s ease, transform .12s ease;
+    margin-top: 6px;
+  }
+  .submit:hover { background: #0a4a44; }
+  .submit:active { transform: translateY(1px); }
+  .submit:disabled { background: var(--ink-3); cursor: not-allowed; }
+  .secondary { display: block; text-align: center; margin-top: 14px;
+    font-size: 12.5px; color: var(--ink-3); text-decoration: none; }
+  .secondary:hover { color: var(--acc); }
+  .state {
+    text-align: center; padding: 14px 0 6px;
+  }
+  .state .icon {
+    width: 48px; height: 48px; margin: 0 auto 14px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; color: #fff;
+  }
+  .state.ok .icon { background: var(--acc); }
+  .state.err .icon { background: var(--pink); }
+  .state h2 { margin: 0 0 8px; font-size: 17px; }
+  .state p { margin: 0 0 16px; color: var(--ink-3); font-size: 13px; }
+  .spinner {
+    width: 14px; height: 14px; border: 2px solid #ffffff80;
+    border-top-color: #fff; border-radius: 50%;
+    display: inline-block; vertical-align: -3px; margin-right: 6px;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card">
+    <div class="brand">
+      <div class="brand__mark">L</div>
+      <div class="brand__name"><b>LATTICE</b> · 材料科研自动化平台</div>
+    </div>
+
+    <!-- 默认：表单（链接有效 + 等待用户输入新密码） -->
+    <div id="formView">
+      <h1>设置新密码</h1>
+      <p class="sub">请输入新密码（至少 6 位）。提交后会立即生效，你可以用新密码登录。</p>
+      <div class="field">
+        <label for="newPw">新密码</label>
+        <input type="password" id="newPw" placeholder="至少 6 位" autocomplete="new-password" autofocus>
+      </div>
+      <div class="field">
+        <label for="newPw2">确认新密码</label>
+        <input type="password" id="newPw2" placeholder="再次输入新密码" autocomplete="new-password">
+      </div>
+      <div class="hint" id="hint"></div>
+      <button class="submit" id="submitBtn" type="button">提交新密码</button>
+      <a class="secondary" href="app.html">← 返回主站</a>
+    </div>
+
+    <!-- 状态视图（链接无效 / 已过期 / 已完成） -->
+    <div id="stateView" hidden>
+      <div class="state" id="stateBox">
+        <div class="icon" id="stateIcon"></div>
+        <h2 id="stateTitle"></h2>
+        <p id="stateDesc"></p>
+        <a class="submit" id="stateAction" style="text-decoration:none;display:inline-block;width:auto;padding:10px 24px" href="app.html">返回主站</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* === Supabase 客户端初始化 === */
+var CFG = window.LATTICE_SUPABASE || {};
+var SB_ON = !!(CFG.enabled && CFG.url && !CFG.url.includes('YOUR_') && CFG.anonKey && !CFG.anonKey.includes('YOUR_'));
+var sbClient = null;
+if (SB_ON) {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+  s.onload = function () {
+    try { sbClient = window.supabase.createClient(CFG.url, CFG.anonKey);
+      window.__sbReady = true; initPage();
+    } catch (e) { showError('Supabase 初始化失败：' + e.message); }
+  };
+  s.onerror = function () { showError('无法加载 Supabase SDK（可能离线或被网络策略拦截）'); };
+  document.head.appendChild(s);
+} else {
+  showError('后端未配置：请在 supabase-config.js 填入真实配置后，把 reset.html 也部署到对应站点。');
+}
+
+function initPage() {
+  /* 默认 Supabase JS 会从 URL fragment 自动恢复 recovery session（access_token / refresh_token），
+     并触发 onAuthStateChange('PASSWORD_RECOVERY', session)。这里等一会儿检测 session 是否到位。 */
+  /* 标记当前还未确认 session；PASSWORD_RECOVERY 一旦触发就置 true，避免误显示错误态。 */
+  window.__recoveryOk = false;
+  if (sbClient && sbClient.auth) {
+    sbClient.auth.onAuthStateChange(function (event, session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        window.__recoveryOk = true;
+        showForm();
+      } else if (event === 'SIGNED_IN' && session && session.user) {
+        window.__recoveryOk = true;
+        showForm();
+      }
+    });
+  }
+  setTimeout(checkSession, 600);
+  document.getElementById('submitBtn').addEventListener('click', submitNew);
+}
+
+function checkSession() {
+  if (!sbClient || !sbClient.auth) return;
+  sbClient.auth.getSession().then(function (res) {
+    var s = res && res.data && res.data.session;
+    if (s && s.user) {
+      window.__recoveryOk = true;
+      showForm();
+    } else {
+      /* 再等 1.5s：PASSWORD_RECOVERY 事件可能在 getSession 之后才到 */
+      setTimeout(function () {
+        if (!window.__recoveryOk) {
+          showError('链接无效或已过期：请回到登录页重新发送重置邮件。',
+            { actionLabel: '返回登录页', actionHref: 'index.html#login' });
+        }
+      }, 1500);
+    }
+  }).catch(function (e) {
+    showError('会话检测失败：' + (e && e.message || '未知错误'));
+  });
+}
+
+function showForm() {
+  document.getElementById('formView').hidden = false;
+  document.getElementById('stateView').hidden = true;
+  var p = document.getElementById('newPw'); if (p) p.focus();
+}
+
+function showError(msg, opts) {
+  opts = opts || {};
+  document.getElementById('formView').hidden = true;
+  document.getElementById('stateView').hidden = false;
+  var box = document.getElementById('stateBox');
+  box.className = 'state err';
+  document.getElementById('stateIcon').textContent = '!';
+  document.getElementById('stateTitle').textContent = '无法设置新密码';
+  document.getElementById('stateDesc').textContent = msg;
+  var a = document.getElementById('stateAction');
+  if (opts.actionLabel) a.textContent = opts.actionLabel;
+  if (opts.actionHref) a.href = opts.actionHref;
+}
+
+function showSuccess(msg) {
+  document.getElementById('formView').hidden = true;
+  document.getElementById('stateView').hidden = false;
+  var box = document.getElementById('stateBox');
+  box.className = 'state ok';
+  document.getElementById('stateIcon').textContent = '✓';
+  document.getElementById('stateTitle').textContent = '密码已更新';
+  document.getElementById('stateDesc').textContent = msg || '你可以用新密码登录 LATTICE。';
+  var a = document.getElementById('stateAction');
+  a.textContent = '立即登录'; a.href = 'index.html#login';
+}
+
+function submitNew() {
+  var pw  = (document.getElementById('newPw').value  || '').trim();
+  var pw2 = (document.getElementById('newPw2').value || '').trim();
+  var hint = document.getElementById('hint');
+  var btn  = document.getElementById('submitBtn');
+  hint.classList.remove('is-err','is-ok');
+  if (pw.length < 6)      { hint.classList.add('is-err'); hint.textContent = '新密码至少 6 位'; return; }
+  if (pw !== pw2)         { hint.classList.add('is-err'); hint.textContent = '两次输入的密码不一致'; return; }
+  if (!sbClient || !sbClient.auth) { hint.classList.add('is-err'); hint.textContent = '后端未就绪，请稍候再试'; return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>正在更新…';
+  sbClient.auth.updateUser({ password: pw }).then(function (r) {
+    if (r && r.error) throw r.error;
+    /* 更新成功后顺手登出（避免用户停留在 recovery session 里访问主站产生困惑） */
+    return sbClient.auth.signOut().catch(function () {}).then(function () {
+      showSuccess();
+    });
+  }).catch(function (e) {
+    btn.disabled = false;
+    btn.textContent = '提交新密码';
+    hint.classList.add('is-err');
+    hint.textContent = (e && e.message) || '更新失败，请重试';
+  });
+}
+</script>
+</body>
+</html>

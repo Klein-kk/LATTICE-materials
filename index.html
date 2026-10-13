@@ -522,6 +522,7 @@ main{position:relative;z-index:1}
           <input type="password" id="authPw" placeholder="至少 6 位" autocomplete="current-password" required>
         </div>
         <div class="auth__hint" id="authHint"></div>
+        <div class="auth__links"><button type="button" class="auth__forgot" id="authForgot">忘记密码？</button></div>
         <button type="submit" class="auth__submit" id="authGo">登录</button>
         <div class="auth__sep"><span>或</span></div>
         <button type="button" class="auth__google" id="authGoogle">
@@ -1140,6 +1141,38 @@ authForm.addEventListener('submit', async (e) => {
     hint.classList.add('is-err'); hint.textContent = (err && err.message) || '操作失败';
   } finally {
     submitBtn.disabled = false;
+  }
+});
+
+/* === 找回密码：发送重置邮件 === */
+document.getElementById('authForgot').addEventListener('click', async () => {
+  if (!SB_ON || !sbClient) {
+    hint.classList.remove('is-err','is-ok');
+    hint.classList.add('is-err');
+    hint.textContent = '本地模式不支持找回密码：未启用 Supabase 后端。';
+    return;
+  }
+  const email = document.getElementById('authEmail').value.trim();
+  hint.classList.remove('is-err','is-ok');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    hint.classList.add('is-err'); hint.textContent = '请填写有效的邮箱地址';
+    return;
+  }
+  const fb = document.getElementById('authForgot');
+  fb.disabled = true;
+  hint.textContent = '正在发送重置邮件…';
+  try {
+    const { error } = await sbClient.auth.resetPasswordForEmail(email, {
+      redirectTo: location.origin + location.pathname.replace(/[^/]*$/, 'reset.html')
+    });
+    if (error) throw error;
+    hint.classList.add('is-ok');
+    hint.textContent = '重置邮件已发送至 ' + email + '。请到邮箱点击链接设置新密码。';
+  } catch (err) {
+    hint.classList.add('is-err');
+    hint.textContent = (err && err.message) || '发送失败';
+  } finally {
+    fb.disabled = false;
   }
 });
 

@@ -175,6 +175,34 @@ window.MR = window.MR || {};
       if (!this.client) { this.user = null; this.uid = null; try { localStorage.removeItem(KEY_USER); } catch (e) {} MR.ui && MR.ui.updateUser(); return Promise.resolve(); }
       return this.client.auth.signOut();
     },
+    /* —— 找回密码：发送重置邮件 —— 
+       「忘记密码？」链接点进来后调用。
+       Supabase 会把恢复链接发到用户邮箱；点击后浏览器跳到 redirectTo 指定页（reset.html）。
+       返回 Promise<{ok, error}>：ok=true 表示已尝试发送；Supabase 出于安全考虑，无论邮箱是否注册都会返回成功。 */
+    requestPasswordReset: function (email) {
+      var self = this;
+      if (!this.enabled) return Promise.resolve({ ok: false, error: new Error('本地模式不支持找回密码：未配置 Supabase 后端。') });
+      var em = String(email || '').trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return Promise.resolve({ ok: false, error: new Error('请填写有效的邮箱地址') });
+      return this.loadSdk()
+        .then(function () {
+          return self.client.auth.resetPasswordForEmail(em, {
+            redirectTo: window.location.origin + '/reset.html'
+          });
+        })
+        .then(function (r) { if (r && r.error) throw r.error; return { ok: true }; })
+        .catch(function (e) { MR.log && MR.log('RISK', '发送重置邮件失败：' + e.message); return { ok: false, error: e }; });
+    },
+    /* —— 用户在 reset.html 输入新密码后调用 —— 
+       假设此时 Supabase JS 已从 URL fragment 自动恢复 recovery session（auth.onAuthStateChange 会触发）。 */
+    updatePassword: function (newPw) {
+      var self = this;
+      if (!this.client) return Promise.resolve({ ok: false, error: new Error('后端未连接') });
+      if (!newPw || newPw.length < 6) return Promise.resolve({ ok: false, error: new Error('新密码至少 6 位') });
+      return this.client.auth.updateUser({ password: newPw })
+        .then(function (r) { if (r && r.error) throw r.error; return { ok: true }; })
+        .catch(function (e) { return { ok: false, error: e }; });
+    },
 
     /* —— 论文表：papers(user_id, id, name, kind, chars, content) —— */
     savePaper: function (p) {
@@ -251,6 +279,7 @@ window.MR = window.MR || {};
         '<div class="auth__row"><label>邮箱</label><input type="email" id="authEmail" class="eq" placeholder="you@example.com" autocomplete="email"></div>' +
         '<div class="auth__row"><label>密码</label><input type="password" id="authPw" class="eq" placeholder="至少 6 位" autocomplete="current-password"></div>' +
         '<div class="auth__hint" data-ahint></div>' +
+        '<div class="auth__links"><button type="button" class="auth__forgot" data-act="authForgot">忘记密码？</button></div>' +
         '<button class="btn btn--primary" data-act="authGo" style="width:100%;margin-top:6px">登录</button>' +
         '<div class="auth__sep"><span>或</span></div>' +
         '<button class="btn" data-act="authGoogle" style="width:100%">' + MR.icon('lit', 14) + ' 使用 Google 账号登录</button>' +
@@ -291,6 +320,34 @@ window.MR = window.MR || {};
         var g = box.querySelector('[data-act="authGoogle"]');
         if (g) g.addEventListener('click', function () {
           MR.cloud.signInGoogle().then(function () {}).catch(function () {});
+        });
+        var fp = box.querySelector('[data-act="authForgot"]');
+        if (fp) fp.addEventListener('click', function () {
+          var emailEl = document.getElementById('authEmail');
+          var hint = box.querySelector('[data-ahint]');
+          var email = emailEl ? (emailEl.value || '').trim() : '';
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+            if (hint) { hint.textContent = '请先在上方填写注册邮箱'; hint.style.color = 'var(--pink)'; }
+            if (emailEl) emailEl.focus();
+            return;
+          }
+          if (hint) { hint.textContent = '正在发送重置邮件…'; hint.style.color = 'var(--ink-3)'; }
+          fp.disabled = true;
+          MR.cloud.requestPasswordReset(email).then(function (r) {
+            fp.disabled = false;
+            if (r && r.ok) {
+              if (hint) {
+                hint.textContent = '重置邮件已发送至 ' + email + '。请到邮箱点击链接设置新密码。';
+                hint.style.color = 'var(--acc)';
+              }
+              MR.log && MR.log('OK', '密码重置邮件已发送：<b>' + email + '</b>');
+            } else {
+              if (hint) {
+                hint.textContent = (r && r.error && r.error.message) || '发送失败';
+                hint.style.color = 'var(--pink)';
+              }
+            }
+          });
         });
       }, 0);
     },
