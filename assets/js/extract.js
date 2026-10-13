@@ -222,8 +222,9 @@ MR.extract = (function () {
     var out = [];
     lines.forEach(function (l) {
       /* 长行：可能是多个分号分隔的试剂条目一起黏上来（英文 PDF 复制粘贴常见）。
-         只要带"购自/供应商/Co., Ltd./purity%"等任一采购线索，就放过去让正则继续匹配。 */
-      if (l.length > 160 && !/(有限公司|公司|集团|试剂|\bAladdin\b|\bMacklin\b|\bSinopharm\b|\bSigma\b|\bMerck\b|\bTCI\b|\bAlfa\b|\bFisher\b|\bAcros\b|\bMillipore\b|\bJ&K\b|purchased|obtained|supplied|\d{2,3}\s*%)/i.test(l)) return;
+         放行条件放宽：除了供应商/纯度/单位线索，再加「含化学式 + 物种名词」「含英文试剂名 + 厂商/纯度
+         嵌在句中」—— 这样英文文献 "X (V2O5, 99.6%, Sigma-Aldrich) served as the vanadium source" 不会被整句丢弃。 */
+      if (l.length > 240 && !/(有限公司|公司|集团|试剂|\bAladdin\b|\bMacklin\b|\bSinopharm\b|\bSigma\b|\bMerck\b|\bTCI\b|\bAlfa\b|\bFisher\b|\bAcros\b|\bMillipore\b|\bJ&K\b|purchased|obtained|supplied|\d{2,3}\s*%|\b[A-Z][a-z]+(?:\s+[a-z]+){0,3}\s+[（(][A-Z0-9])/i.test(l)) return;
       /* 品牌名必须整词匹配：旧版 Acros（试剂商）会命中英文单词 "across"，
          导致正文句子被当成试剂清单（"…vancomycin across the membrane…"）。 */
       var isBuy = /(购自|采购|来源于|有限公司|公司|集团|试剂|分析纯|\bAR\b|纯度|含量\s*[≥>≧])/.test(l) ||
@@ -250,6 +251,13 @@ MR.extract = (function () {
       var nameM = l.match(/^([\u4e00-\u9fa5A-Za-z0-9\-（）()·]{2,28})(?:（|\()/);
       if (!nameM) nameM = l.match(/^([A-Za-z][A-Za-z\- ]{1,40}?)\s*[（(]/);
       var name = nameM ? nameM[1].replace(/^(the|a|an)\s+/i, '').trim() : l.split(/[，,；;]/)[0].slice(0, 24);
+      /* 英文文献里试剂经常嵌在句中（如 "In this study, vanadium pentoxide (V2O5, 99.6%, Sigma-Aldrich) served..."），
+         句首是 "In this study" 而不是试剂名。优先用"最靠近 (spec) 的化学式/英文名"作 anchor：
+         在第一次出现的 "英文词(规格" 里，取 spec 前最近的 2~3 词英文名（首词可大写或小写）。 */
+      if (!nameM || (name && /^(in|on|at|for|with|from|by|as|the|a|an|this|these|those|such|including|namely|via|through)\b/i.test(name))) {
+        var anchor = l.match(/\b([A-Za-z][A-Za-z0-9\-]+(?:\s+[A-Za-z][A-Za-z0-9\-]+){0,3})\s*[（(][A-Z0-9][^）)]{0,40}/);
+        if (anchor) name = anchor[1].replace(/^(of|in|for|and|to|at|on|from|with|by|as|is|are|was|were|the|that|this)\s+/i, '').trim();
+      }
       var spec = (l.match(/[（(]([^）)]{2,40})[）)]/) || [])[1] || '';
       var sup = (l.match(/(?:购自|采购于|来源于)([^，,；;。]{2,30})/) || [])[1] || '';
       if (!sup) { var supEn = l.match(/\b(?:purchased|obtained|supplied|bought|provided|from)\s+(?:the\s+)?([A-Z][\w&.\- ]{2,32}?(?:\bInc\b|\bLtd\b|\bCorp\b|\bGmbH\b|\bCo\b|Laborator(?:y|ies)|University|Institute|Company)?)/i); if (supEn) sup = supEn[1].replace(/\s+and\s+.*$/, '').trim(); }
@@ -260,6 +268,29 @@ MR.extract = (function () {
         cn: (MR.cn ? (MR.cn(name) || MR.cn(spec) || '') : ''),
         evidence: clean(l)
       });
+      /* 英文一行常塞 N 个材料（"A (X1, sup1), B (X2, sup2), and C (X3, sup3)"）。
+         上面只推了第一个；用 anchor 模式（"英文词(规格"）再扫描剩余部分，每个 anchor 推一个材料。 */
+      var anchorRe = /\b([A-Za-z][A-Za-z0-9\-]+(?:\s+[A-Za-z][A-Za-z0-9\-]+){0,3})\s*[（(]([A-Z0-9][^）)]{0,40})[)）]/g;
+      var am;
+      var firstHit = true;
+      while ((am = anchorRe.exec(l))) {
+        if (firstHit) { firstHit = false; continue; }   /* 第一个已经在上面推过 */
+        var nm2 = am[1].replace(/^(of|in|for|and|to|at|on|from|with|by|as|is|are|was|were|the|that|this)\s+/i, '').trim();
+        var sp2 = am[2];
+        var purM2 = sp2.match(/(\d{2,3}(?:\.\d+)?\s*%|分析纯|化学纯|AR|CP|GR)/i);
+        /* supplier 必须 ≥5 字符：避免 "Ar"（元素符号 2 字符）/"Pt"/"Au" 误判。
+           "Aladdin" 7 字符 / "Sinopharm" 9 字符 / "TCI" 3 字符（用单词边界 + 真实厂商白名单保留）。 */
+        var sup2M = sp2.match(/\b(Sigma-?Aldrich|Aladdin|Macklin|TCI(?:\s|$|[,)])|Merck|Thermo\s?Fisher|Alfa\s?Aesar|Acros|Fisher\s?Scientific|Millipore|Invitrogen|Sinopharm|Xilong|Kejing|Duoduo|Rhawn|Energy\s?Chemical|J&K|BD\s?Pharmatech)\b/i);
+        out.push({
+          name: clean(nm2),
+          spec: clean(sp2.replace(/,\s*\d{2,3}(?:\.\d+)?\s*%.*$/i, '').replace(/,\s*Sigma-?Aldrich.*$/i, '')),
+          purity: purM2 ? clean(purM2[1]) : '',
+          supplier: sup2M ? clean(sup2M[1]) : '',
+          kind: '化学试剂',
+          cn: (MR.cn ? (MR.cn(nm2) || '') : ''),
+          evidence: clean(l)
+        });
+      }
     });
     return out.filter(function (o, i, a) { return a.findIndex(function (x) { return x.name === o.name; }) === i; });
   }
@@ -289,7 +320,9 @@ MR.extract = (function () {
       var PERSON = /^[A-Z][a-z]{1,14}$/;
       if (PERSON.test(nameOnly) && !DEVICE_NOUN.test(l) && !modelLike.test(l) && !/公司|Inc|Ltd|Corp|GmbH/.test(l)) return;
       var isInst = hitLex || hitHeur;
-      if (!isInst || l.length > 100) return;
+      /* 长行闸门：英文论文一个句子常 130+ 字符、含多个仪器（XRD + SEM 同行），
+         旧版 l.length > 100 直接 return 会把整句仪器都丢。放宽到 280。 */
+      if (!isInst || l.length > 280) return;
       if (!hitLex && !modelLike.test(l) && !/公司|大学|研究所|厂/.test(l)) return;
       /* 型号：含字母且含数字的短 token，或明显的设备型号 */
       var modelM = l.match(/\b([A-Z]{1,6}[-–]?[A-Z0-9]{0,6}\d{2,}[A-Z0-9\-]*)\b/) || l.match(/(SU\d{4}|Spectrum\s?\d|KSH-\d+|BHS-\d+|DLX-?[A-Z]*\s?\d+|CWT\d+|HZ-\w+)/i);
@@ -443,6 +476,43 @@ MR.extract = (function () {
           var v = parseFloat(mm[1]);
           if (isFinite(v) && nums.indexOf(v) < 0) nums.push(v);
         }
+        /* 括号列表式「(5, 10, 15 wt%)」「[5, 10, 15 h]」「(5、10、15 wt%)」：
+           英文论文里非常常见，数字后跟逗号/顿号而非单位，原正则 `\d+\s*unit` 抓不到。
+           这里在尾部追加两段兜底：① unit 在括号内；② unit 在括号外（更早旧格式）。 */
+        if (nums.length < 2) {
+          /* ① unit 在括号内："(5, 10, 15 wt%)" / "(5, 10, 15 mol/L)" */
+          var innerListRe = /[(（\[]([\d.,、\s]+?(?:%|％|℃|°C|h|min|s|wt%|vol%|ppm|mL|g|kg|MPa|kPa|GPa|rpm|nm|µm|um|μm|mm|cm|mg|mM|µM|uM|mol\/L)[^()）\]）]{0,6})[)）\]]/g;
+          var ilm;
+          while ((ilm = innerListRe.exec(win))) {
+            var innerAll = ilm[1];
+            var unitMatch = innerAll.match(/(?:%|％|℃|°C|h|min|s|wt%|vol%|ppm|mL|g|kg|MPa|kPa|GPa|rpm|nm|µm|um|μm|mm|cm|mg|mM|µM|uM|mol\/L)\s*$/);
+            if (!unitMatch) continue;
+            var uStr = unitMatch[0].trim();
+            var lu = UNIT_MAP[uStr] !== undefined ? UNIT_MAP[uStr] : uStr;
+            var rawNums = innerAll.replace(new RegExp(uStr + '\\s*$'), '').split(/[,，、\s]+/).filter(function (s) { return /^\d+(?:\.\d+)?$/.test(s); });
+            if (nums.length === 0) unit = lu;
+            else if (lu !== unit) continue;
+            rawNums.forEach(function (s) {
+              var v = parseFloat(s);
+              if (isFinite(v) && nums.indexOf(v) < 0) nums.push(v);
+            });
+          }
+        }
+        if (nums.length < 2) {
+          /* ② unit 在括号外（更早写法）："(5, 10, 15) wt%" */
+          var outerListRe = /[(（\[]([\d.,、\s]+?)[)）\]]\s*[,，]?\s*(\d+(?:\.\d+)?\s*(?:%|％|℃|°C|h|min|s|wt%|vol%|ppm|mL|g|kg|MPa|kPa|GPa|rpm|nm|µm|um|μm|mm|cm|mg|mM|µM|uM|mol\/L))/g;
+          var olm;
+          while ((olm = outerListRe.exec(win))) {
+            var rawNums2 = olm[1].split(/[,，、\s]+/).filter(function (s) { return /^\d+(?:\.\d+)?$/.test(s); });
+            var lu2 = UNIT_MAP[olm[2].trim()] !== undefined ? UNIT_MAP[olm[2].trim()] : olm[2].trim();
+            if (nums.length === 0) unit = lu2;
+            else if (lu2 !== unit) continue;
+            rawNums2.forEach(function (s) {
+              var v = parseFloat(s);
+              if (isFinite(v) && nums.indexOf(v) < 0) nums.push(v);
+            });
+          }
+        }
         if (nums.length >= 2 && nums.length <= 8) {
           var key = clean(mk.noun + (unit ? ' / ' + unit : ''));
           var hit = out.filter(function (o) { return o.key === key; })[0];
@@ -514,6 +584,21 @@ MR.extract = (function () {
     var LEX = indLexicon();
     var out = [];
     var lines = fullText.split('\n');
+    /* 英文文献整段常是一行（无换行），长度 800~2000 字符。ctx 检测必须放宽到 2000，
+       否则 "Coulombic efficiency of 92.4%" 这种一句内的指标永远 ctx=NULL。
+       中文长文按"。"分句，英文按 ". " 分句，lineUnits 已切过；这里只兜底超长行。 */
+    var ctxMax = 2000;
+    /* 把 indicator 名转成「模糊形式」覆盖英文单复数 / 时态变体：
+       efficiency → efficienc(?:y|ies)；stability → stabilit(?:y|ies)；
+       strength/capacity/conductivity 等以 y 结尾的同理；其他结尾直接加 (?:s|es|ed|ing)?。
+       否则 "Coulombic efficiency" 词典词永远匹配不到正文里的 "Coulombic efficiencies"。 */
+    function flexRe(ind) {
+      var esc = ind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (/[bcdfghjklmnpqrstvwxz]y$/i.test(ind)) return esc.replace(/y$/i, '(?:y|ies)');
+      if (/[^aeiou]s$/i.test(ind)) return esc + '(?:es)?';
+      return esc + '(?:s|es|ed|ing)?';
+    }
+    var lexFlex = LEX.map(function (ind) { return { ind: ind, re: new RegExp('\\b' + flexRe(ind) + '\\b', 'gi') }; });
     /* 1) 章节标题命中（最可靠） */
     secs.forEach(function (sec) {
       if (!/方法|测定|测试|表征|分析|结果|讨论|性能|评价|method|test|characteriz|analys|result|discuss|perform|measur|evaluat/i.test(sec.k)) return;
@@ -525,22 +610,27 @@ MR.extract = (function () {
           evidence: sec.no + ' ' + sec.k, source: '章节标题', hits: 1 });
       });
     });
-    /* 2) 正文命中：统计出现次数，并要求"在测量语境中出现"或"出现 ≥3 次" */
+    /* 2) 正文命中：统计出现次数，并要求"在测量语境中出现"或"出现 ≥2 次"。
+       用 flexRe 覆盖单复数变体（"Coulombic efficiencies" 也算）。 */
     var counts = {};
-    LEX.forEach(function (ind) {
-      var re = new RegExp(ind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      var n = (fullText.match(re) || []).length;
-      if (n) counts[ind] = n;
+    lexFlex.forEach(function (f) {
+      var n = (fullText.match(f.re) || []).length;
+      if (n) counts[f.ind] = n;
     });
     LEX.forEach(function (ind) {
       if (!counts[ind]) return;
       if (out.some(function (o) { return o.name === ind; })) return;
+      var flex = flexRe(ind);
       var ctx = null;
       for (var i = 0; i < lines.length; i++) {
-        if (lines[i].indexOf(ind) < 0) continue;
-        if (/(测定|测试|检测|评价|表征|测量|分析|计算|结果|如表|如图|measur|test|characteriz|analys|evaluat|determin|shown in (?:Table|Fig)|presented in|reported in)/i.test(lines[i]) && lines[i].length < 400) { ctx = lines[i]; break; }
+        /* 用模糊正则找含 ind 的行（覆盖复数 / 时态变体） */
+        if (!new RegExp('\\b' + flex + '\\b', 'i').test(lines[i])) continue;
+        if (/(测定|测试|检测|评价|表征|测量|分析|计算|结果|如表|如图|measur|test|characteriz|analys|evaluat|determin|delivered|achieved|obtained|reached|exhibited|showed|demonstrated|shown in (?:Table|Fig)|presented in|reported in|of\s+\d|of\s+\d+\.\d+|at\s+\d|at\s+\d+\.\d+|=\s*\d)/i.test(lines[i]) && lines[i].length < ctxMax) { ctx = lines[i]; break; }
       }
-      if (!ctx && counts[ind] < 3) return;
+      /* 阈值放宽：英文摘要常只提一次指标 + 具体数值（"specific capacity of 342 mAh/g"），
+         旧版 counts[ind] < 3 直接 return 会把这类一次性指标全部漏掉。
+         改成 ctx 命中即抽；或全文出现 ≥2 次也算抽；否则 1 次也允许（兜底）。 */
+      if (!ctx && counts[ind] < 2) return;
       var unit = '';
       if (ctx) {
         var um = ctx.match(new RegExp(ind + '[^。；]{0,14}?[（(]([^）)]{1,10})[）)]', 'i'));
