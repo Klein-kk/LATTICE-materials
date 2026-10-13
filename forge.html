@@ -190,7 +190,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
         <div class="card">
           <h3><span class="ic">烧杯</span> 立体实验台</h3>
           <div class="beaker-host" id="beakerHost">
-            <div id="beakerCanvas" style="position:absolute;inset:0"></div>
+            <canvas id="beakerCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
             <div class="beaker-overlay" id="beakerAdded"></div>
           </div>
           <div style="display:flex;gap:8px;margin-top:10px">
@@ -485,108 +485,323 @@ function buildReagentList() {
 let rackList = buildReagentList();
 renderRack(rackList);
 
-/* ============== 2. 3D 烧杯（three.js，独立 canvas） ============== */
+/* ============== 2. 立体实验台 v2（three.js） ==============
+ * 支持：
+ *   - 烧杯 / 锥形瓶 / 试管 三种器皿切换
+ *   - 真实化学液体颜色表（25 种常见化合物）
+ *   - 产气→气泡上升、沉淀→颗粒下落、放热→火焰跳动
+ *   - 360 鼠标拖拽 + 顶视/正视 + 自动旋转 + 截图下载
+ *   - 桌面网格 + 阴影 + 玻璃透射
+ * ========================================================= */
 const beakerHost = document.getElementById('beakerHost');
 const beakerCanvas = document.getElementById('beakerCanvas');
-const beakerRenderer = new THREE.WebGLRenderer({ canvas: beakerCanvas, antialias: true, alpha: true });
+const beakerRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 beakerRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-const resizeBeaker = () => {
+beakerRenderer.setClearColor(0x000000, 0);
+beakerRenderer.shadowMap.enabled = true;
+beakerRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+beakerHost.appendChild(beakerRenderer.domElement);
+
+function resizeBeaker() {
   const r = beakerHost.getBoundingClientRect();
-  beakerRenderer.setSize(r.width, r.height, false);
-};
+  if (r.width <= 0 || r.height <= 0) return;
+  /* setSize(w,h,updateStyle) - 第三参 true 让 CSS 跟随 */
+  beakerRenderer.setSize(r.width, r.height, true);
+  if (typeof bCam !== 'undefined' && bCam) { bCam.aspect = r.width / r.height; bCam.updateProjectionMatrix(); }
+}
 new ResizeObserver(resizeBeaker).observe(beakerHost);
-resizeBeaker();
+
+/* 真实化学液体颜色表（25 种） */
+const CHEM_COLOR = {
+  '盐酸': 0xe8f4ff, '硫酸': 0xf0e8d8, '硝酸': 0xf5f0e0, '乙酸': 0xeae0c8, '醋酸': 0xeae0c8,
+  'NaOH': 0xdde8d0, '氢氧化钠': 0xdde8d0, '氨水': 0xe8d0e0,
+  'NaCl': 0xe8f0ff, 'CuSO4': 0x4ea8d8, 'AgNO3': 0xeeeef0, 'Na2CO3': 0xe0e8e8, 'NaHCO3': 0xe0e8e8,
+  'H2O2': 0xfaf5ee, 'FeCl3': 0xc8a040, 'KMnO4': 0x702060,
+  'C6H12O6': 0xe6e0c0, '葡萄糖': 0xe6e0c0, 'C2H5OH': 0xe6e0c0, '乙醇': 0xe6e0c0, '甘油': 0xe6e0c0,
+  '酚酞(碱)': 0xc04080, '酚酞(酸)': 0xeae0e8, '石蕊(碱)': 0x4060a0, '石蕊(酸)': 0xc040a0,
+  '甲基橙(酸)': 0xff6060, '甲基橙(碱)': 0xfada60, '碘水': 0x602030, '溴水': 0xc07030,
+  '硫氰化铁': 0xc00000, 'Cu(OH)2': 0x3070a8, 'Fe(OH)3': 0x804020,
+  'AgCl': 0xeae8e0, 'BaSO4': 0xeae8e0, 'default': 0xc8e0e8
+};
+function lookupLiquidColor(name) {
+  if (CHEM_COLOR[name]) return CHEM_COLOR[name];
+  for (var k in CHEM_COLOR) if (k !== 'default' && name && name.indexOf(k) >= 0) return CHEM_COLOR[k];
+  return CHEM_COLOR.default;
+}
 
 const bScene = new THREE.Scene();
 const bCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-bCam.position.set(2.2, 1.5, 3.5);
-bScene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const bLight = new THREE.DirectionalLight(0xffffff, 1.0); bLight.position.set(3,5,4); bScene.add(bLight);
+bCam.position.set(2.2, 1.6, 3.5);
+bScene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const bKey = new THREE.DirectionalLight(0xffffff, 0.95); bKey.position.set(4, 6, 5); bKey.castShadow = true; bKey.shadow.mapSize.width = 1024; bKey.shadow.mapSize.height = 1024; bScene.add(bKey);
+const bFill = new THREE.DirectionalLight(0x88ccff, 0.35); bFill.position.set(-4, 1, -3); bScene.add(bFill);
+const bPt = new THREE.PointLight(0x2dd4bf, 0.4, 4); bPt.position.set(0, 2, 0); bScene.add(bPt);
 const bCtl = new THREE.OrbitControls(bCam, beakerRenderer.domElement);
-bCtl.target.set(0, 0.5, 0); bCtl.autoRotate = true;
+bCtl.target.set(0, 0.5, 0); bCtl.autoRotate = true; bCtl.enableDamping = true;
+bCtl.minDistance = 1.5; bCtl.maxDistance = 8; bCtl.maxPolarAngle = Math.PI / 1.85;
 
-const desk = new THREE.Mesh(
-  new THREE.CylinderGeometry(3.5, 3.5, 0.08, 24),
-  new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.85 })
-);
-desk.position.y = -0.04; bScene.add(desk);
+const desk = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 0.08, 32), new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.85, metalness: 0.15 }));
+desk.position.y = -0.04; desk.receiveShadow = true; bScene.add(desk);
+const gridMat = new THREE.LineBasicMaterial({ color: 0x2dd4bf, opacity: 0.18, transparent: true });
+const gridPoints = []; for (let i = -3; i <= 3; i++) { gridPoints.push(-3, 0, i, 3, 0, i); gridPoints.push(i, 0, -3, i, 0, 3); }
+const gridGeo = new THREE.BufferGeometry(); gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridPoints, 3));
+const grid = new THREE.LineSegments(gridGeo, gridMat); grid.position.y = 0.01; bScene.add(grid);
 
-const glass = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.65, 0.65, 1.3, 24, 1, true),
-  new THREE.MeshPhysicalMaterial({
-    color: 0xe8f4f8, transparent: true, opacity: 0.2,
-    roughness: 0.05, metalness: 0, side: THREE.DoubleSide,
-    transmission: 0.95, clearcoat: 1
-  })
-);
-glass.position.set(0, 0.65, 0); bScene.add(glass);
+var vesselType = 'beaker';
+var vessel, vesselBottom, vesselLip;
+function clearVessel() {
+  if (vessel) { bScene.remove(vessel); vessel.geometry.dispose(); vessel.material.dispose(); }
+  if (vesselBottom) { bScene.remove(vesselBottom); vesselBottom.geometry.dispose(); vesselBottom.material.dispose(); }
+  if (vesselLip) { bScene.remove(vesselLip); vesselLip.geometry.dispose(); vesselLip.material.dispose(); }
+}
+function buildVessel(type) {
+  clearVessel();
+  vesselType = type;
+  var glassMat = new THREE.MeshPhysicalMaterial({ color: 0xe8f4f8, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0, side: THREE.DoubleSide, transmission: 0.92, clearcoat: 1, ior: 1.5, thickness: 0.4 });
+  if (type === 'beaker') {
+    vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 1.3, 32, 1, true), glassMat);
+    vessel.position.set(0, 0.66, 0); vessel.castShadow = true;
+    vesselBottom = new THREE.Mesh(new THREE.CircleGeometry(0.65, 32), new THREE.MeshStandardMaterial({ color: 0xb8d8e8, transparent: true, opacity: 0.5 }));
+    vesselBottom.rotation.x = -Math.PI / 2; vesselBottom.position.set(0, 0.02, 0);
+  } else if (type === 'flask') {
+    var points = []; for (var i = 0; i <= 20; i++) { var t = i / 20; var r = 0.55 * Math.sin(t * Math.PI); var y = (1 - t) * 0.1 + t * 1.1; points.push(new THREE.Vector2(r, y)); }
+    vessel = new THREE.Mesh(new THREE.LatheGeometry(points, 32), glassMat);
+    vessel.castShadow = true;
+    vesselBottom = new THREE.Mesh(new THREE.CircleGeometry(0.55, 32), new THREE.MeshStandardMaterial({ color: 0xb8d8e8, transparent: true, opacity: 0.4 }));
+    vesselBottom.rotation.x = -Math.PI / 2; vesselBottom.position.set(0, 0.02, 0);
+  } else {
+    vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.6, 24, 1, true), glassMat);
+    vessel.position.set(0, 0.82, 0);
+    vesselBottom = new THREE.Mesh(new THREE.CircleGeometry(0.18, 24), new THREE.MeshStandardMaterial({ color: 0xb8d8e8, transparent: true, opacity: 0.4 }));
+    vesselBottom.rotation.x = -Math.PI / 2; vesselBottom.position.set(0, 0.02, 0);
+  }
+  bScene.add(vessel); bScene.add(vesselBottom);
+  var lipGroup = new THREE.Group();
+  for (var li = 1; li <= 4; li++) {
+    var line = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.005, 0.005), new THREE.MeshStandardMaterial({ color: 0xffffff, opacity: 0.45, transparent: true }));
+    line.position.set(-0.5, 0.25 + li * 0.22, 0.66); lipGroup.add(line);
+  }
+  vesselLip = lipGroup; bScene.add(vesselLip);
+}
+buildVessel('beaker');
 
-const base = new THREE.Mesh(
-  new THREE.CircleGeometry(0.65, 24),
-  new THREE.MeshStandardMaterial({ color: 0xddeef2, transparent: true, opacity: 0.6 })
-);
-base.rotation.x = -Math.PI / 2; bScene.add(base);
+var beakerLiquid = null;
+var bubbles = [];
+var precipitates = [];
+var heatingFlame = null;
+var moleculeGroup = new THREE.Group(); bScene.add(moleculeGroup);
+var currentReaction = null;
 
-let beakerLiquid = null;
-function updateBeaker3D() {
-  if (beakerLiquid) { bScene.remove(beakerLiquid); beakerLiquid.geometry.dispose(); beakerLiquid.material.dispose(); }
-  if (!beaker.length) return;
-  const colors = beaker.map(b => b.color);
-  const intg = colors.reduce((acc, c) => {
-    const n = parseInt(c.slice(1), 16);
-    acc.r += (n >> 16) & 0xff;
-    acc.g += (n >> 8) & 0xff;
-    acc.b += n & 0xff;
-    return acc;
-  }, { r: 0, g: 0, b: 0 });
-  const mixed = ((intg.r / colors.length) << 16) | ((intg.g / colors.length) << 8) | (intg.b / colors.length);
-  const fillRatio = Math.min(0.75, 0.15 + beaker.length * 0.15);
-  const geo = new THREE.CylinderGeometry(0.63, 0.63, 1.25 * fillRatio, 20);
-  const mat = new THREE.MeshStandardMaterial({ color: mixed, transparent: true, opacity: 0.75, roughness: 0.3 });
+function clearLiquidEffects() {
+  bubbles.forEach(function (b) { bScene.remove(b); b.geometry.dispose(); b.material.dispose(); }); bubbles = [];
+  precipitates.forEach(function (p) { bScene.remove(p); p.geometry.dispose(); p.material.dispose(); }); precipitates = [];
+}
+
+function updateBeaker3D(reaction) {
+  if (beakerLiquid) { bScene.remove(beakerLiquid); beakerLiquid.geometry.dispose(); beakerLiquid.material.dispose(); beakerLiquid = null; }
+  clearLiquidEffects();
+  while (moleculeGroup.children.length) { var c0 = moleculeGroup.children[0]; moleculeGroup.remove(c0); c0.geometry && c0.geometry.dispose(); c0.material && c0.material.dispose(); }
+  if (!beaker.length && !reaction) return;
+
+  var color = 0x88ccff;
+  if (reaction && reaction.products && reaction.products[0]) {
+    color = lookupLiquidColor(reaction.products[0].name) || lookupLiquidColor(reaction.products[0].formula);
+  } else if (beaker.length) {
+    var names = beaker.map(function (b) { return b.name; });
+    var colors = names.map(lookupLiquidColor);
+    var sumR = colors.reduce(function (a, c) { return a + ((c >> 16) & 0xff); }, 0);
+    var sumG = colors.reduce(function (a, c) { return a + ((c >> 8) & 0xff); }, 0);
+    var sumB = colors.reduce(function (a, c) { return a + (c & 0xff); }, 0);
+    color = ((Math.round(sumR / colors.length) & 0xff) << 16) | ((Math.round(sumG / colors.length) & 0xff) << 8) | (Math.round(sumB / colors.length) & 0xff);
+  }
+
+  var vesselRadius = vesselType === 'tube' ? 0.17 : 0.6;
+  var fillRatio = Math.min(0.78, 0.12 + beaker.length * 0.16 + (reaction ? 0.1 : 0));
+  var geo = new THREE.CylinderGeometry(vesselRadius, vesselRadius, 1.25 * fillRatio, 28);
+  var mat = new THREE.MeshPhysicalMaterial({ color: color, transparent: true, opacity: 0.78, roughness: 0.2, metalness: 0.05, transmission: 0.55, clearcoat: 0.5, thickness: 0.5 });
   beakerLiquid = new THREE.Mesh(geo, mat);
   beakerLiquid.position.set(0, 0.04 + 0.625 * fillRatio, 0);
+  beakerLiquid.castShadow = true;
   bScene.add(beakerLiquid);
+
+  var showcase = (reaction && reaction.products && reaction.products[0]) ? reaction.products[0].formula : (beaker[0] ? beaker[0].formula : null);
+  if (showcase) {
+    var pts = buildMolecule3DPoints(showcase);
+    var hues = { H: 0xf5f5f5, C: 0x404040, O: 0xff4040, N: 0x4060ff, Na: 0xb05cf2, Cl: 0x4ade80, Cu: 0xc08060, Fe: 0xe06633, Ag: 0xc0c0d0, Zn: 0xa8a8b0, S: 0xe0d030, Mg: 0xc0c0c8, K: 0xa040c0 };
+    pts.forEach(function (p, i) {
+      var m = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 12), new THREE.MeshStandardMaterial({ color: hues[p.el] || 0xaaaaaa, roughness: 0.5, metalness: 0.15 }));
+      m.position.set((i % 4) * 0.4 - 0.6, 1.55, (Math.floor(i / 4) - 0.5) * 0.4);
+      moleculeGroup.add(m);
+    });
+  }
+
+  if (reaction) {
+    if (reaction.producesGas) for (var i = 0; i < 24; i++) spawnBubble();
+    if (reaction.producesPrecipitate) for (var j = 0; j < 40; j++) spawnPrecipitate();
+    if (reaction.thermal === 'exothermic') spawnHeatFlame();
+  }
 }
-(function tickBeaker() {
+function spawnBubble() {
+  var sz = 0.04 + Math.random() * 0.06;
+  var b = new THREE.Mesh(new THREE.SphereGeometry(sz, 8, 6), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.05 }));
+  b.userData = { vx: (Math.random() - 0.5) * 0.005, vy: 0.008 + Math.random() * 0.012, vz: (Math.random() - 0.5) * 0.005, life: 0 };
+  b.position.set((Math.random() - 0.5) * 0.7, 0.4 + Math.random() * 0.2, (Math.random() - 0.5) * 0.7);
+  bScene.add(b); bubbles.push(b);
+}
+function spawnPrecipitate() {
+  var p = new THREE.Mesh(new THREE.SphereGeometry(0.025 + Math.random() * 0.03, 6, 4), new THREE.MeshStandardMaterial({ color: 0xeae8e0, roughness: 0.8 }));
+  p.position.set((Math.random() - 0.5) * 1.0, 0.05 + Math.random() * 0.5, (Math.random() - 0.5) * 1.0);
+  p.userData = { settled: false };
+  bScene.add(p); precipitates.push(p);
+}
+function spawnHeatFlame() {
+  if (heatingFlame) { bScene.remove(heatingFlame); heatingFlame.geometry.dispose(); }
+  var cone = new THREE.ConeGeometry(0.3, 0.5, 16, 1, true);
+  heatingFlame = new THREE.Mesh(cone, new THREE.MeshStandardMaterial({ color: 0xff8030, emissive: 0xff5020, emissiveIntensity: 0.9, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+  heatingFlame.position.set(0, -0.1, 0);
+  bScene.add(heatingFlame);
+}
+function buildMolecule3DPoints(formula) {
+  if (!formula) return [];
+  if (formula === 'NaCl' || formula === 'AgCl') return [{ el: 'Na' }, { el: 'Cl' }, { el: 'Na' }, { el: 'Cl' }];
+  if (formula === 'H2O') return [{ el: 'O' }, { el: 'H' }, { el: 'H' }, { el: 'O' }];
+  if (formula === 'CO2') return [{ el: 'C' }, { el: 'O' }, { el: 'O' }];
+  if (/^Cu/.test(formula)) return [{ el: 'Cu' }, { el: 'Cu' }, { el: 'Cu' }, { el: 'Cu' }];
+  if (/^Ag/.test(formula)) return [{ el: 'Ag' }, { el: 'Ag' }, { el: 'Ag' }, { el: 'Ag' }];
+  var e = formula.replace(/[0-9]/g, '').charAt(0) || 'C';
+  return [{ el: e }, { el: e }, { el: e }, { el: e }];
+}
+
+var clock = new THREE.Clock();
+function tickBeaker() {
   requestAnimationFrame(tickBeaker);
+  var dt = clock.getDelta();
+  for (var i = bubbles.length - 1; i >= 0; i--) {
+    var b = bubbles[i];
+    b.position.y += b.userData.vy;
+    b.position.x += b.userData.vx + Math.sin(b.userData.life * 6) * 0.002;
+    b.position.z += b.userData.vz;
+    b.userData.life += dt;
+    if (b.position.y > 1.45 || b.userData.life > 4) { bScene.remove(b); b.geometry.dispose(); b.material.dispose(); bubbles.splice(i, 1); }
+  }
+  for (var j = precipitates.length - 1; j >= 0; j--) {
+    var pp = precipitates[j];
+    if (!pp.userData.settled) { pp.position.y -= 0.003 + Math.random() * 0.003; if (pp.position.y < 0.1) { pp.position.y = 0.1; pp.userData.settled = true; } }
+  }
+  if (heatingFlame) {
+    var k = 0.8 + Math.sin(clock.elapsedTime * 8) * 0.18;
+    heatingFlame.scale.set(k, 0.8 + Math.sin(clock.elapsedTime * 5) * 0.15, k);
+    heatingFlame.rotation.y += dt * 1.2;
+  }
   bCtl.update();
+  resizeBeaker();
   beakerRenderer.render(bScene, bCam);
+}
+tickBeaker();
+
+/* 视图控制条（烧杯/锥形瓶/试管/自转/顶视/正视/截图） */
+(function buildVesselBar() {
+  var bar = document.createElement('div');
+  bar.style.cssText = 'position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;background:rgba(0,0,0,.45);padding:5px 9px;border-radius:999px;font-family:var(--mono);backdrop-filter:blur(4px)';
+  bar.innerHTML =
+    '<button data-v="beaker" style="padding:4px 10px;font-size:11px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;cursor:pointer">烧杯</button>' +
+    '<button data-v="flask" style="padding:4px 10px;font-size:11px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;cursor:pointer">锥形瓶</button>' +
+    '<button data-v="tube" style="padding:4px 10px;font-size:11px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;cursor:pointer">试管</button>' +
+    '<span style="color:#fff;opacity:.4;margin:0 4px">|</span>' +
+    '<button data-r="toggle" style="padding:4px 10px;font-size:11px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;cursor:pointer">↻ 自转</button>' +
+    '<button data-r="top" style="padding:4px 10px;font-size:11px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;cursor:pointer">⬆ 顶视</button>' +
+    '<button data-r="front" style="padding:4px 10px;font-size:11px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;cursor:pointer">正视</button>' +
+    '<span style="color:#fff;opacity:.4;margin:0 4px">|</span>' +
+    '<button data-r="heat" title="加热" style="padding:4px 10px;font-size:11px;color:#ffd0a0;background:transparent;border:1px solid rgba(255,150,80,.5);border-radius:999px;cursor:pointer">🔥 加热</button>' +
+    '<button data-r="cool" title="冷却" style="padding:4px 10px;font-size:11px;color:#bfeaff;background:transparent;border:1px solid rgba(120,200,255,.5);border-radius:999px;cursor:pointer">❄ 冷却</button>' +
+    '<span style="color:#fff;opacity:.4;margin:0 4px">|</span>' +
+    '<button data-r="shot" style="padding:4px 10px;font-size:11px;color:var(--acc);background:transparent;border:1px solid var(--acc);border-radius:999px;cursor:pointer">📷 截图</button>';
+  beakerHost.appendChild(bar);
+  bar.querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.dataset.v, r = b.dataset.r;
+      if (v) { buildVessel(v); updateBeaker3D(currentReaction); }
+      if (r === 'toggle') { bCtl.autoRotate = !bCtl.autoRotate; b.textContent = bCtl.autoRotate ? '↻ 自转' : '◯ 自转'; }
+      if (r === 'top') { bCam.position.set(0.01, 5, 0.01); bCtl.target.set(0, 0.6, 0); bCtl.update(); }
+      if (r === 'front') { bCam.position.set(0.01, 0.6, 4); bCtl.target.set(0, 0.6, 0); bCtl.update(); }
+      if (r === 'heat') { spawnHeatFlame(); updateHUD('🔥 加热中', 'fire'); }
+      if (r === 'cool') { if (heatingFlame) { bScene.remove(heatingFlame); heatingFlame.geometry.dispose(); heatingFlame = null; } updateHUD('❄ 冷却', 'cold'); }
+      if (r === 'shot') { beakerRenderer.render(bScene, bCam); var data = beakerRenderer.domElement.toDataURL('image/png'); var a = document.createElement('a'); a.download = 'forge-3d-' + Date.now() + '.png'; a.href = data; a.click(); }
+    });
+  });
 })();
+
+/* HUD 标签（左上角：当前反应 · 温度 · 体积 · 备注） */
+var hudEl = null;
+function ensureHUD() {
+  if (hudEl) return hudEl;
+  hudEl = document.createElement('div');
+  hudEl.style.cssText = 'position:absolute;top:10px;left:10px;z-index:6;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:8px;color:#fff;font-family:var(--mono);font-size:11px;line-height:1.6;backdrop-filter:blur(6px);min-width:140px;pointer-events:none';
+  beakerHost.appendChild(hudEl);
+  return hudEl;
+}
+function updateHUD(extra, kind) {
+  var h = ensureHUD();
+  var reactText = currentReaction ? (currentReaction.reacted ? '✅ ' + (currentReaction.description || '').slice(0, 30) : '⚪ 无可见反应') : '⚪ 待混料';
+  var vesselText = ({beaker: '🥃 烧杯', flask: '🧪 锥形瓶', tube: '🧒 试管'})[vesselType];
+  var vesselVol = (function(){
+    var filled = currentReaction ? 0.1 : 0;
+    var total = Math.max(0.12, 0.12 + beaker.length * 0.16) + filled;
+    var ml = Math.round(total * 250);
+    return ml + ' mL';
+  })();
+  var temp = (function(){
+    if (heatingFlame) return '🔥 85 °C';
+    if (kind === 'cold') return '❄ 5 °C';
+    return '~25 °C';
+  })();
+  h.innerHTML = '<div style="opacity:.6;font-size:10px;letter-spacing:.12em">EXPERIMENT</div>' +
+                '<div style="font-weight:600;color:var(--acc);margin-bottom:4px">' + vesselText + '</div>' +
+                '<div>体积 ' + vesselVol + '</div>' +
+                '<div>温度 ' + temp + '</div>' +
+                '<div>试剂 ' + beaker.length + ' 种</div>' +
+                '<div style="margin-top:4px;font-family:-apple-system,sans-serif;max-width:200px;font-size:11px;color:#e5f5f2">' + reactText + '</div>' +
+                (extra ? '<div style="margin-top:6px;color:#facc15">' + extra + '</div>' : '');
+}
+setInterval(function () { updateHUD(); }, 500);
 
 document.getElementById('btnClear').addEventListener('click', () => {
   beaker = [];
+  currentReaction = null;
   document.querySelectorAll('.reagent').forEach(c => c.classList.remove('added'));
   refreshAdded();
   updateBeaker3D();
   document.getElementById('reactResult').style.display = 'none';
 });
-
 document.getElementById('btnReact').addEventListener('click', () => {
   if (beaker.length < 2) { toast('至少需要 2 种试剂', 'err'); return; }
-  const names = beaker.map(b => b.name);
+  var names = beaker.map(b => b.name);
   if (window.MR && window.MR.forge) {
-    const r = window.MR.forge.react(names);
-    const box = document.getElementById('reactResult');
-    box.style.display = 'block';
-    if (r.reacted) {
-      const products = (r.products || []).map(p => `<span class="chip ok"><b style="color:var(--acc)">${p.formula}</b> ${p.name}</span>`).join(' ');
-      const flags = ['产气', '沉淀', '颜色变化', '温度效应'].map((label, i) => {
-        const v = [r.producesGas, r.producesPrecipitate, r.colorChange, r.thermal !== 'none'];
-        return `<span class="chip ${v[i] ? '' : 'warn'}">${v[i] ? '✓' : '·'} ${label}</span>`;
-      }).join(' ');
-      box.innerHTML = `
-        <div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;margin-bottom:10px">
-          <b style="color:#4ade80">✓ 发生反应</b> · ${r.description || ''}
-        </div>
-        <div style="background:var(--surface-2);padding:8px;border-radius:6px;border-left:3px solid var(--acc);margin-bottom:10px;font-family:var(--mono);font-size:12px">${r.equation || ''}</div>
-        <div>${flags}</div>
-        <div style="margin-top:8px"><b style="color:var(--ink-2);font-size:12px">产物：</b>${products}</div>
-      `;
-    } else {
-      box.innerHTML = `<div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:10px"><b style="color:var(--warn)">· 无可见反应</b><p style="margin-top:6px;color:var(--ink-2)">${r.description || '当前条件下未观察到明显反应。'}</p></div>`;
-    }
-  }
+    var r = window.MR.forge.react(names);
+    currentReaction = r;
+    /* 自动选器皿：含沉淀 → 烧杯；电解 → 电解瓶；玻璃杯便用锥形瓶；窄反应体积 → 试管 */
+    if (/electrolysis|电解/i.test((r.description || '') + names)) buildVessel('beaker');
+    if ((names.join(' ') + (r.description || '')).match(/锥形瓶|烧瓶|flask/i)) buildVessel('flask');
+    if (beaker.length <= 2 && (names.join('') + (r.description || '')).match(/试管|tube/i)) buildVessel('tube');
+    updateBeaker3D(r);
+    showResult(r);
+    /* 可选：化学反应项完成后尝试自动开始烧杯仪器化（加热/电极） */
+  } else { toast('MR.forge 未加载', 'err'); }
 });
+function showResult(r) {
+  const box = document.getElementById('reactResult');
+  box.style.display = 'block';
+  if (r.reacted) {
+    const products = (r.products || []).map(p => `<span class="chip ok"><b style="color:var(--acc)">${p.formula}</b> ${p.name}</span>`).join(' ');
+    const flags = ['产气','沉淀','颜色变化','温度效应'].map((label, i) => {
+      const v = [r.producesGas, r.producesPrecipitate, r.colorChange, r.thermal !== 'none'];
+      return `<span class="chip ${v[i] ? '' : 'warn'}">${v[i] ? '✓' : '·'} ${label}</span>`;
+    }).join(' ');
+    box.innerHTML = `<div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;margin-bottom:10px"><b style="color:#4ade80">✓ 发生反应</b> · ${r.description || ''}</div><div style="background:var(--surface-2);padding:8px;border-radius:6px;border-left:3px solid var(--acc);margin-bottom:10px;font-family:var(--mono);font-size:12px">${r.equation || ''}</div><div>${flags}</div><div style="margin-top:8px"><b style="color:var(--ink-2);font-size:12px">产物：</b>${products}</div>`;
+  } else {
+    box.innerHTML = `<div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:10px"><b style="color:var(--warn)">· 无可见反应</b><p style="margin-top:6px;color:var(--ink-2)">${r.description || '当前条件下未观察到明显反应。'}</p></div>`;
+  }
+}
 
 /* ============== 3. 电解 / 原电池 / 电导 ============== */
 document.getElementById('elecRun').addEventListener('click', () => {
