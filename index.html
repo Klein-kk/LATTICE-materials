@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LATTICE · 介绍 — 材料科研自动化平台</title>
+<title>LATTICE · 平台介绍 — 材料科研自动化平台</title>
 <meta name="description" content="登录 LATTICE，开启材料学科研自动化之旅：分子间作用力的 3D 可视化、本地优先论文库、AI 助手小晶。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%232dd4bf'/><circle cx='16' cy='16' r='14' fill='none' stroke='%232dd4bf' stroke-width='2' opacity='.55'/></svg>">
 
@@ -52,13 +52,13 @@ main{position:relative;z-index:1}
 
 /* ---------- 鼠标光标聚焦光晕（hero 区域） ---------- */
 #cursorGlow{
-  position:fixed;left:0;top:0;width:520px;height:520px;border-radius:50%;
+  position:fixed;left:0;top:0;width:620px;height:620px;border-radius:50%;
   background:radial-gradient(circle,
-    color-mix(in srgb,var(--acc) 22%,transparent) 0%,
-    color-mix(in srgb,var(--acc) 10%,transparent) 35%,
+    color-mix(in srgb,var(--acc) 30%,transparent) 0%,
+    color-mix(in srgb,var(--acc) 14%,transparent) 35%,
     transparent 70%);
   pointer-events:none;z-index:2;
-  transform:translate3d(-260px,-260px,0);
+  transform:translate3d(-310px,-310px,0);
   transition:opacity .3s,transform .12s cubic-bezier(.2,.7,.3,1);
   mix-blend-mode:screen;opacity:0;
   filter:blur(8px);
@@ -374,6 +374,16 @@ main{position:relative;z-index:1}
 @media(prefers-reduced-motion: reduce){
   *{animation-duration:.001s !important;transition-duration:.001s !important}
 }
+
+/* ---------- 核心优势卡片：鼠标 3D 倾斜 + 高光跟随 ---------- */
+.benefits{perspective:1200px}
+.benefit{transition:background .2s,transform .2s cubic-bezier(.2,.7,.3,1);transform-style:preserve-3d}
+.benefit__sheen{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),
+    color-mix(in srgb,var(--acc) 20%,transparent),transparent 66%)}
+.benefit:hover .benefit__sheen{opacity:1}
+.benefit:hover{border-color:var(--line-2)}
+@media(prefers-reduced-motion: reduce){ .benefit{transform:none !important} }
 </style>
 </head>
 <body>
@@ -907,19 +917,20 @@ addEventListener('resize', () => {
   const heroBounds = hero ? hero.getBoundingClientRect() : null;
 
   if (glow && hero) {
-    let glowX = -260, glowY = -260, targetX = -260, targetY = -260;
+    let glowX = -310, glowY = -310, targetX = -310, targetY = -310;
     let rafId = null;
 
     const onMove = (e) => {
-      targetX = e.clientX - 260;
-      targetY = e.clientY - 260;
+      targetX = e.clientX - 310;
+      targetY = e.clientY - 310;
+      glow.classList.add('is-on');
       /* hero 3D 视差（鼠标距中心 60px → 旋转 4deg） */
       if (hero) {
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
         const dx = (e.clientX - cx) / cx;
         const dy = (e.clientY - cy) / cy;
-        hero.style.transform = 'perspective(1200px) rotateX(' + (-dy * 1.2) + 'deg) rotateY(' + (dx * 1.2) + 'deg)';
+        hero.style.transform = 'perspective(1200px) rotateX(' + (-dy * 2.8) + 'deg) rotateY(' + (dx * 2.8) + 'deg)';
         hero.style.transformOrigin = 'center center';
         if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) hero.classList.add('is-aim');
       }
@@ -1610,6 +1621,30 @@ loadScene('hbond');
   }
   controls.update();
   stageRenderer.render(stageScene, stageCamera);
+})();
+</script>
+
+<!-- =================================================================== -->
+<!--        JS · 核心优势卡片 3D 倾斜（鼠标交互补充）                      -->
+<!-- =================================================================== -->
+<script>
+(function () {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.benefit').forEach(function (card) {
+    var sheen = document.createElement('div');
+    sheen.className = 'benefit__sheen';
+    card.appendChild(sheen);
+    card.addEventListener('pointermove', function (e) {
+      var r = card.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width;
+      var py = (e.clientY - r.top) / r.height;
+      card.style.transform = 'rotateY(' + ((px - 0.5) * 7).toFixed(2) + 'deg) rotateX(' +
+        ((0.5 - py) * 6).toFixed(2) + 'deg) translateZ(10px)';
+      sheen.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+      sheen.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+    });
+    card.addEventListener('pointerleave', function () { card.style.transform = ''; });
+  });
 })();
 </script>
 </body>
