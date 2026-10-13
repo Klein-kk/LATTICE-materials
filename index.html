@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LATTICE · 登录与入门 — 材料科研自动化平台</title>
+<title>LATTICE · 介绍 — 材料科研自动化平台</title>
 <meta name="description" content="登录 LATTICE，开启材料学科研自动化之旅：分子间作用力的 3D 可视化、本地优先论文库、AI 助手小晶。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%232dd4bf'/><circle cx='16' cy='16' r='14' fill='none' stroke='%232dd4bf' stroke-width='2' opacity='.55'/></svg>">
 
@@ -49,6 +49,63 @@ a{color:inherit;text-decoration:none}
 
 canvas#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none}
 main{position:relative;z-index:1}
+
+/* ---------- 鼠标光标聚焦光晕（hero 区域） ---------- */
+#cursorGlow{
+  position:fixed;left:0;top:0;width:520px;height:520px;border-radius:50%;
+  background:radial-gradient(circle,
+    color-mix(in srgb,var(--acc) 22%,transparent) 0%,
+    color-mix(in srgb,var(--acc) 10%,transparent) 35%,
+    transparent 70%);
+  pointer-events:none;z-index:2;
+  transform:translate3d(-260px,-260px,0);
+  transition:opacity .3s,transform .12s cubic-bezier(.2,.7,.3,1);
+  mix-blend-mode:screen;opacity:0;
+  filter:blur(8px);
+}
+#cursorGlow.is-on{opacity:1}
+
+/* ---------- Hero 3D 视差（鼠标移动 → 整体轻微倾斜） ---------- */
+.hero{position:relative;transform-style:preserve-3d;transition:transform .15s cubic-bezier(.2,.7,.3,1)}
+
+/* ---------- Hero 文字光标 hover 高亮 ---------- */
+.hero h1 em{transition:color .25s,text-shadow .25s}
+.hero.is-aim h1 em{color:var(--pink);text-shadow:0 0 18px color-mix(in srgb,var(--pink) 55%,transparent)}
+.hero h1 .line2 em{position:relative;display:inline-block}
+.hero h1 .line2 em::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--acc),transparent);
+  transform:scaleX(0);transform-origin:center;transition:transform .35s cubic-bezier(.2,.7,.3,1)}
+.hero.is-aim h1 .line2 em::after{transform:scaleX(1)}
+
+/* ---------- CTA 按钮 hover 涟漪 ---------- */
+.btn{position:relative;overflow:hidden}
+.btn::after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;
+  background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%);
+  border-radius:50%;transform:translate(-50%,-50%);
+  transition:width .4s,height .4s;pointer-events:none}
+.btn.is-ripple::after{width:240px;height:240px}
+
+/* ---------- Hero 鼠标坐标光标（自定义光标） ---------- */
+.hero{cursor:default}
+
+/* ---------- 卡片微动（登录卡随鼠标轻微旋转） ---------- */
+.authcard{transition:transform .2s,border-color .2s,box-shadow .2s}
+.authcard.is-tilt{transform:perspective(1200px) rotateX(var(--ty,0deg)) rotateY(var(--tx,0deg))}
+.authcard.is-tilt:hover{border-color:var(--line-2);box-shadow:0 22px 50px rgba(0,0,0,.45),0 0 0 1px var(--acc-ink)}
+
+/* ---------- Stats 数值卡片 hover 高亮 ---------- */
+.hero__stat{transition:transform .25s,background .25s,border-color .25s}
+.hero__stat:hover{transform:translateY(-3px);background:var(--surface-2);border-color:var(--line-2)}
+.hero__stat em{transition:color .3s,text-shadow .3s}
+.hero__stat:hover em{text-shadow:0 0 16px color-mix(in srgb,var(--acc) 70%,transparent)}
+
+/* ---------- Eyebrow 文字 hint（鼠标经过时改字） ---------- */
+.hero__eyebrow .d{transition:transform .25s,box-shadow .25s}
+.hero.is-aim .hero__eyebrow .d{transform:scale(1.4);box-shadow:0 0 0 6px rgba(45,212,191,.18)}
+
+/* ---------- 信任栏 logo hover 高亮 ---------- */
+.trust__logo{transition:opacity .2s,color .2s,transform .2s}
+.trust__logo:hover{opacity:1;color:var(--ink);transform:translateY(-2px)}
 
 /* ---------- header ---------- */
 .nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);
@@ -323,6 +380,9 @@ main{position:relative;z-index:1}
 
 <canvas id="bg" aria-hidden="true"></canvas>
 
+<!-- 鼠标光标聚焦光晕（鼠标交互 · 实时跟随） -->
+<div id="cursorGlow" aria-hidden="true"></div>
+
 <!-- =========================== § HEADER =========================== -->
 <header class="nav">
   <div class="nav__in">
@@ -355,7 +415,7 @@ main{position:relative;z-index:1}
 <!-- =========================== § HERO（§3+§4+§5） =========================== -->
 <section class="wrap hero" id="intro">
   <div class="hero__l">
-    <div class="hero__eyebrow"><span class="d"></span>登录 LATTICE 体验完整功能</div>
+    <div class="hero__eyebrow"><span class="d"></span>LATTICE 产品介绍 · 鼠标移动试试</div>
     <h1>
       把论文里的
       <span class="line2"><em>分子世界</em>，搬进浏览器</span>
@@ -369,7 +429,7 @@ main{position:relative;z-index:1}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
         立即登录 / 注册
       </button>
-      <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_blank" rel="noopener">
+      <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
         直接访问主站（本地模式）
       </a>
@@ -412,7 +472,7 @@ main{position:relative;z-index:1}
           <button class="auth__signout" id="signOutBtn">退出</button>
         </div>
         <a class="btn btn--primary" id="enterAppBtn" style="display:flex;justify-content:center;margin-top:18px"
-           href="https://klein-kk.github.io/LATTICE-materials/app.html">
+           href="https://klein-kk.github.io/LATTICE-materials/">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           进入 LATTICE 主站
         </a>
@@ -657,7 +717,7 @@ main{position:relative;z-index:1}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
           登录 / 注册
         </button>
-        <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_blank" rel="noopener">
+        <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H6V9h6M15 3h6v6M21 3l-9 9"/></svg>
           跳过登录 · 本地模式
         </a>
@@ -682,7 +742,7 @@ main{position:relative;z-index:1}
     </div>
     <div class="foot__col">
       <h5>平台</h5>
-      <a href="https://klein-kk.github.io/LATTICE-materials/app.html">主站入口</a>
+      <a href="https://klein-kk.github.io/LATTICE-materials/">主站入口</a>
       <a href="#features">核心能力</a>
       <a href="#molecular">3D 可视化</a>
     </div>
@@ -831,6 +891,79 @@ addEventListener('resize', () => {
   bgUniforms.uPx.value = innerHeight;
   updateMouseWorld();
 });
+</script>
+
+<!-- =================================================================== -->
+<!--       JS · 鼠标交互（光晕跟随 / 3D 视差 / 按钮涟漪 / 卡片微动）      -->
+<!-- =================================================================== -->
+<script>
+(function () {
+  const glow = document.getElementById('cursorGlow');
+  const hero = document.querySelector('.hero');
+  const authcard = document.querySelector('.authcard');
+  const stats = document.querySelectorAll('.hero__stat');
+  const buttons = document.querySelectorAll('.btn');
+  const navLinks = document.querySelectorAll('.nav__links a, .iconbtn');
+  const heroBounds = hero ? hero.getBoundingClientRect() : null;
+
+  if (glow && hero) {
+    let glowX = -260, glowY = -260, targetX = -260, targetY = -260;
+    let rafId = null;
+
+    const onMove = (e) => {
+      targetX = e.clientX - 260;
+      targetY = e.clientY - 260;
+      /* hero 3D 视差（鼠标距中心 60px → 旋转 4deg） */
+      if (hero) {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = (e.clientX - cx) / cx;
+        const dy = (e.clientY - cy) / cy;
+        hero.style.transform = 'perspective(1200px) rotateX(' + (-dy * 1.2) + 'deg) rotateY(' + (dx * 1.2) + 'deg)';
+        hero.style.transformOrigin = 'center center';
+        if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) hero.classList.add('is-aim');
+      }
+      /* 登录卡 3D 微动 */
+      if (authcard) {
+        const r = authcard.getBoundingClientRect();
+        const relX = (e.clientX - r.left) / r.width - 0.5;
+        const relY = (e.clientY - r.top) / r.height - 0.5;
+        if (relX > -0.5 && relX < 0.5 && relY > -0.5 && relY < 0.5) {
+          authcard.classList.add('is-tilt');
+          authcard.style.setProperty('--tx', (relY * -2) + 'deg');
+          authcard.style.setProperty('--ty', (relX * 2) + 'deg');
+        }
+      }
+    };
+    const tick = () => {
+      glowX += (targetX - glowX) * 0.18;
+      glowY += (targetY - glowY) * 0.18;
+      glow.style.transform = 'translate3d(' + glowX + 'px,' + glowY + 'px,0)';
+      rafId = requestAnimationFrame(tick);
+    };
+    addEventListener('pointermove', onMove, { passive: true });
+    addEventListener('pointerenter', () => glow.classList.add('is-on'));
+    addEventListener('pointerleave', () => { glow.classList.remove('is-on'); if (hero) hero.classList.remove('is-aim'); });
+    /* 启动光晕循环（即使鼠标不动也有微动） */
+    tick();
+
+    /* Stats 数值卡片 hover 高亮（已有 CSS，JS 标记） */
+    stats.forEach(s => s.addEventListener('pointerenter', () => s.classList.add('is-hover')));
+
+    /* 按钮涟漪：mousedown 触发 */
+    buttons.forEach(b => {
+      b.addEventListener('pointerdown', () => {
+        b.classList.remove('is-ripple');
+        void b.offsetWidth;  /* 强制重排 */
+        b.classList.add('is-ripple');
+        setTimeout(() => b.classList.remove('is-ripple'), 500);
+      });
+    });
+
+    /* 导航链接 hover 微动 */
+    navLinks.forEach(l => l.addEventListener('pointerenter', () => l.style.transform = 'translateY(-1px)'));
+  }
+})();
 </script>
 
 <!-- =================================================================== -->
@@ -998,7 +1131,7 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
 
 /* === 跳过登录 · 进入本地模式主站 === */
 document.getElementById('skipLogin').addEventListener('click', () => {
-  location.href = 'https://klein-kk.github.io/LATTICE-materials/app.html?mode=local';
+  location.href = 'https://klein-kk.github.io/LATTICE-materials/?mode=local';
 });
 
 /* === 初始状态恢复 === */
