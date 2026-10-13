@@ -298,6 +298,40 @@ window.MR = window.MR || {};
   };
 
   /* ======================= 10 论文评审 ======================= */
+  function renderUploadPanel() {
+    return MR.panel({
+      title: '上传你的论文草稿', meta: '初稿 → 优化 → 期刊推荐',
+      icon: 'upload', cls: 'panel--acc', pad: true,
+      body: '<div id="uploadPanel"></div>',
+      note: '把你的初稿（DOCX / TXT / Markdown）粘到这里 → 自动跑投稿检查、AI 痕迹检测、期刊推荐。本功能借鉴 <a href="https://github.com/735034777/journal-submission-assistant" target="_blank" style="color:var(--acc)">735034777/journal-submission-assistant</a> 数据源。'
+    });
+  }
+
+  function renderJournalRecommendPanel(pf) {
+    var cands = (MR.journals && MR.journals.recommend) ? MR.journals.recommend(pf) : [];
+    var list = cands.map(function (c, i) {
+      var j = c.journal;
+      return '<div class="rowitem" style="grid-template-columns:18px 1fr auto;cursor:default">' +
+        '<span class="rowitem__title" style="font-weight:700;color:var(--acc)">' + (i+1) + '</span>' +
+        '<span>' +
+          '<span class="rowitem__title"><b>' + MR.esc(j.name) + '</b>' + MR.chip(j.tier, j.tier === 'T1' ? 'risk' : (j.tier === 'T2' ? 'sig' : 'acc')) + MR.chip('IF ' + j.impactFactor, 'acc') + '</span>' +
+          '<span class="rowitem__sub">出版: ' + MR.esc(j.publisher) + ' · 收稿语言: ' + j.languages.join('/') + '</span>' +
+          '<span class="rowitem__sub" style="margin-top:4px;color:var(--ink-2)">' + MR.esc((c.reasons || []).join(' · ')) + '</span>' +
+          '<span class="rowitem__sub" style="margin-top:4px;color:var(--ink-3);font-family:var(--mono);font-size:11px">收稿要求: ' + MR.esc((j.requirements || []).join(' · ')) + '</span>' +
+        '</span>' +
+        '<span class="rowitem__side"><a class="btn" href="' + MR.esc(j.url) + '" target="_blank" rel="noopener" style="padding:5px 10px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">投稿链接 ↗</a></span>' +
+        '</div>';
+    }).join('');
+    return MR.panel({
+      title: '推荐投稿期刊', meta: 'Top ' + cands.length + ' · 按当前论文画像自动给出',
+      icon: 'journal', cls: 'panel--acc', pad: true, flush: true,
+      body: cands.length
+        ? '<div class="rowlist">' + list + '</div>'
+        : '<div class="note note--sig">' + MR.icon('review1', 14) + '<span>未匹配到合适的期刊，请确保当前论文已加载。</span></div>',
+      note: '推荐依据：期刊领域匹配 + 关键词命中（电池/碱激发/纤维/化学…）+ 语言友好度 + 影响因子梯度。每条有"为什么推荐"理由与期刊官方投稿链接。'
+    });
+  }
+
   MR.views2.review = {
     render: function () {
       if (!MR.state.profile) return MR.head({ n: '10', t: '论文评审', sub: '' }) + MR.note('请先在环节 01 载入论文。', 'sig', 'review1');
@@ -324,6 +358,13 @@ window.MR = window.MR || {};
         sub: '先做通用指标检测（查重率与 AI 率都是可解释的真实计算），再按你这篇论文的领域分派三位专家，逐条给出基于原文证据的修改意见。',
         acts: '<button class="btn" data-act="dlall">导出审稿意见</button><button class="btn btn--primary" data-act="run">开始评审</button>'
       });
+
+      /* ===== 上传论文草稿（用户自己写的稿件） ===== */
+      html += renderUploadPanel();
+
+      /* ===== 期刊推荐（融合 journal-submission-assistant 数据） ===== */
+      html += renderJournalRecommendPanel(pf);
+
       html += '<div class="grid g-2-1 mb-4">' +
         MR.panel({
           title: '通用指标', meta: '查重率 / AI 率', icon: 'analysis', pad: true,
@@ -438,6 +479,92 @@ window.MR = window.MR || {};
       if (tl) tl.addEventListener('click', function () { MR.app.setView('lang'); });
       var rn = host.querySelector('[data-act="run"]');
       if (rn) rn.addEventListener('click', function () { MR.app.runStage('review', { force: true, cb: function () { MR.app.render(); } }); });
+
+      /* ===== 上传草稿 + 投稿检查 + AI 痕迹检测 ===== */
+      var uploadHost = host.querySelector('#uploadPanel');
+      if (uploadHost) {
+        var saved = '';
+        try { saved = localStorage.getItem('lattice.review.uploadText') || ''; } catch (e) {}
+        uploadHost.innerHTML = ''
+          + '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'
+          +   '<input type="file" id="upFile" accept=".txt,.md,.markdown,.doc,.docx" style="font-size:12px;color:var(--ink-2)">'
+          +   '<span style="font-size:11px;color:var(--ink-3)">支持 .txt / .md，.docx 仅取纯文本</span>'
+          + '</div>'
+          + '<textarea id="upTxt" placeholder="把论文草稿粘到这里（或者选文件），支持 Markdown 和纯文本。" style="width:100%;min-height:130px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);padding:10px;border-radius:6px;font-family:var(--mono);font-size:12.5px;resize:vertical;outline:none">' + MR.esc(saved) + '</textarea>'
+          + '<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">'
+          +   '<button class="btn btn--primary" data-upact="check" style="padding:7px 16px;font-size:12.5px">投稿检查 + AI 痕迹 + 降 AI 建议</button>'
+          +   '<button class="btn" data-upact="manual" style="padding:7px 16px;font-size:12.5px">补充为评审语料</button>'
+          +   '<button class="btn" data-upact="clear" style="padding:7px 16px;font-size:12.5px">清空</button>'
+          + '</div>'
+          + '<div id="upResult" style="margin-top:14px"></div>';
+        /* 拖入文件 */
+        uploadHost.querySelector('#upFile').addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0]; if (!f) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            var text = (ev.target.result || '').toString();
+            uploadHost.querySelector('#upTxt').value = text;
+            try { localStorage.setItem('lattice.review.uploadText', text); } catch (e) {}
+            toastUp('已读入 ' + (text.length / 1000).toFixed(1) + ' 千字符');
+          };
+          if (/\.(txt|md|markdown)$/i.test(f.name)) reader.readAsText(f);
+          else if (/\.docx?$/i.test(f.name)) { toastUp('DOCX 文本提取需后端；请把 .txt 重命名再上传'); }
+          else reader.readAsText(f);
+        });
+        uploadHost.querySelector('[data-upact="clear"]').addEventListener('click', function () {
+          uploadHost.querySelector('#upTxt').value = '';
+          try { localStorage.removeItem('lattice.review.uploadText'); } catch (e) {}
+          uploadHost.querySelector('#upResult').innerHTML = '';
+        });
+        uploadHost.querySelector('[data-upact="manual"]').addEventListener('click', function () {
+          var txt = uploadHost.querySelector('#upTxt').value;
+          if (!txt.trim()) { toastUp('内容为空'); return; }
+          /* 把上传文本 merge 到 rawText，让下游 sim/ai 用上 */
+          try {
+            var old = (MR.state.rawText || '') + '\n\n----- 用户草稿（评审辅助）-----\n\n';
+            MR.state.rawText = old + txt;
+            MR.state.deAIInput = txt;
+            localStorage.setItem('lattice.review.uploadText', txt);
+          } catch (e) {}
+          toastUp('已合并到评审语料。点击"开始评审"重新跑报告。');
+        });
+        uploadHost.querySelector('[data-upact="check"]').addEventListener('click', function () {
+          var txt = uploadHost.querySelector('#upTxt').value || '';
+          if (txt.length < 50) { toastUp('字数太少（< 50）'); return; }
+          try { localStorage.setItem('lattice.review.uploadText', txt); } catch (e) {}
+          var issues = MR.journals.checkSubmission(txt);
+          var ai = MR.journals.aiLikelihood(txt);
+          var items = ai.items.map(function (x) {
+            var pct = Math.min(100, Math.round(x.v * 100));
+            return '<div class="feat"><span>' + MR.esc(x.k) + '</span><span class="feat__v">' + MR.f1(x.v, 2) + ' · ' + pct + '%</span>' +
+              '<span class="feat__bar"><i style="width:' + Math.min(100, pct) + '%;' + (pct > 60 ? 'background:var(--risk)' : '') + '"></i></span></div>';
+          }).join('');
+          uploadHost.querySelector('#upResult').innerHTML =
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+              '<div class="note ' + (issues.length ? 'note--sig' : 'note--ok') + '">' +
+                '<span><b>投稿前自查</b> · ' + issues.length + ' 项' + (issues.length ? '<ul style="margin:6px 0 0 18px;font-size:12px">' + issues.map(function (i) { return '<li>[' + (i.lv === 'must' ? '必改' : '建议') + '] ' + MR.esc(i.t) + ' — ' + MR.esc(i.d) + '</li>'; }).join('') + '</ul>' : ' · 无明显问题') + '</span>' +
+              '</div>' +
+              '<div class="note ' + (ai.score > 60 ? 'note--risk' : (ai.score > 40 ? 'note--sig' : 'note--ok')) + '">' +
+                '<span><b>AI 痕迹启发式评分</b> · ' + ai.score.toFixed(0) + '%</span>' +
+                '<div style="margin-top:6px">' + items + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="note note--acc" style="margin-top:10px">' +
+              '<span><b>初稿优化建议</b>（去 AIGC + 期刊格式）：' +
+                (ai.score > 40 ? '1) 进入环节 09 语言处理 → 降 AIGC 改写 · ' : '') +
+                (issues.filter(function (i) { return i.lv === 'must'; }).length > 0 ? '2) 必改项补齐（缺参考文献 / 通讯邮箱）' : '2) 期刊格式按推荐前 1 名调字号/列宽') +
+                ' · 3) 用 <a href="./forge.html" target="_blank" style="color:var(--acc)">实验工坊</a> 重跑论文变量扫描和产物分析，作为正文图表数据来源' +
+              '</span>' +
+            '</div>';
+        });
+        function toastUp(msg) {
+          var t = uploadHost.parentNode.querySelector('.toast-mini');
+          if (!t) { t = document.createElement('div'); t.className = 'toast-mini'; uploadHost.parentNode.appendChild(t); }
+          t.textContent = msg;
+          t.style.cssText = 'margin-top:8px;font-size:11.5px;color:var(--acc)';
+          setTimeout(function () { t.textContent = ''; }, 2400);
+        }
+      }
     }
   };
 })();

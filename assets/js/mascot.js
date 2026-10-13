@@ -256,11 +256,17 @@ MR.mascot = (function () {
       els.quick.appendChild(b);
       return;
     }
+    /* research-assistant 10 子技能（精简为 8 个最常用 preset） */
     var items = [
-      ['这篇讲什么？', '这篇讲什么'],
-      ['核心变量与指标', '变量与指标'],
-      ['实验步骤', '实验步骤'],
-      ['检索方向', '检索方向']
+      ['这篇讲什么？',          '这篇讲什么'],
+      ['变量与指标',            '变量与指标'],
+      ['实验步骤',              '实验步骤'],
+      ['📚 文献检索',           '帮我检索相关文献'],
+      ['🔗 引文格式化',         '把引用格式化'],
+      ['📮 期刊推荐',           '推荐投稿期刊'],
+      ['✨ 学术润色',           '润色建议'],
+      ['📝 综述 / 开题建议',    '综述结构建议'],
+      ['检索方向',              '检索方向']
     ];
     els.quick.innerHTML = '';
     items.forEach(function (it) {
@@ -295,8 +301,108 @@ MR.mascot = (function () {
     if (/类型|综述|研究|review|临床|type|算不算/.test(s)) return paperType(an, pf);
     if (/参考|文献|reference|引用|别人/.test(s)) return references(an);
     if (/检索|搜索|查|search|方向|scholar|知网|cnki|更多|拓展|找/.test(s)) return searchAdvice(pf);
+
+    /* ===== 研究助手 10 子技能（融合 Yts1919/research-assistant） ===== */
+    if (/检索|文献检索|paper search|literature/.test(s)) return adviceLiterature(pf);
+    if (/精读|深读|细读|读懂|paper reading/.test(s)) return advicePaperReading(pf);
+    if (/综述|literature review|写综述|review/.test(s)) return adviceLiteratureReview(pf);
+    if (/分节|起草|写章节|section|写作|section writing/.test(s)) return adviceSectionWriting(pf);
+    if (/画图|图表|figure|出图|image/.test(s)) return adviceFigureGen(pf);
+    if (/引用|citation|格式化|ref|gb|ieee|apa/.test(s)) return adviceCitation();
+    if (/润色|改写|语法|中英|translation|polish|academic/.test(s)) return advicePolish();
+    if (/预评审|模拟审稿|互盲|prereview|审稿/.test(s)) return advicePreReview(pf);
+    if (/开题|proposal|研究方案|研究目标/.test(s)) return adviceProposal(pf);
+    if (/格式|模板|重排版|格式化版式|reformat|format/.test(s)) return adviceReformat(pf);
+    if (/投稿|期刊推荐|投哪个|where to submit/.test(s)) return adviceJournal(pf);
+
     /* 兜底：尝试在已抽取字段里做关键词命中 */
     return fallback(q, pf, an);
+  }
+
+  /* ===== research-assistant 10 子技能方法 ===== */
+  function adviceLiterature(pf) {
+    return '📚 **文献检索建议**（基于 <code>Yts1919/research-assistant</code> 文献检索模块）：<br>'
+      + '1. 用关键词组合：领域（如「' + (pf.domain || '材料') + '」）+ 材料名 + 工艺名。'
+      + '2. 中英文交叉：' + (pf.keywords && pf.keywords[0] || '关键词') + ' + alloy 的 AND 组合<br>'
+      + '3. 推荐源：知网 CNKI / 万方 + Web of Science + Scopus + Google Scholar + PubMed<br>'
+      + '4. 推荐时段：近 5 年 + 经典文献。<br>'
+      + '5. 自动操作：在本平台用右上角"科研绘图" → 文献搜索或 PubMed 检索。';
+  }
+  function advicePaperReading(pf) {
+    var msg = '📖 **精读论文**（基于 research-assistant 精读模块）：<br>'
+      + '结构化卡片按四段读：<b>研究问题</b> → <b>方法</b> → <b>结果</b> → <b>结论与意义</b>。<br>'
+      + '针对你的《' + esc(pf.title || '这篇') + '》：<br>';
+    if (pf.perf && pf.perf[0]) msg += '· 主要指标：<code>' + pf.perf[0].name + '</code>（最优 ' + (pf.perf[0].optimum || '?') + (pf.perf[0].unit || '') + '）<br>';
+    if (pf.materials && pf.materials[0]) msg += '· 主要材料：' + pf.materials.slice(0, 3).map(function (m) { return '<code>' + esc(m.name) + '</code>'; }).join('、');
+    return msg + '<br>· 重点关注：作者如何用「变量 + 水平 + 响应」支撑结论？是否报告了误差与重复次数？';
+  }
+  function adviceLiteratureReview(pf) {
+    return '📝 **文献综述撰写建议**（research-assistant literature-review）：<br>'
+      + '1. 分层：研究背景 → 研究现状（按主题/方法/对象）→ 文献评述 → 你的课题意义。<br>'
+      + '2. 必须每条引用真实文献（避免 AI 编造）。<br>'
+      + '3. 推荐：本平台环节 08 论文撰写即可基于当前抽取结果生成。<br>'
+      + '4. 避免模板句套话（"X 对 Y 至关重要"这种已经被 AI 检测打标）。<br>'
+      + '5. 综述提交前过 <a style="color:var(--acc)" href="https://github.com/docsor1212/paper-reference-formatter" target="_blank">paper-reference-formatter</a> 统一文献格式。';
+  }
+  function adviceSectionWriting(pf) {
+    return '✍️ **分节起草建议**（research-assistant section-writing）：<br>'
+      + '· 引言：研究背景 + 文献缺口 + 你这篇的目的<br>'
+      + '· 实验：材料 → 工艺 → 测试方法（GB/T 国标注标准）<br>'
+      + '· 结果与讨论：每一项数据 + 引用文献对比 + 误差分析<br>'
+      + '· 结论：3~5 条核心结论（与摘要呼应）<br>'
+      + '· 自动操作：本平台环节 08 论文撰写会自动给分节大纲；环节 09 语言处理做降 AIGC 改写。';
+  }
+  function adviceFigureGen(pf) {
+    return '🎨 **图表生成建议**（research-assistant + academic-figures + Show2Know 47 类）：<br>'
+      + '可用图表类型（17 类前端可绘）：折线 / 柱状 / 散点 / XRD 谱图 / FTIR / 热力图 / 桑基图 / 小提琴图 / 瀑布图 / 双 Y 轴 / 雷达 / 环形 / 箱线 / 直方图 / 饼图 等。<br>'
+      + '· SVG 在线预览：<a style="color:var(--acc)" href="./figures-gallery.html" target="_blank">/figures-gallery.html</a><br>'
+      + '· 出版级 600dpi：调用 <code>academic-figures</code> 引擎（学术诚信要求不直接用 AI 生成数据图）。<br>'
+      + '· 推荐配色：Nature → Okabe-Ito；中文期刊 → default glm。';
+  }
+  function adviceCitation() {
+    return '🔗 **引文格式化**：<br>'
+      + '· GB/T 7714（中国国标） · APA（社会科学） · IEEE（电气/电子） · MLA（人文）<br>'
+      + '· 推荐工具：<a style="color:var(--acc)" href="https://github.com/docsor1212/paper-reference-formatter" target="_blank">paper-reference-formatter</a><br>'
+      + '· 文献真实核验（避免伪造 DOI）：<a style="color:var(--acc)" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> / <a style="color:var(--acc)" href="https://doi.org" target="_blank">DOI</a> / arXiv<br>'
+      + '· arXiv 自 2026-05 起对幻觉引用禁投一年；务必先核验再投稿。<br>'
+      + '· 本平台环节 08 在论文生成时会自动按 GB/T 7714 排版引用。';
+  }
+  function advicePolish() {
+    return '✨ **学术润色 / 改写建议**：<br>'
+      + '· 自动执行：本平台环节 09 语言处理 → 降 AIGC 改写（用同义词替换 + 句式变换 + 7 类痕迹模式）。<br>'
+      + '· 规则：本平台环境变量要求中文 paper 写"学术化书面语"，禁止口语化的"在当今"等。<br>'
+      + '· 推荐外部工具：<a style="color:var(--acc)" href="https://github.com/docsor1212/paper-polisher-pro" target="_blank">paper-polisher-pro</a> 或 <a style="color:var(--acc)" href="https://github.com" target="_blank">academic-natural-rewrite</a>。<br>'
+      + '· 翻译英文：参考 <a style="color:var(--acc)" href="https://arxiv.org/help/language" target="_blank">arXiv 投稿须知</a> 摘要 < 200 词。';
+  }
+  function advicePreReview(pf) {
+    return '🔍 **模拟审稿 / 互盲预评审**（research-assistant pre-review）：<br>'
+      + '本平台环节 10 已内置三位互盲专家（工艺 / 表征 / 统计），自动针对你的论文画像发现问题。<br>'
+      + '· P0 必改 / P1 建议 / P2 可选。<br>'
+      + '· 关键问题：变量是否都给值？指标是否都分析？误差与重复是否报告？<br>'
+      + '· 引文真实性用 <a style="color:var(--acc)" href="https://github.com/docsor1212/reference-verification" target="_blank">reference-verification</a> 单独核验。';
+  }
+  function adviceProposal(pf) {
+    return '🎯 **开题 / 研究方案建议**（research-assistant proposal-writing）：<br>'
+      + '· 题目（20 字内，含关键词）<br>'
+      + '· 研究背景（200-300 字）<br>'
+      + '· 文献综述（500-800 字 + 30+ 真实文献）<br>'
+      + '· 研究目标（3-5 条定量目标）<br>'
+      + '· 研究方法（变量 / 指标 / 表征 / 统计）<br>'
+      + '· 进度安排（甘特图）<br>'
+      + '本平台环节 03 变量设计 + 05 结果分析可直接提供方法学支撑。';
+  }
+  function adviceReformat() {
+    return '📐 **格式改写 / 重排版**（research-assistant format-reformat）：<br>'
+      + '· 按学校模板 / 期刊模板 自动改字号、边距、列宽。<br>'
+      + '· 推荐工具：<a style="color:var(--acc)" href="https://github.com" target="_blank">thesis-format-zh</a> 中文论文格式检查工具。<br>'
+      + '· 国外投稿：IEEE / Elsevier / Wiley-VCH 模板均在科研绘图环节准备。';
+  }
+  function adviceJournal(pf) {
+    return '📮 **期刊投稿建议**（融合 journal-submission-assistant + docsor1212 journal db）：<br>'
+      + '本平台环节 10 论文评审 已内置 40 个候选期刊的推荐引擎。<br>'
+      + '每条推荐给出：领域匹配分 + 关键词命中 + IF 梯度 + 语言 + 官方投稿链接 + 收稿要求。<br>'
+      + '打开环节 10 → "推荐投稿期刊" 面板查看完整列表。<br>'
+      + '投稿前最后一步：① AI 痕迹 < 40%；② 查重率 < 20%；③ 通讯邮箱标注；④ ORCID；⑤ 投稿系统账号与作者顺序已核对。';
   }
 
   function summary(pf) {

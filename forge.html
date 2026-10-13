@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="LATTICE · 实验工坊：融合 ChemAIForge 反应引擎 + chemtools 7 件套，支持自由试剂混合、电解、原电池、电导、摩尔质量、方程式配平、NLP 解析、热处理模拟。">
+<title>LATTICE · 实验工坊</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%232dd4bf'/><circle cx='16' cy='16' r='14' fill='none' stroke='%232dd4bf' stroke-width='2' opacity='.55'/></svg>">
+
+<!-- 三方依赖：three.js + 既有 lab 引擎 + chemtools 7 个 JS + forge.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="./assets/js/lab-chem.js"></script>
+<script src="./assets/js/lab-experiments.js"></script>
+<!-- chemtools 7 件套 -->
+<script src="./assets/js/chemtools/chem.js"></script>
+<script src="./assets/js/chemtools/nlp.js"></script>
+<script src="./assets/js/chemtools/elements.js"></script>
+<script src="./assets/js/chemtools/molecules.js"></script>
+<script src="./assets/js/chemtools/reaction.js"></script>
+<script src="./assets/js/chemtools/tools.js"></script>
+<script src="./assets/js/chemtools/heatmap-data.js"></script>
+<script src="./assets/js/forge.js"></script>
+
+<style>
+:root{
+  --bg:#08080a; --surface:#101015; --surface-2:#18181f; --surface-3:#23232c;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.18);
+  --ink:#f4f4f5; --ink-2:#a1a1aa; --ink-3:#6b6b74;
+  --acc:#2dd4bf; --acc-ink:#042e2a; --warn:#facc15; --err:#f87171;
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-pill:999px;
+  --mono:ui-monospace,SFMono-Regular,JetBrains Mono,Menlo,Consolas,monospace;
+}
+[data-theme=light]{
+  --bg:#f7f7f9; --surface:#fff; --surface-2:#fafafd; --surface-3:#eef;
+  --line:rgba(0,0,0,.08); --line-2:rgba(0,0,0,.18);
+  --ink:#1f1f23; --ink-2:#555; --ink-3:#888;
+  --acc:#0d9488; --acc-ink:#fff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column}
+
+/* ===== nav ===== */
+.nav{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.nav a.brand{font-weight:700;color:var(--ink);text-decoration:none;font-size:16px;display:flex;gap:6px;align-items:center}
+.nav a.brand svg{color:var(--acc)}
+.nav .spacer{flex:1}
+.nav .btn{padding:7px 14px;border-radius:var(--r-pill);font-size:13px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink-2);text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.nav .btn:hover{color:var(--ink);background:var(--surface-2)}
+.nav .btn.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+
+/* ===== body ===== */
+.wrap{flex:1;display:flex;min-height:0}
+.sidebar{width:230px;background:var(--surface);border-right:1px solid var(--line);padding:14px 12px;overflow-y:auto}
+.sidebar h2{font-size:12px;letter-spacing:.12em;color:var(--ink-3);text-transform:uppercase;margin:14px 8px 8px}
+.sidebar h2:first-child{margin-top:4px}
+.sidebar button,.sidebar a{display:block;width:100%;text-align:left;background:transparent;color:var(--ink-2);border:1px solid transparent;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;text-decoration:none}
+.sidebar button.active,.sidebar a.active,.sidebar button:hover,.sidebar a:hover{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
+.sidebar .group-label{display:block;padding:6px 10px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+.sidebar .pill{display:inline-block;background:rgba(45,212,191,.15);color:var(--acc);padding:1px 7px;border-radius:var(--r-pill);font-size:9.5px;margin-left:6px;font-family:var(--mono)}
+
+.main{flex:1;overflow-y:auto;padding:20px 28px 80px}
+.main h1{font-size:22px;margin:6px 0 6px}
+.main .sub{color:var(--ink-2);font-size:13.5px;margin-bottom:18px;line-height:1.6}
+
+/* ===== cards ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:14px;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:22px;height:22px;border-radius:6px;background:rgba(45,212,191,.18);color:var(--acc);display:grid;place-items:center;font-size:12px;font-family:var(--mono)}
+.card .field{display:flex;gap:10px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.card label{font-size:12px;color:var(--ink-2);min-width:80px}
+.card input,.card select,.card textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);padding:7px 10px;border-radius:6px;font-family:inherit;font-size:13px;outline:none}
+.card input:focus,.card select:focus,.card textarea:focus{border-color:var(--acc)}
+.card textarea{width:100%;min-height:90px;font-family:var(--mono);resize:vertical}
+.card .btn{padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;background:var(--acc);color:var(--acc-ink);border:0;font-weight:600;font-family:inherit}
+.card .btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+.card .btn:hover{filter:brightness(1.05)}
+.card .output{margin-top:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;max-height:400px;overflow-y:auto}
+
+/* ===== grid layouts ===== */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:980px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ===== 3D beaker host (left big) ===== */
+.beaker-host{height:360px;background:linear-gradient(180deg,#0c0c10 0%,#08080a 100%);border-radius:12px;overflow:hidden;position:relative;border:1px solid var(--line)}
+.beaker-host canvas{position:absolute;inset:0}
+.beaker-overlay{position:absolute;bottom:10px;left:10px;right:10px;display:flex;flex-wrap:wrap;gap:6px;z-index:5}
+
+/* ===== tools/list ===== */
+.reagent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;max-height:340px;overflow-y:auto}
+.reagent{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px;cursor:pointer;transition:.12s}
+.reagent:hover{border-color:var(--acc)}
+.reagent.added{opacity:.4;border-style:dashed}
+.reagent .cat{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+.reagent .nm{font-size:12.5px;font-weight:600;margin:3px 0 4px}
+.reagent .fm{display:flex;justify-content:space-between;align-items:center}
+.reagent .fm .f{font-family:var(--mono);font-size:10.5px;color:var(--acc)}
+.reagent .fm .d{width:8px;height:8px;border-radius:50%}
+
+.chip{display:inline-block;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.3);color:var(--ink);padding:4px 10px;border-radius:var(--r-pill);font-size:11.5px;display:inline-flex;align-items:center;gap:5px;font-family:var(--mono)}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.chip .x{background:none;border:0;color:var(--ink-3);cursor:pointer;font-size:13px;padding:0 2px}
+.chip.warn{background:rgba(250,204,21,.12);border-color:rgba(250,204,21,.3)}
+.chip.err{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.3)}
+.chip.ok{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.3)}
+
+.periodic{display:grid;grid-template-columns:repeat(18,1fr);gap:3px;margin-top:6px;font-family:var(--mono)}
+.periodic .el{cursor:pointer;aspect-ratio:1;display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:5px;font-size:9.5px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);text-align:center;line-height:1.15;padding:2px}
+.periodic .el:hover{border-color:var(--acc);color:var(--ink)}
+.periodic .el b{font-size:12px;color:var(--ink);font-weight:700}
+.periodic .el[data-cls=alkali]{background:rgba(248,113,113,.15)}
+.periodic .el[data-cls=alkaline]{background:rgba(251,146,60,.15)}
+.periodic .el[data-cls=transition]{background:rgba(45,212,191,.12)}
+.periodic .el[data-cls=post]{background:rgba(96,165,250,.15)}
+.periodic .el[data-cls=metalloid]{background:rgba(168,162,158,.15)}
+.periodic .el[data-cls=nonmetal]{background:rgba(132,204,22,.18)}
+.periodic .el[data-cls=halogen]{background:rgba(244,114,182,.15)}
+.periodic .el[data-cls=noble]{background:rgba(14,165,233,.18)}
+.periodic .el[data-cls=lanthanide]{background:rgba(217,119,6,.15)}
+.periodic .el[data-cls=actinide]{background:rgba(239,68,68,.18)}
+
+.section-title{font-size:11px;letter-spacing:.15em;color:var(--ink-3);text-transform:uppercase;margin:20px 0 10px;font-weight:600}
+.metric{display:inline-flex;flex-direction:column;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.metric .lbl{font-size:10px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono)}
+.metric .val{font-size:18px;font-weight:700;font-family:var(--mono);margin-top:2px}
+
+.legend{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+.legend kbd{background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:4px;font-size:10.5px;font-family:var(--mono)}
+
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 18px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:13px}
+.toast.err{border-color:rgba(248,113,113,.4);color:var(--err)}
+
+.banner{background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(96,165,250,.12));border:1px solid rgba(45,212,191,.3);border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.banner b{color:var(--acc);font-size:14px}
+.banner p{margin:0;color:var(--ink-2);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="./app.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+      <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M3 12h4M17 12h4M12 3v4M12 17v4" opacity=".5"/>
+    </svg>
+    LATTICE · 实验工坊
+  </a>
+  <a class="btn" href="./app.html">← 返回主站</a>
+  <span class="spacer"></span>
+  <button class="btn" id="themeToggle">🌓 主题</button>
+  <a class="btn primary" href="./index.html#forge">📊 主页入口</a>
+</header>
+
+<div class="wrap">
+
+  <aside class="sidebar" id="sidebar">
+    <h2>实验工坊</h2>
+    <button data-tab="play" class="active">▶️ 自由混料反应</button>
+    <button data-tab="electro">⚡ 电解定量</button>
+    <button data-tab="cell">🔋 原电池设计</button>
+    <button data-tab="cond">💡 电导率测试</button>
+    <h2>工具</h2>
+    <a href="#" data-tab="molar">🧪 摩尔质量 / 配平</a>
+    <button data-tab="nlp">🌐 中文反应解析</button>
+    <button data-tab="solution">💧 溶液配制</button>
+    <button data-tab="unit">📏 单位换算</button>
+    <h2>数据库</h2>
+    <button data-tab="periodic">🧬 元素周期表</button>
+    <button data-tab="exp">📚 33 个标准实验</button>
+    <h2>论文联动</h2>
+    <button data-tab="paper" id="paperBtn">📄 当前论文材料</button>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="banner">
+      <div style="font-size:30px">🧪</div>
+      <div style="flex:1">
+        <b>实验工坊 (Laboratory Forge)</b>
+        <p>融合 <a style="color:var(--acc);text-decoration:none" href="https://github.com/zhangifonly/ChemAIForge" target="_blank">ChemAIForge</a> 反应/电解/原电池/电导 4 套引擎 + <a style="color:var(--acc);text-decoration:none" href="https://github.com/chaxiAI/chemtools" target="_blank">chemtools</a> 7 件套（配平/NLP/周期表/3D/溶液/单位）+ LATTICE 既有 lab-chem（74 物质、20 反应规则）。从主站导入论文后，本页会自动带入 paper-aware 试剂清单与变量。</p>
+      </div>
+    </div>
+
+    <section class="tab" id="tab-play">
+      <h1>自由混料反应</h1>
+      <p class="sub">点击右侧试剂架中的物质加入烧杯（点击 chip 的 × 移除），凑齐 ≥2 种后点"▶ 触发反应"。同步调用既有 LATTICE lab 的 20 条 paper-aware 反应规则。</p>
+      <div class="grid2">
+        <div class="card">
+          <h3><span class="ic">烧杯</span> 立体实验台</h3>
+          <div class="beaker-host" id="beakerHost">
+            <div id="beakerCanvas" style="position:absolute;inset:0"></div>
+            <div class="beaker-overlay" id="beakerAdded"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" id="btnReact">▶ 触发反应</button>
+            <button class="btn ghost" id="btnClear">✕ 清空</button>
+          </div>
+          <div id="reactResult" class="output" style="display:none"></div>
+        </div>
+        <div class="card">
+          <h3><span class="ic">架</span> 试剂架（点击加入）</h3>
+          <div class="reagent-grid" id="reagentGrid"></div>
+          <p class="legend" id="reagentLegend">从 74 条 lab-chem 物质库 + 论文 profile.materials 合并展示。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-electro" style="display:none">
+      <h1>电解定量（法拉第定律）</h1>
+      <p class="sub">输入溶液名与电流 / 时间，得到阴极 / 阳极产物质量与摩尔。ChemiAIForge 原版的 electrolyze() 引擎。</p>
+      <div class="card">
+        <div class="field"><label>电解溶液</label><input id="elecSol" value="CuCl2" placeholder="如 CuCl2 / CuSO4 / NaCl / AgNO3 / 水"></div>
+        <div class="field"><label>电流 (A)</label><input id="elecI" type="number" value="1" step="0.1"></div>
+        <div class="field"><label>时间 (s)</label><input id="elecT" type="number" value="60" step="1"></div>
+        <button class="btn" id="elecRun">⚡ 计算电解结果</button>
+        <div id="elecOut" class="output" style="display:none;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-cell" style="display:none">
+      <h1>原电池设计</h1>
+      <p class="sub">选择两种电极金属 + 电解液，给出电动势与电极反应。ChemiAIForge 原版的 galvanicCell() 引擎。</p>
+      <div class="card">
+        <div class="field"><label>负极金属 A</label>
+          <select id="cellA"><option>Zn</option><option selected>Cu</option><option>Fe</option><option>Mg</option><option>Al</option><option>Ag</option><option>Pt</option><option>Au</option><option>C</option></select>
+        </div>
+        <div class="field"><label>正极金属 B</label>
+          <select id="cellB"><option selected>Zn</option><option>Cu</option><option>Fe</option><option>Ag</option></select>
+        </div>
+        <div class="field"><label>电解液</label><input id="cellE" value="稀硫酸"></div>
+        <button class="btn" id="cellRun">🔋 计算电动势</button>
+        <div id="cellOut" class="output" style="display:none;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-cond" style="display:none">
+      <h1>电导率测试</h1>
+      <p class="sub">输入溶液名或化学式，输出导电性等级（极弱/弱/中等/强/很强）以及灯泡是否会亮。ChemiAIForge 原版的 conductivity() 引擎。</p>
+      <div class="card">
+        <div class="field"><label>溶液名 / 化学式</label><input id="condIn" value="0.5mol/L NaCl 溶液" style="flex:1"></div>
+        <button class="btn" id="condRun">💡 测试电导</button>
+        <div id="condOut" class="output" style="display:none;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-molar" style="display:none">
+      <h1>摩尔质量与方程式配平</h1>
+      <p class="sub">chemtools.Chem 的核心计算：纯前端有理数高斯消元，能配平含离子电荷 / 结晶水 / 括号的方程式。</p>
+      <div class="grid2">
+        <div class="card">
+          <h3><span class="ic">M</span> 摩尔质量</h3>
+          <div class="field"><label>化学式</label><input id="molFormula" value="CuSO4·5H2O" style="flex:1"></div>
+          <button class="btn" id="molRun">⚖️ 计算</button>
+          <div id="molOut" class="output" style="display:none;margin-top:14px"></div>
+        </div>
+        <div class="card">
+          <h3><span class="ic">⚖</span> 方程式配平</h3>
+          <div class="field"><label>方程式</label><input id="balEq" value="Fe + O2 = Fe2O3" style="flex:1"></div>
+          <button class="btn" id="balRun">配平</button>
+          <div id="balOut" class="output" style="display:none;margin-top:14px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-nlp" style="display:none">
+      <h1>中文反应解析</h1>
+      <p class="sub">chemtools.NLP —— 识别自然语言场景中的反应物、生成物、限量反应物与剩余量。例如："氮气与氢气反应生成氨气，氮气过量"。</p>
+      <div class="card">
+        <div class="field"><label>自然语言场景</label><textarea id="nlpIn">氮气与氢气反应生成氨气，氮气过量</textarea></div>
+        <button class="btn" id="nlpRun">🌐 解析</button>
+        <div id="nlpOut" class="output" style="display:none;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-solution" style="display:none">
+      <h1>溶液配制计算</h1>
+      <p class="sub">chemtools.Tools —— 稀释（4 选 3）+ 固体配制（摩尔质量 → 质量）+ 浓度转换（% / ppm / mol/L）。</p>
+      <div class="grid3">
+        <div class="card">
+          <h3><span class="ic">×</span> 稀释（C₁V₁ = C₂V₂）</h3>
+          <div class="field"><label>浓液浓度 C1</label><input id="sfC1" type="number" value="1" step="0.01"></div>
+          <div class="field"><label>浓液体积 V1 (mL)</label><input id="sfV1" type="number" value="10"></div>
+          <div class="field"><label>稀液浓度 C2</label><input id="sfC2" type="number" value="0.1" step="0.01"></div>
+          <button class="btn" id="sfRun">计算 V2</button>
+          <div id="sfOut" class="output" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <h3><span class="ic">M</span> 由固体配制溶液</h3>
+          <div class="field"><label>体积 V (mL)</label><input id="smV" type="number" value="500"></div>
+          <div class="field"><label>浓度 c (mol/L)</label><input id="smC" type="number" value="0.1" step="0.01"></div>
+          <div class="field"><label>摩尔质量 M (g/mol)</label><input id="smM" type="number" value="58.44"></div>
+          <button class="btn" id="smRun">计算需多少 g</button>
+          <div id="smOut" class="output" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <h3><span class="ic">%</span> 浓度转换</h3>
+          <div class="field"><label>从浓度单位</label><select id="ccFrom"><option>mg/L</option><option>μg/mL</option><option>%</option><option>ppm</option></select></div>
+          <div class="field"><label>数值</label><input id="ccV" type="number" value="500"></div>
+          <div class="field"><label>溶液密度 (g/mL)</label><input id="ccD" type="number" value="1" step="0.001"></div>
+          <button class="btn" id="ccRun">转其它单位</button>
+          <div id="ccOut" class="output" style="display:none;margin-top:12px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-unit" style="display:none">
+      <h1>单位换算</h1>
+      <p class="sub">覆盖长度 / 质量 / 时间 / 压力 / 能量 / 温度 / 物质的量 / 浓度 8 大类。</p>
+      <div class="card">
+        <div class="field"><label>类别</label>
+          <select id="uCat">
+            <option value="length">长度</option><option value="mass">质量</option><option value="time">时间</option>
+            <option value="pressure">压力</option><option value="energy">能量</option><option value="temperature">温度</option>
+          </select>
+        </div>
+        <div class="field"><label>数值</label><input id="uVal" type="number" value="1" step="0.001"></div>
+        <div class="field"><label>从</label><select id="uFrom"></select></div>
+        <div class="field"><label>到</label><select id="uTo"></select></div>
+        <button class="btn" id="uRun">换算</button>
+        <div id="uOut" class="output" style="display:none;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-periodic" style="display:none">
+      <h1>元素周期表（118 元素，热力图着色）</h1>
+      <p class="sub">电负性 / 熔点 / 原子半径 / 地壳丰度 四种热力图。点击元素查看详情。</p>
+      <div class="card">
+        <div class="field"><label>配色属性</label>
+          <select id="heatProp">
+            <option value="electronegativity">电负性</option>
+            <option value="meltingPoint">熔点</option>
+            <option value="atomicRadius">原子半径</option>
+            <option value="abundance">地壳丰度</option>
+          </select>
+        </div>
+        <div id="periodicHost"></div>
+        <div id="elDetail" class="output" style="display:none;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-exp" style="display:none">
+      <h1>33 个标准实验</h1>
+      <p class="sub">来自 lab-experiments.js：6 类酸碱 / 4 类氧化还原 / 3 类沉淀 / 4 类气体 / 2 类金属 / 2 类有机 / 2 类电化学 / 2 类配位 / 8 类 paper-aware 材料合成与热处理。</p>
+      <div id="expList" class="grid3" style="margin-top:10px"></div>
+    </section>
+
+    <section class="tab" id="tab-paper" style="display:none">
+      <h1>当前论文的 paper-aware 信息</h1>
+      <p class="sub">主站 app.html 正在处理哪一篇论文，本页能自动接过来。本页 URL 参数 <kbd>?paper=S1</kbd> 或 <kbd>?paper=text</kbd>，或在主站点击"实验台"按钮 → 它会自动跳至此页并带上论文。</p>
+      <div id="paperCtx" class="output"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+/* ============== theme ============== */
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  try { localStorage.setItem('lattice.forge.theme', document.documentElement.getAttribute('data-theme')); } catch(e){}
+});
+try { const t = localStorage.getItem('lattice.forge.theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){}
+
+/* ============== tab switching ============== */
+document.querySelectorAll('.sidebar [data-tab]').forEach(el => {
+  el.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('.sidebar [data-tab]').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tab').forEach(x => x.style.display = 'none');
+    const t = el.dataset.tab;
+    const tab = document.getElementById('tab-' + t);
+    if (tab) tab.style.display = '';
+  });
+});
+
+/* ============== toast ============== */
+const toast = (msg, kind) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (kind === 'err' ? ' err' : '');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2400);
+};
+
+/* ============== 1. 试剂架 + 烧杯（与 LATTICE lab 共享 paper-aware 逻辑） ============== */
+let beaker = [];
+
+const allReagents = (() => {
+  const built = window.MR && window.MR.forge ? [] : [];
+  return built;
+})();
+
+/* 试剂架：内置 4 类 12 个 + 任何论文 materials */
+function reagentCategoryColor(cat) {
+  return ({
+    acid:'#ff6b35', base:'#6ba6ff', salt:'#a8d8a8', carbonate:'#c89666',
+    metal:'#888888', oxide:'#604040', gas:'#a0d8e8', water:'#a0c8f0',
+    indicator:'#e06699', oxidizer:'#a050a0', reducer:'#603030', organic:'#e0c896',
+    alloy:'#b0a98a', fiber:'#7aa8a8', polymer:'#c89ec0', silane:'#d4af6a',
+    mineral:'#a89570', cathode:'#ff8c5a', carbon:'#3a3a3a', bio:'#cce07a',
+    precipitate:'#cab9d6', material:'#b0b0b0', other:'#888888'
+  })[cat] || '#888888';
+}
+
+function renderRack(list) {
+  const grid = document.getElementById('reagentGrid');
+  grid.innerHTML = list.map((r, i) => `
+    <div class="reagent" data-i="${i}">
+      <div class="cat">${r.category || '—'}</div>
+      <div class="nm">${r.name}</div>
+      <div class="fm"><span class="f">${r.formula}</span><span class="d" style="background:${r.color}"></span></div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.reagent').forEach(el => {
+    el.addEventListener('click', () => {
+      const r = list[+el.dataset.i];
+      if (beaker.find(b => b.name === r.name)) return;
+      beaker.push(r);
+      el.classList.add('added');
+      refreshAdded();
+      updateBeaker3D();
+    });
+  });
+}
+
+function refreshAdded() {
+  const el = document.getElementById('beakerAdded');
+  el.innerHTML = beaker.map((r, i) => `
+    <span class="chip"><span class="dot" style="background:${r.color}"></span>${r.name}<span style="color:var(--ink-3)">${r.formula}</span>
+      <button class="x" data-rm="${i}" aria-label="remove">×</button>
+    </span>
+  `).join('');
+  el.querySelectorAll('[data-rm]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = +btn.dataset.rm;
+      const removed = beaker[idx].name;
+      beaker.splice(idx, 1);
+      document.querySelectorAll('.reagent').forEach((c, ci) => {
+        if (rackList[ci] && rackList[ci].name === removed) c.classList.remove('added');
+      });
+      refreshAdded();
+      updateBeaker3D();
+    });
+  });
+}
+
+/* 取试剂：内置 lab-chem 抓 12 个常见 + 论文 materials + forge 桥接的物质 */
+function buildReagentList() {
+  const list = [];
+  if (window.MR && window.MR.chem) {
+    const show = ['盐酸', '硫酸', 'NaOH', '氨水', '碳酸钠', '氯化钠', 'CuSO4', 'AgNO3', 'H2O2', 'FeCl3', 'KMnO4', '葡萄糖', '乙醇', '6061 铝合金', '玄武岩纤维', 'NVP', 'PVDF', '偏高岭土', '矿渣粉', '水玻璃', '金属钠'];
+    const sub = window.MR.chem.SUBSTANCES || [];
+    sub.filter(s => show.includes(s.name)).forEach(s => {
+      list.push({ name: s.name, formula: s.formula, category: s.category, color: reagentCategoryColor(s.category), source: 'lab-chem' });
+    });
+  }
+  /* 论文 materials（fetched from parent app.html via localStorage）*/
+  try {
+    const raw = localStorage.getItem('lattice.forge.currentPaper');
+    if (raw) {
+      const p = JSON.parse(raw);
+      (p.materials || []).forEach(m => {
+        const nm = typeof m === 'string' ? m : m.name;
+        if (!nm) return;
+        if (list.find(x => x.name === nm)) return;
+        const sub = (window.MR && window.MR.chem && window.MR.chem.resolveSubstance) ? window.MR.chem.resolveSubstance(nm) : null;
+        list.push({
+          name: nm, formula: sub ? sub.formula : '(材料)',
+          category: sub ? sub.category : 'material',
+          color: reagentCategoryColor(sub ? sub.category : 'material'),
+          source: 'paper'
+        });
+      });
+    }
+  } catch(e) {}
+  return list;
+}
+
+let rackList = buildReagentList();
+renderRack(rackList);
+
+/* ============== 2. 3D 烧杯（three.js，独立 canvas） ============== */
+const beakerHost = document.getElementById('beakerHost');
+const beakerCanvas = document.getElementById('beakerCanvas');
+const beakerRenderer = new THREE.WebGLRenderer({ canvas: beakerCanvas, antialias: true, alpha: true });
+beakerRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const resizeBeaker = () => {
+  const r = beakerHost.getBoundingClientRect();
+  beakerRenderer.setSize(r.width, r.height, false);
+};
+new ResizeObserver(resizeBeaker).observe(beakerHost);
+resizeBeaker();
+
+const bScene = new THREE.Scene();
+const bCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+bCam.position.set(2.2, 1.5, 3.5);
+bScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const bLight = new THREE.DirectionalLight(0xffffff, 1.0); bLight.position.set(3,5,4); bScene.add(bLight);
+const bCtl = new THREE.OrbitControls(bCam, beakerRenderer.domElement);
+bCtl.target.set(0, 0.5, 0); bCtl.autoRotate = true;
+
+const desk = new THREE.Mesh(
+  new THREE.CylinderGeometry(3.5, 3.5, 0.08, 24),
+  new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.85 })
+);
+desk.position.y = -0.04; bScene.add(desk);
+
+const glass = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.65, 0.65, 1.3, 24, 1, true),
+  new THREE.MeshPhysicalMaterial({
+    color: 0xe8f4f8, transparent: true, opacity: 0.2,
+    roughness: 0.05, metalness: 0, side: THREE.DoubleSide,
+    transmission: 0.95, clearcoat: 1
+  })
+);
+glass.position.set(0, 0.65, 0); bScene.add(glass);
+
+const base = new THREE.Mesh(
+  new THREE.CircleGeometry(0.65, 24),
+  new THREE.MeshStandardMaterial({ color: 0xddeef2, transparent: true, opacity: 0.6 })
+);
+base.rotation.x = -Math.PI / 2; bScene.add(base);
+
+let beakerLiquid = null;
+function updateBeaker3D() {
+  if (beakerLiquid) { bScene.remove(beakerLiquid); beakerLiquid.geometry.dispose(); beakerLiquid.material.dispose(); }
+  if (!beaker.length) return;
+  const colors = beaker.map(b => b.color);
+  const intg = colors.reduce((acc, c) => {
+    const n = parseInt(c.slice(1), 16);
+    acc.r += (n >> 16) & 0xff;
+    acc.g += (n >> 8) & 0xff;
+    acc.b += n & 0xff;
+    return acc;
+  }, { r: 0, g: 0, b: 0 });
+  const mixed = ((intg.r / colors.length) << 16) | ((intg.g / colors.length) << 8) | (intg.b / colors.length);
+  const fillRatio = Math.min(0.75, 0.15 + beaker.length * 0.15);
+  const geo = new THREE.CylinderGeometry(0.63, 0.63, 1.25 * fillRatio, 20);
+  const mat = new THREE.MeshStandardMaterial({ color: mixed, transparent: true, opacity: 0.75, roughness: 0.3 });
+  beakerLiquid = new THREE.Mesh(geo, mat);
+  beakerLiquid.position.set(0, 0.04 + 0.625 * fillRatio, 0);
+  bScene.add(beakerLiquid);
+}
+(function tickBeaker() {
+  requestAnimationFrame(tickBeaker);
+  bCtl.update();
+  beakerRenderer.render(bScene, bCam);
+})();
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  beaker = [];
+  document.querySelectorAll('.reagent').forEach(c => c.classList.remove('added'));
+  refreshAdded();
+  updateBeaker3D();
+  document.getElementById('reactResult').style.display = 'none';
+});
+
+document.getElementById('btnReact').addEventListener('click', () => {
+  if (beaker.length < 2) { toast('至少需要 2 种试剂', 'err'); return; }
+  const names = beaker.map(b => b.name);
+  if (window.MR && window.MR.forge) {
+    const r = window.MR.forge.react(names);
+    const box = document.getElementById('reactResult');
+    box.style.display = 'block';
+    if (r.reacted) {
+      const products = (r.products || []).map(p => `<span class="chip ok"><b style="color:var(--acc)">${p.formula}</b> ${p.name}</span>`).join(' ');
+      const flags = ['产气', '沉淀', '颜色变化', '温度效应'].map((label, i) => {
+        const v = [r.producesGas, r.producesPrecipitate, r.colorChange, r.thermal !== 'none'];
+        return `<span class="chip ${v[i] ? '' : 'warn'}">${v[i] ? '✓' : '·'} ${label}</span>`;
+      }).join(' ');
+      box.innerHTML = `
+        <div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;margin-bottom:10px">
+          <b style="color:#4ade80">✓ 发生反应</b> · ${r.description || ''}
+        </div>
+        <div style="background:var(--surface-2);padding:8px;border-radius:6px;border-left:3px solid var(--acc);margin-bottom:10px;font-family:var(--mono);font-size:12px">${r.equation || ''}</div>
+        <div>${flags}</div>
+        <div style="margin-top:8px"><b style="color:var(--ink-2);font-size:12px">产物：</b>${products}</div>
+      `;
+    } else {
+      box.innerHTML = `<div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:10px"><b style="color:var(--warn)">· 无可见反应</b><p style="margin-top:6px;color:var(--ink-2)">${r.description || '当前条件下未观察到明显反应。'}</p></div>`;
+    }
+  }
+});
+
+/* ============== 3. 电解 / 原电池 / 电导 ============== */
+document.getElementById('elecRun').addEventListener('click', () => {
+  const out = document.getElementById('elecOut');
+  out.style.display = 'block';
+  try {
+    const r = window.MR.forge.electrolyze(document.getElementById('elecSol').value, +document.getElementById('elecI').value, +document.getElementById('elecT').value);
+    out.innerHTML = (r.log || []).join('\n') + '\n\n电荷 ' + r.charge_C + ' C · 转移电子 ' + r.moles_electrons.toFixed(4) + ' mol';
+  } catch (e) { out.innerHTML = String(e); }
+});
+document.getElementById('cellRun').addEventListener('click', () => {
+  const out = document.getElementById('cellOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.galvanicCell(document.getElementById('cellA').value, document.getElementById('cellB').value, document.getElementById('cellE').value);
+  if (!r.emf) { out.innerHTML = r.description || '请检查电极金属符号。'; return; }
+  out.innerHTML = `
+<b>电动势 ${r.emf.toFixed(2)} V</b>\n负极（阳极）:${r.electrodes.anode} → 失去电子\n正极（阴极）:${r.electrodes.cathode} ← 得到电子\n
+阳极反应：${r.reactions.anode}\n阴极反应：${r.reactions.cathode}\n
+电解液：${r.electrolyte}
+  `.trim();
+});
+document.getElementById('condRun').addEventListener('click', () => {
+  const out = document.getElementById('condOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.conductivity(document.getElementById('condIn').value);
+  out.innerHTML = r.description + '\n等级：' + r.kind + ' · 灯泡' + (r.lightsBulb ? '亮' : (r.dimsBulb ? '暗淡' : '不亮'));
+});
+
+/* ============== 4. 摩尔质量 / 配平 ============== */
+document.getElementById('molRun').addEventListener('click', () => {
+  const out = document.getElementById('molOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.molarMass(document.getElementById('molFormula').value);
+  if (r.mass) out.innerHTML = `<b>${document.getElementById('molFormula').value}</b> 的摩尔质量 = <b style="color:var(--acc)">${r.mass.toFixed(3)} g/mol</b>\n\n元素构成：\n` + Object.entries(r.composition || {}).map(([k, v]) => k + ' × ' + v).join('\n');
+  else out.innerHTML = (r.error || '未识别') + '\n请检查化学式格式（如 CuSO4·5H2O 含结晶水）。';
+});
+document.getElementById('balRun').addEventListener('click', () => {
+  const out = document.getElementById('balOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.balanceEquation(document.getElementById('balEq').value);
+  out.innerHTML = JSON.stringify(r, null, 2);
+});
+
+/* ============== 5. NLP ============== */
+document.getElementById('nlpRun').addEventListener('click', () => {
+  const out = document.getElementById('nlpOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.nlp(document.getElementById('nlpIn').value);
+  out.innerHTML = JSON.stringify(r, null, 2);
+});
+
+/* ============== 6. 溶液计算（稀释 / 固体配制 / 浓度转换） ============== */
+document.getElementById('sfRun').addEventListener('click', () => {
+  const out = document.getElementById('sfOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.dilute({
+    C1: +document.getElementById('sfC1').value,
+    V1: +document.getElementById('sfV1').value,
+    C2: +document.getElementById('sfC2').value,
+    V2: null
+  });
+  out.innerHTML = JSON.stringify(r, null, 2);
+});
+document.getElementById('smRun').addEventListener('click', () => {
+  const out = document.getElementById('smOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.prepareSolid({
+    V: +document.getElementById('smV').value,
+    c: +document.getElementById('smC').value,
+    M: +document.getElementById('smM').value
+  });
+  out.innerHTML = JSON.stringify(r, null, 2);
+});
+document.getElementById('ccRun').addEventListener('click', () => {
+  const out = document.getElementById('ccOut');
+  out.style.display = 'block';
+  const r = window.MR.forge.convertConc({
+    from: document.getElementById('ccFrom').value,
+    value: +document.getElementById('ccV').value,
+    density: +document.getElementById('ccD').value
+  });
+  out.innerHTML = JSON.stringify(r, null, 2);
+});
+
+/* ============== 7. 单位换算 ============== */
+(function fillUnit() {
+  const cats = ['length','mass','time','pressure','energy','temperature'];
+  document.getElementById('uCat').addEventListener('change', () => fillUnit());
+  fillUnit();
+  function fillUnit() {
+    const cat = document.getElementById('uCat').value;
+    if (!window.MR.forge.chemtools.Tools || !window.MR.forge.chemtools.Tools.UNIT_DEFS) return;
+    const def = window.MR.forge.chemtools.Tools.UNIT_DEFS[cat];
+    if (!def) return;
+    const opts = def.units.map(u => `<option value="${u.id}">${u.label}</option>`).join('');
+    document.getElementById('uFrom').innerHTML = opts;
+    document.getElementById('uTo').innerHTML = opts;
+    document.getElementById('uTo').value = def.units[1] ? def.units[1].id : def.units[0].id;
+  }
+})();
+document.getElementById('uRun').addEventListener('click', () => {
+  const out = document.getElementById('uOut');
+  out.style.display = 'block';
+  const cat = document.getElementById('uCat').value;
+  const fromId = document.getElementById('uFrom').value;
+  const toId = document.getElementById('uTo').value;
+  const val = +document.getElementById('uVal').value;
+  const r = window.MR.forge.chemtools.Tools ? window.MR.forge.chemtools.Tools.convert(cat, val, fromId, toId) : null;
+  out.innerHTML = `输入：${val} ${fromId}\n换算至：${toId}\n\n结果：<b style="color:var(--acc)">${typeof r === 'number' ? r : (r && r.error ? r.error : '无效')}</b>\n\n${typeof r === 'number' ? `${val} ${fromId} = ${r.toFixed(6)} ${toId}` : ''}`;
+});
+
+/* ============== 8. 周期表 ============== */
+function renderPeriodic() {
+  const prop = document.getElementById('heatProp').value;
+  const elements = window.MR.forge.elements || [];
+  const host = document.getElementById('periodicHost');
+  if (!elements.length) { host.innerHTML = '<div style="color:var(--ink-3);font-size:12px">chemtools.elements 未加载</div>'; return; }
+  /* heatmap-data.js 提供 colorBy(prop, elements) */
+  let cm = null;
+  try {
+    if (window.HeatmapData && window.HeatmapData.colorBy) cm = window.HeatmapData.colorBy(elements, prop);
+  } catch (e) {}
+  host.innerHTML = '<div class="periodic">' +
+    elements.map(e => {
+      const css = cm ? ` style="background:${cm[e[1]] || 'var(--surface-2)'}" ` : '';
+      return `<div class="el" data-sym="${e[1]}" data-z="${e[0]}" ${css}><span style="opacity:.55;font-size:8.5px">${e[0]}</span><b>${e[1]}</b><span style="font-size:8.5px">${e[2]}</span></div>`;
+    }).join('') + '</div>';
+  host.querySelectorAll('.el').forEach(el => {
+    el.addEventListener('click', () => {
+      const sym = el.dataset.sym;
+      const e = elements.find(x => x[1] === sym);
+      const box = document.getElementById('elDetail');
+      box.style.display = 'block';
+      box.innerHTML = `<b style="color:var(--acc);font-size:16px">${e[2]} (${e[3]}) · ${e[1]}</b>
+序号 ${e[0]} · 周期 ${e[6]} · 族 ${e[5]}
+相对原子质量：${e[4]} g/mol
+分类：${e[7]} · 常温状态：${e[8] === 'g' ? '气体' : (e[8] === 'l' ? '液体' : '固体')}
+`;
+    });
+  });
+}
+document.getElementById('heatProp').addEventListener('change', renderPeriodic);
+renderPeriodic();
+
+/* ============== 9. 33 个标准实验 ============== */
+(function renderExp() {
+  const list = window.MR.experiments || [];
+  const host = document.getElementById('expList');
+  host.innerHTML = list.map(e => `
+    <div class="card" style="margin:0">
+      <h3 style="font-size:13px">${e.title}</h3>
+      <div style="font-size:11px;color:var(--ink-3);font-family:var(--mono);margin-bottom:6px">${e.category} · ${e.difficulty} · ${e.estimatedMinutes || 0}min</div>
+      <p style="margin:0 0 6px;font-size:12.5px;color:var(--ink-2);line-height:1.5">${(e.description || '').slice(0, 90)}${(e.description || '').length > 90 ? '…' : ''}</p>
+      <div style="font-size:11px;color:var(--ink-3)">试剂：${(e.reagents || []).slice(0, 2).join(' / ')}${(e.reagents || []).length > 2 ? ' …' : ''}</div>
+    </div>
+  `).join('');
+})();
+
+/* ============== 10. 论文信息 ============== */
+(function renderPaper() {
+  const out = document.getElementById('paperCtx');
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem('lattice.forge.currentPaper') || 'null'); } catch(e) {}
+  if (!p) {
+    const urlP = new URLSearchParams(location.search).get('paper');
+    if (urlP) p = { id: urlP, title: '从 URL 传入：' + urlP, materials: [], variables: [] };
+  }
+  if (!p) {
+    out.innerHTML = '<b style="color:var(--warn)">未携带论文上下文</b>\n\n打开本工坊的两种方式：\n  1. 在主站导入文献 → 点击右上角"实验工坊"按钮（自动带论文过来）。\n  2. 直接打开本工坊 ?paper=S1（载入内置示例）。\n\n内置示例论文：本工坊支持任意 S1~S4 / C1~C3（来自主站 papers.js）。';
+    return;
+  }
+  out.innerHTML = `<b style="color:var(--acc);font-size:15px">📄 ${p.title || p.id || '当前论文'}</b>\n\n材料：${(p.materials || []).length} 条\n仪器：${(p.instruments || []).length} 条\n变量：${(p.variables || []).length} 组\n性能指标：${(p.perf || []).length} 项\n\n<i style="color:var(--ink-3);font-size:12px">论文上下文由主站 app.html 在 setView('design') 或切到 lab 时写入 localStorage[ 'lattice.forge.currentPaper' ]，本工坊读取并展示。</i>`;
+})();
+</script>
+
+</body>
+</html>

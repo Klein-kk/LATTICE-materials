@@ -865,10 +865,37 @@ MR.views2 = {};
       var c1 = host.querySelector('[data-act="confirm"]'); if (c1) c1.addEventListener('click', go);
       var c2 = host.querySelector('[data-act="confirm2"]'); if (c2) c2.addEventListener('click', go);
 
-      /* 虚拟实验台渲染 */
+      /* 虚拟实验台渲染 + 打开完整工坊按钮 */
       var labHost = host.querySelector('#designLabPanel');
       if (labHost && MR.lab && MR.lab.renderLabPanel) {
         MR.lab.renderLabPanel(labHost, MR.state.profile);
+        var labWrap = labHost.querySelector('.panel');
+        if (labWrap && !labWrap.querySelector('.open-forge-cta')) {
+          var cta = document.createElement('a');
+          cta.className = 'open-forge-cta';
+          cta.href = './forge.html';
+          cta.target = '_blank';
+          cta.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;background:var(--acc);color:var(--acc-ink);border-radius:var(--r-pill);font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--acc)';
+          cta.innerHTML = '🧪 打开完整实验工坊（4 套 ChemAIForge 引擎 + chemtools）';
+          /* 把论文上下文也写到 localStorage 方便工坊读取 */
+          try {
+            var ctx = {
+              id: (MR.state.paper && MR.state.paper.id) || null,
+              title: (MR.state.paper && MR.state.paper.name) || null,
+              materials: (MR.state.profile && MR.state.profile.materials) || [],
+              instruments: (MR.state.profile && MR.state.profile.instruments) || [],
+              variables: (MR.state.profile && MR.state.profile.variables) || [],
+              perf: (MR.state.profile && MR.state.profile.perf) || []
+            };
+            cta.addEventListener('click', function () {
+              try { localStorage.setItem('lattice.forge.currentPaper', JSON.stringify(ctx)); } catch (e) {}
+            });
+            cta.addEventListener('mouseenter', function () {
+              try { localStorage.setItem('lattice.forge.currentPaper', JSON.stringify(ctx)); } catch (e) {}
+            });
+          } catch (e) {}
+          labWrap.appendChild(cta);
+        }
       }
       bindFig(host); cfDraw(host);
     }

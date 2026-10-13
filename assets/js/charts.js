@@ -470,7 +470,162 @@ MR.charts = (function () {
   }
 
   var renderers = { lineErr: lineErr, linePlain: linePlain, radar: radar, donut: donut, bars: bars, xrd: xrd,
-    spectrum: spectrum, heat: heat, scatterErr: scatterErr, barsGroup: barsGroup };
+    spectrum: spectrum, heat: heat, scatterErr: scatterErr, barsGroup: barsGroup,
+    sankey: sankey, violin: violin, waterfall: waterfall, lineDual: lineDual };
+
+  /* ============================================================
+     Show2Know 系列图型（融合 Winn1y/Show2Know）
+     - sankey       桑基图（物质/能量流）
+     - violin       小提琴图（分布 + 抖动散点）
+     - waterfall    瀑布图（前后对比）
+     - lineDual     双 Y 轴（左柱+右线 / 左线+右柱）
+     ============================================================ */
+
+  function sankey(w, spec) {
+    /* spec.links: [{source, target, value}] */
+    var nodes = {}; var links = spec.links || [];
+    links.forEach(function (l) { nodes[l.source] = 1; nodes[l.target] = 1; });
+    var keys = Object.keys(nodes);
+    var H = spec.height || 220;
+    var padTop = 14, padX = 80, padBot = 18;
+    var innerH = H - padTop - padBot;
+    /* 把节点按列排：source 偏左，target 偏右 */
+    var leftKeys = [], rightKeys = [];
+    keys.forEach(function (k) {
+      var isSource = links.some(function (l) { return l.source === k; });
+      var isTarget = links.some(function (l) { return l.target === k; });
+      if (isSource && !isTarget) rightKeys.push(k);
+      else if (isTarget && !isSource) leftKeys.push(k);
+      else leftKeys.push(k);
+    });
+    leftKeys = leftKeys.concat(rightKeys);
+    var total = links.reduce(function (a, b) { return a + b.value; }, 0);
+    var s = svgOpen(w, H);
+    s += '<rect width="' + w + '" height="' + H + '" fill="transparent"/>';
+    var colW = (w - padX * 2) / Math.max(2, leftKeys.length);
+    keys.forEach(function (k, i) {
+      var cx = padX + (i % 2 === 0 ? 0 : colW);
+      var sum = links.filter(function (l) { return l.source === k; }).reduce(function (a, b) { return a + b.value; }, 0) +
+        links.filter(function (l) { return l.target === k; }).reduce(function (a, b) { return a + b.value; }, 0);
+      var nodeH = Math.max(8, (sum / total) * innerH);
+      s += '<rect x="' + (cx + 2) + '" y="' + (padTop + 10) + '" width="' + (colW - 20) + '" height="' + nodeH + '" rx="3" fill="rgba(45,212,191,.6)" stroke="rgba(45,212,191,.9)"/>';
+      s += txt(cx + 6, padTop + 8, k, { size: 10, weight: 600, fill: 'var(--ink-2)' });
+    });
+    links.forEach(function (l, i) {
+      var yOff = padTop + 16 + i * 18;
+      s += '<path d="M' + padX + ' ' + yOff + ' C' + (w / 2) + ' ' + yOff + ',' + (w / 2) + ' ' + (yOff + 12) + ',' + (w - padX) + ' ' + (yOff + 12) +
+        '" fill="none" stroke="rgba(45,212,191,' + Math.min(0.9, 0.2 + l.value / 30) + ')" stroke-width="' + Math.max(1.5, l.value / 4) + '"/>';
+      s += txt(padX + 6, yOff - 1, l.source + ' →', { size: 9.5, fill: 'var(--ink-2)' });
+      s += txt(w - padX - 60, yOff + 4, '→ ' + l.target + ' (' + l.value + ')', { size: 9.5, fill: 'var(--ink-2)' });
+    });
+    s += '</svg>';
+    return s;
+  }
+
+  function violin(w, spec) {
+    var data = spec.data || [];
+    var labels = data.map(function (d) { return d.label; });
+    var max = Math.max.apply(null, [0].concat(data.map(function (d) { return d.max; })));
+    var H = spec.height || 220;
+    var padL = 30, padR = 10, padT = 14, padB = 24;
+    var s = svgOpen(w, H);
+    s += '<rect width="' + w + '" height="' + H + '" fill="transparent"/>';
+    var bw = (w - padL - padR) / Math.max(1, data.length);
+    data.forEach(function (d, i) {
+      var cx = padL + bw * i + bw / 2;
+      var half = (d.max / max) * (H - padT - padB) / 2;
+      /* 4 个控制点画小提琴轮廓 */
+      var top = padT + (H - padT - padB) / 2 - half;
+      var bot = padT + (H - padT - padB) / 2 + half;
+      s += '<path d="M' + cx + ' ' + top + ' C' + (cx - bw * 0.3) + ' ' + padT + ',' + (cx - bw * 0.3) + ' ' + (H - padB) + ',' + cx + ' ' + bot +
+        ' C' + (cx + bw * 0.3) + ' ' + (H - padB) + ',' + (cx + bw * 0.3) + ' ' + padT + ',' + cx + ' ' + top + ' Z" fill="rgba(45,212,191,.18)" stroke="rgba(45,212,191,.7)" stroke-width="1.2"/>';
+      /* 中心实线 = q1/q3 盒子 */
+      s += '<line x1="' + cx + '" y1="' + (padT + (H - padT - padB) / 2 - (d.q3 / max) * half) + '" x2="' + cx + '" y2="' + (padT + (H - padT - padB) / 2 - (d.q1 / max) * half) +
+        '" stroke="var(--acc)" stroke-width="3"/>';
+      /* median */
+      s += '<circle cx="' + cx + '" cy="' + (padT + (H - padT - padB) / 2 - (d.median / max) * half) + '" r="3" fill="var(--acc-ink)" stroke="var(--acc)" stroke-width="1"/>';
+      /* 抖动点 */
+      (d.points || []).forEach(function (p, k) {
+        var px = cx + (Math.random() - 0.5) * bw * 0.4;
+        var py = padT + (H - padT - padB) / 2 - (p / max) * half;
+        s += '<circle cx="' + px + '" cy="' + py + '" r="2" fill="rgba(45,212,191,.65)"/>';
+      });
+      s += txt(cx, H - padB + 14, d.label, { size: 10, anchor: 'middle', fill: 'var(--ink-2)' });
+    });
+    s += '</svg>';
+    return s;
+  }
+
+  function waterfall(w, spec) {
+    var items = spec.items || [];
+    var H = spec.height || 220;
+    var padL = 50, padR = 10, padT = 18, padB = 24;
+    var innerH = H - padT - padB, innerW = w - padL - padR;
+    var max = Math.max.apply(null, [0].concat(items.map(function (it) { return Math.max(Math.abs(it.delta), Math.abs(it.running)); })));
+    var bw = innerW / Math.max(1, items.length);
+    var s = svgOpen(w, H);
+    s += '<rect width="' + w + '" height="' + H + '" fill="transparent"/>';
+    /* baseline */
+    var baseY = padT + innerH / 2;
+    s += '<line x1="' + padL + '" y1="' + baseY + '" x2="' + (w - padR) + '" y2="' + baseY + '" stroke="var(--line-2)" stroke-width="0.5"/>';
+    var running = 0;
+    items.forEach(function (it, i) {
+      var cx = padL + bw * i + bw / 2;
+      var up = it.delta >= 0;
+      var top = baseY - (Math.abs(it.delta) / max) * (innerH / 2 - 10) * (up ? -1 : 1);
+      var bot = baseY;
+      s += '<rect x="' + (cx - bw * 0.32) + '" y="' + Math.min(top, bot) + '" width="' + (bw * 0.64) + '" height="' + Math.abs(bot - top) + '" fill="' + (up ? 'rgba(74,222,128,.55)' : 'rgba(248,113,113,.55)') + '" stroke="' + (up ? 'rgba(74,222,128,.9)' : 'rgba(248,113,113,.9)') + '"/>';
+      running += it.delta || 0;
+      s += txt(cx, Math.min(top, bot) - 4, (up ? '+' : '') + (it.delta || 0), { size: 9.5, anchor: 'middle', fill: 'var(--ink)' });
+      s += txt(cx, H - padB + 14, it.label, { size: 10, anchor: 'middle', fill: 'var(--ink-2)' });
+    });
+    /* 起点与终点线 */
+    if (items[0] && items[0].start) {
+      s += '<line x1="' + (padL + bw * 0.5) + '" y1="' + (baseY - items[0].start / max * (innerH / 2)) + '" x2="' + (padL + bw * 0.5) + '" y2="' + baseY + '" stroke="var(--acc)" stroke-dasharray="3,3"/>';
+    }
+    s += '</svg>';
+    return s;
+  }
+
+  function lineDual(w, spec) {
+    /* spec: { left:[{label, value}], right:[{label, value}], labels:[label,...] } */
+    var labels = spec.labels || [];
+    var left = spec.left || [];
+    var right = spec.right || [];
+    var H = spec.height || 220;
+    var padL = 36, padR = 36, padT = 14, padB = 24;
+    var s = svgOpen(w, H);
+    s += '<rect width="' + w + '" height="' + H + '" fill="transparent"/>';
+    var maxL = Math.max.apply(null, [1].concat(left.map(function (x) { return Math.abs(x.value); })));
+    var maxR = Math.max.apply(null, [1].concat(right.map(function (x) { return Math.abs(x.value); })));
+    var innerW = w - padL - padR;
+    var innerH = H - padT - padB;
+    var baseY = padT + innerH;
+    s += '<line x1="' + padL + '" y1="' + baseY + '" x2="' + (w - padR) + '" y2="' + baseY + '" stroke="var(--line-2)" stroke-width="0.5"/>';
+    s += txt(padL, padT - 4, '左轴 ' + spec.leftLabel || '', { size: 9, fill: 'var(--acc)' });
+    s += txt(w - padR, padT - 4, spec.rightLabel || '右轴', { size: 9, fill: 'var(--ink-2)', anchor: 'end' });
+    var bw = innerW / Math.max(1, labels.length);
+    labels.forEach(function (lb, i) {
+      var cx = padL + bw * (i + 0.5);
+      var hL = (Math.abs(left[i] ? left[i].value : 0) / maxL) * innerH;
+      var hR = (Math.abs(right[i] ? right[i].value : 0) / maxR) * innerH;
+      /* 柱 */
+      s += '<rect x="' + (cx - bw * 0.32) + '" y="' + (baseY - hL) + '" width="' + (bw * 0.5) + '" height="' + hL + '" fill="rgba(45,212,191,.55)"/>';
+      /* 折线（虚线） */
+      var lp = padT + innerH - hR;
+      s += '<circle cx="' + cx + '" cy="' + lp + '" r="2.5" fill="var(--ink-2)"/>';
+      if (i > 0) {
+        var px = padL + bw * (i - 0.5);
+        var py = padT + innerH - (Math.abs(right[i - 1] ? right[i - 1].value : 0) / maxR) * innerH;
+        s += '<line x1="' + px + '" y1="' + py + '" x2="' + cx + '" y2="' + lp + '" stroke="var(--ink-2)" stroke-dasharray="3,3" stroke-width="1"/>';
+      }
+      s += txt(cx, H - padB + 14, lb, { size: 9.5, anchor: 'middle', fill: 'var(--ink-2)' });
+    });
+    s += '</svg>';
+    return s;
+  }
+
+
 
   /* 按容器宽度渲染，宽度变化时重绘 */
   function draw(el, spec) {

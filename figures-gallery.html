@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LATTICE · 科研绘图图谱</title>
+<meta name="description" content="融合 Winn1y/Show2Know 19 类图谱 + academic-figures 28 类图的科研绘图图谱展示页">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%232dd4bf'/><circle cx='16' cy='16' r='14' fill='none' stroke='%232dd4bf' stroke-width='2' opacity='.55'/></svg>">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="./assets/js/charts.js"></script>
+<style>
+:root{
+  --bg:#08080a;--surface:#101015;--surface-2:#18181f;--surface-3:#23232c;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.18);
+  --ink:#f4f4f5;--ink-2:#a1a1aa;--ink-3:#6b6b74;
+  --acc:#2dd4bf;--acc-ink:#042e2a;--warn:#facc15;
+  --mono:ui-monospace,SFMono-Regular,JetBrains Mono,Consolas,monospace;
+}
+[data-theme=light]{
+  --bg:#f7f7f9;--surface:#fff;--surface-2:#fafafd;--surface-3:#eef;
+  --line:rgba(0,0,0,.08);--line-2:rgba(0,0,0,.18);
+  --ink:#1f1f23;--ink-2:#555;--ink-3:#888;--acc:#0d9488;--acc-ink:#fff;
+}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.nav{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.nav a{color:var(--ink-2);text-decoration:none;padding:7px 14px;border-radius:999px;border:1px solid var(--line);font-size:13px}
+.nav a:hover{color:var(--ink);background:var(--surface-2)}
+.brand{font-weight:700;color:var(--ink);font-size:16px;display:flex;gap:6px;align-items:center;text-decoration:none}
+.brand svg{color:var(--acc)}
+.spacer{flex:1}
+.wrap{padding:24px 32px 80px}
+.banner{background:linear-gradient(135deg,rgba(45,212,191,.1),rgba(96,165,250,.1));border:1px solid rgba(45,212,191,.3);border-radius:14px;padding:18px 22px;margin-bottom:24px}
+.banner b{color:var(--acc);font-size:14px}
+.banner p{margin:6px 0 0;color:var(--ink-2);font-size:13px;line-height:1.6}
+.sec{font-size:13px;letter-spacing:.18em;color:var(--ink-3);text-transform:uppercase;margin:26px 0 12px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{margin:0 0 6px;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.card h3 .tag{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:2px 6px}
+.card p{margin:0 0 12px;font-size:12.5px;color:var(--ink-2);line-height:1.55}
+.chart{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:170px}
+.card .src{font-size:10.5px;color:var(--ink-3);font-family:var(--mono);margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.ctrls{margin:14px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctrls input,.ctrls select{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);padding:5px 10px;border-radius:6px;font-size:12px;font-family:inherit;outline:none}
+.ctrls input:focus,.ctrls select:focus{border-color:var(--acc)}
+.ctrls button{padding:5px 12px;border-radius:6px;background:var(--acc);color:var(--acc-ink);border:0;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit}
+.legend{margin-top:8px;font-size:11px;color:var(--ink-3)}
+.legend kbd{background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:10.5px}
+footer{text-align:center;color:var(--ink-3);font-size:11.5px;padding:30px 0 10px}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="./app.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+      <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M3 12h4M17 12h4M12 3v4M12 17v4" opacity=".5"/>
+    </svg>
+    LATTICE · 科研绘图图谱
+  </a>
+  <a href="./app.html">主站</a>
+  <a href="./forge.html">实验工坊</a>
+  <a href="./figures.html">原绘图</a>
+  <a href="./figs.html">Figures</a>
+  <span class="spacer"></span>
+  <button id="theme" style="background:transparent;color:var(--ink-2);border:1px solid var(--line);padding:7px 12px;border-radius:999px;cursor:pointer;font-size:13px">🌓 主题</button>
+</header>
+
+<div class="wrap">
+  <div class="banner">
+    <b>科研绘图图谱 — 47 类</b>
+    <p>本页融合 <a style="color:var(--acc);text-decoration:none" href="https://github.com/Winn1y/Show2Know" target="_blank">Winn1y/Show2Know</a> 的 19 类 Python Matplotlib 科研绘图代码 + <a style="color:var(--acc);text-decoration:none" href="https://github.com/docsor1212/academic-figures" target="_blank">docsor1212/academic-figures</a> 的 28 类出版级 SVG 论文配图（柱状/线图/箱线/KM 生存/火山图/瀑布/PRISMA/聚类热图等）。</p>
+    <p style="margin-top:6px"><b style="color:var(--ink)">前端可用图（17 类）</b>：下方绿色框内均为本平台 MR.charts 已实现的渲染器，能在你的环节 04/05 直接用；剩余 30 类仅作为图谱参考，给科研作者提供方向。</p>
+  </div>
+
+  <div class="sec">前端可绘（17 类 — MR.charts 实现 · Show2Know + academic-figures）</div>
+  <div class="grid" id="gridLive">
+    <div class="card">
+      <h3>折线图（含误差棒）<span class="tag">lineErr</span></h3>
+      <p>变量-响应最常用。误差棒来自多个平行样本的标准差。</p>
+      <div class="chart" id="g1"></div>
+      <div class="src">academic-figures · -t line · 对应论文配图场景</div>
+    </div>
+    <div class="card">
+      <h3>柱状图<span class="tag">bars</span></h3>
+      <p>多组对比，离散均值±标准误。</p>
+      <div class="chart" id="g2"></div>
+      <div class="src">academic-figures · -t bar / -t hbar</div>
+    </div>
+    <div class="card">
+      <h3>散点图（带 95% CI）<span class="tag">scatterErr</span></h3>
+      <p>变量相关 + 拟合趋势 + 95% 置信带。</p>
+      <div class="chart" id="g3"></div>
+      <div class="src">Show2Know #1 Scatter（含拟合趋势 + CI95%）</div>
+    </div>
+    <div class="card">
+      <h3>折线图（无误差）<span class="tag">linePlain</span></h3>
+      <p>时间序列、变量扫描，纯净折线。</p>
+      <div class="chart" id="g4"></div>
+      <div class="src">Show2Know #2 Line（含 TimeMap + 文本标注）</div>
+    </div>
+    <div class="card">
+      <h3>桑基图（物质/能量流）<span class="tag">sankey</span></h3>
+      <p>流程中各节点流的粗细。论文里用于工艺流、能量分布。</p>
+      <div class="chart" id="g5"></div>
+      <div class="src">Show2Know #7 Sankey Plot · 全新加入 MR.charts</div>
+    </div>
+    <div class="card">
+      <h3>小提琴图<span class="tag">violin</span></h3>
+      <p>展示分布形状 + 中位数 + 四分位 + 抖动原始点。</p>
+      <div class="chart" id="g6"></div>
+      <div class="src">Show2Know #19 Violin Plot · 全新加入 MR.charts</div>
+    </div>
+    <div class="card">
+      <h3>瀑布图<span class="tag">waterfall</span></h3>
+      <p>前后对比 / 组成拆解。论文里用于差分溯源、因素分解。</p>
+      <div class="chart" id="g7"></div>
+      <div class="src">academic-figures · -t waterfall（v4.8 RECIST）</div>
+    </div>
+    <div class="card">
+      <h3>双 Y 轴（左柱+右线）<span class="tag">lineDual</span></h3>
+      <p>一张图同时展示两套不同量级的指标。</p>
+      <div class="chart" id="g8"></div>
+      <div class="src">academic-figures · -t dual_axis · 全新加入 MR.charts</div>
+    </div>
+    <div class="card">
+      <h3>分组柱状图<span class="tag">barsGroup</span></h3>
+      <p>多系列 × 多类别 + 显著性标记。</p>
+      <div class="chart" id="g9"></div>
+      <div class="src">academic-figures · -t grouped_bar</div>
+    </div>
+    <div class="card">
+      <h3>XRD 谱图<span class="tag">xrd</span></h3>
+      <p>材料类专用。2θ vs 强度 + 物相标注。</p>
+      <div class="chart" id="g10"></div>
+      <div class="src">MR.charts 内置</div>
+    </div>
+    <div class="card">
+      <h3>FTIR 谱图<span class="tag">spectrum</span></h3>
+      <p>化学类专用。波数 vs 透过率/吸光度 + 基团标注。</p>
+      <div class="chart" id="g11"></div>
+      <div class="src">MR.charts 内置</div>
+    </div>
+    <div class="card">
+      <h3>热力图<span class="tag">heat</span></h3>
+      <p>矩阵可视化 + 单元格标注。</p>
+      <div class="chart" id="g12"></div>
+      <div class="src">academic-figures · -t heatmap / cluster_heatmap</div>
+    </div>
+    <div class="card">
+      <h3>雷达图<span class="tag">radar</span></h3>
+      <p>多维度对比（材料综合性能、雷达多指标）。</p>
+      <div class="chart" id="g13"></div>
+      <div class="src">MR.charts 内置</div>
+    </div>
+    <div class="card">
+      <h3>环形图<span class="tag">donut</span></h3>
+      <p>占比可视化。</p>
+      <div class="chart" id="g14"></div>
+      <div class="src">MR.charts 内置 · 出版级配色</div>
+    </div>
+    <div class="card">
+      <h3>箱线图<span class="tag">academic-figures box</span></h3>
+      <p>均值/中位数/四分位/极值完整统计。</p>
+      <div class="chart" id="g15"></div>
+      <div class="src">Show2Know #10 Box Plot</div>
+    </div>
+    <div class="card">
+      <h3>直方图<span class="tag">Show2Know #13</span></h3>
+      <p>概率分布形态。</p>
+      <div class="chart" id="g16"></div>
+      <div class="src">Show2Know #13 Histogram</div>
+    </div>
+    <div class="card">
+      <h3>饼图<span class="tag">Show2Know #5</span></h3>
+      <p>份额占比（受限使用；多柱/堆叠柱/环形更佳）。</p>
+      <div class="chart" id="g17"></div>
+      <div class="src">Show2Know #5 Pie Plot</div>
+    </div>
+  </div>
+
+  <div class="sec">图谱参考（30 类 — Python matplotlib 实现，需 CLI 调用 academic-figures / Show2Know）</div>
+  <div class="grid" id="gridRef">
+    <!-- 30 entries will be rendered here -->
+  </div>
+
+  <div class="sec">现场调用 / 一键出图</div>
+  <div class="card">
+    <p style="margin-top:0">把后端 Python 引擎 (<b>academic-figures</b> / <b>Show2Know</b>) 作为可选调用 — 在主站环节 04/05 自动识别数据特征，给出"建议的图类型 + 一键渲染命令"。</p>
+    <div class="ctrls">
+      <label style="font-size:12px;color:var(--ink-2)">数据 CSV:</label>
+      <input id="csv" placeholder="x,y&#10;1,5.2&#10;2,7.8&#10;3,9.4" style="flex:1;min-width:200px">
+      <select id="recommended">
+        <option value="line">line 折线（趋势）</option>
+        <option value="bar">bar 柱状（对比）</option>
+        <option value="scatter">scatter 散点（相关）</option>
+        <option value="heatmap">heatmap 热图（矩阵）</option>
+        <option value="violin">violin 小提琴（分布）</option>
+        <option value="waterfall">waterfall 瀑布（拆解）</option>
+        <option value="sankey">sankey 桑基（流向）</option>
+      </select>
+      <button id="render">预览</button>
+    </div>
+    <div class="chart" id="renderOut" style="margin-top:14px"></div>
+    <div class="legend">
+      学术诚信提示：本平台 SVG 渲染器仅用于概念示意。<b>正式投稿</b>请用 <code>academic-figures</code> 引擎
+      <kbd>python3 scripts/gen_figure.py -t line -d data.json -o fig.pdf --theme okabe-ito --verify</kbd> 生成 600dpi 出版级图（PDF + TIFF + 多格式可同出）。
+    </div>
+  </div>
+
+</div>
+
+<footer>LATTICE · 融合 <a href="https://github.com/Winn1y/Show2Know" style="color:var(--acc)">Winn1y/Show2Know</a> + <a href="https://github.com/docsor1212/academic-figures" style="color:var(--acc)">docsor1212/academic-figures</a> · MIT · 2026-10-14</footer>
+
+<script>
+document.getElementById('theme').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  try { localStorage.setItem('lattice.gallery.theme', document.documentElement.getAttribute('data-theme')); } catch (e) {}
+});
+try { const t = localStorage.getItem('lattice.gallery.theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+
+/* ref-grid (30 categories from Show2Know 1..19 + academic-figures 28 minus overlap) */
+(function fillRef() {
+  const ref = [
+    { name: '折线对比', src: 'Show2Know #2', desc: 'time series, max 6 series' },
+    { name: '柱状带斜纹', src: 'academic-figures --hatch', desc: '打印友好' },
+    { name: '水平柱状', src: 'academic-figures -t hbar', desc: '适于排名' },
+    { name: '堆叠柱状', src: 'academic-figures -t stacked_bar', desc: '组成' },
+    { name: '聚类热图', src: 'Show2Know #4 + academic-figures cluster_heatmap', desc: '>3000 行自动降采样' },
+    { name: 'KDE 山峦图', src: 'Show2Know #11 Joy Plot', desc: '多分布重叠' },
+    { name: '平行坐标图', src: 'Show2Know #12 Parallel', desc: '多变量筛选' },
+    { name: '桑基（细）', src: 'Show2Know #7', desc: 'Python sankey' },
+    { name: '3D 柱状', src: 'Show2Know #17', desc: '3 维带交互' },
+    { name: '3D 路径地图', src: 'Show2Know ad-hoc', desc: '轨迹 3 维' },
+    { name: '火山图', src: 'academic-figures -t volcano', desc: '差异基因 log2FC × -log10 p' },
+    { name: '森林图', src: 'academic-figures -t forest', desc: 'Meta 分析 + Cox' },
+    { name: '漏斗图', src: 'academic-figures -t funnel', desc: 'Meta 发表偏移' },
+    { name: 'KM 生存', src: 'academic-figures -t km', desc: 'Log-rank + 风险表 + 竞争风险' },
+    { name: 'ROC', src: 'academic-figures -t roc', desc: 'AUC + 多模型 DeLong' },
+    { name: 'PRISMA', src: 'academic-figures -t prisma', desc: '系统综述，数字自洽' },
+    { name: '流程图', src: 'academic-figures -t diagram', desc: '论文路径图' },
+    { name: 'UpSet', src: 'academic-figures -t upset', desc: '≥5 集合' },
+    { name: '韦恩图', src: 'academic-figures -t venn', desc: '2~4 集合 + --area' },
+    { name: 'PCA', src: 'academic-figures -t pca', desc: 'Top5 载荷' },
+    { name: 'Bland-Altman', src: 'academic-figures -t bland_altman', desc: '一致性' },
+    { name: '配对斜率图', src: 'academic-figures -t slope', desc: '前后对比' },
+    { name: '雨云图', src: 'academic-figures -t raincloud', desc: 'KDE + 箱线 + 抖动三合一' },
+    { name: '瀑布肿瘤', src: 'academic-figures -t waterfall', desc: 'RECIST 着色' },
+    { name: '游泳图', src: 'academic-figures -t swimmer', desc: '逐例时长' },
+    { name: '文本框图', src: 'Show2Know #16', desc: '论文内说明' },
+    { name: '圆形图', src: 'Show2Know #6', desc: '节点占比' },
+    { name: '文本拼图', src: 'Show2Know #14', desc: '多图像批组合' },
+    { name: '正态云图', src: 'Show2Know #15', desc: '区间概率填充' },
+    { name: '2D 直方图', src: 'Show2Know #13 v2', desc: '联合分布' }
+  ];
+  const host = document.getElementById('gridRef');
+  host.innerHTML = ref.map(r => `
+    <div class="card">
+      <h3>${r.name}<span class="tag">PY</span></h3>
+      <p>${r.desc}</p>
+      <div class="src">调用：${r.src}</div>
+    </div>
+  `).join('');
+})();
+
+/* live demos for 17 renderable types using dummy data */
+window.addEventListener('load', () => {
+  /* helper */
+  const plot = (id, type, spec) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = MR.charts.draw ? '' : '';
+    try {
+      const wrap = document.createElement('div');
+      el.appendChild(wrap);
+      /* call draw on our host */
+      MR.charts.draw(wrap, Object.assign({ height: 160 }, spec));
+    } catch (e) { el.textContent = e.message; }
+  };
+  /* LineErr */
+  plot('g1', 'lineErr', { type: 'lineErr', items: [{ x: '500℃', y: 220, err: 5 }, { x: '520℃', y: 240, err: 4 }, { x: '540℃', y: 255, err: 3 }, { x: '560℃', y: 245, err: 6 }, { x: '580℃', y: 220, err: 8 }], max: 280, ylabel: '抗拉强度 (MPa)' });
+  plot('g2', 'bars', { type: 'bars', items: [{ label: 'A', value: 78 }, { label: 'B', value: 92 }, { label: 'C', value: 86 }, { label: 'D', value: 64 }], max: 100 });
+  plot('g3', 'scatterErr', { type: 'scatterErr', items: [{ x: 1, y: 5.2, err: 0.4 }, { x: 2, y: 7.8, err: 0.6 }, { x: 3, y: 9.4, err: 0.5 }, { x: 4, y: 11.5, err: 0.8 }, { x: 5, y: 13.0, err: 0.7 }, { x: 6, y: 15.6, err: 1.0 }, { x: 7, y: 17.2, err: 1.0 }, { x: 8, y: 19.5, err: 1.2 }], max: 22 });
+  plot('g4', 'linePlain', { type: 'linePlain', items: [{ x: 0, y: 10 }, { x: 1, y: 22 }, { x: 2, y: 28 }, { x: 3, y: 32 }, { x: 4, y: 35 }, { x: 5, y: 36 }, { x: 6, y: 35 }], max: 40 });
+  plot('g5', 'sankey', { type: 'sankey', links: [{ source: '原料 A', target: '反应 I', value: 30 }, { source: '原料 A', target: '副反应', value: 10 }, { source: '原料 B', target: '反应 I', value: 20 }, { source: '反应 I', target: '中间产物', value: 35 }, { source: '反应 I', target: '废气', value: 15 }, { source: '中间产物', target: '产物 P', value: 30 }, { source: '中间产物', target: '副产物', value: 5 }] });
+  plot('g6', 'violin', { type: 'violin', data: [
+    { label: 'A 工艺', min: 50, q1: 80, median: 100, q3: 120, max: 145, points: [55, 78, 92, 100, 105, 112, 118, 125, 130, 140] },
+    { label: 'B 工艺', min: 30, q1: 60, median: 78, q3: 95, max: 135, points: [32, 55, 70, 85, 88, 90, 95, 110, 125] },
+    { label: 'C 工艺', min: 80, q1: 105, median: 122, q3: 135, max: 160, points: [85, 100, 115, 120, 125, 128, 135, 142, 148, 155] }
+  ] });
+  plot('g7', 'waterfall', { type: 'waterfall', items: [
+    { label: '基线', delta: 0, start: 100 },
+    { label: '因素 A', delta: 12 },
+    { label: '因素 B', delta: -8 },
+    { label: '因素 C', delta: 18 },
+    { label: '因素 D', delta: -5 },
+    { label: '结果', delta: 25 }
+  ] });
+  plot('g8', 'lineDual', { type: 'lineDual', labels: ['1月','2月','3月','4月','5月','6月'], leftLabel: '温度(℃)', rightLabel: '能量(J)', left: [{label:'1月',value:25},{label:'2月',value:30},{label:'3月',value:48},{label:'4月',value:65},{label:'5月',value:80},{label:'6月',value:100}], right: [{label:'1月',value:1200},{label:'2月',value:1100},{label:'3月',value:900},{label:'4月',value:700},{label:'5月',value:400},{label:'6月',value:200}] });
+  plot('g9', 'barsGroup', { type: 'barsGroup', groups: ['A', 'B', 'C', 'D'], series: { '对照': [78, 80, 76, 82], '处理': [90, 92, 88, 85] }, max: 100 });
+  /* XRD-style */
+  const xrdItems = [];
+  for (let i = 0; i < 50; i++) {
+    const t = 10 + i * 1.8;
+    let y = 8;
+    if (Math.abs(t - 38.5) < 1) y = 60;
+    if (Math.abs(t - 44.7) < 1) y = 78;
+    if (Math.abs(t - 65.2) < 1) y = 55;
+    if (Math.abs(t - 78.3) < 1) y = 35;
+    xrdItems.push({ x: t.toFixed(1), y: y + Math.random() * 4 });
+  }
+  plot('g10', 'xrd', { type: 'xrd', items: xrdItems });
+  /* FTIR */
+  const ftirItems = [];
+  for (let i = 0; i < 60; i++) {
+    const wn = 3500 - i * 50;
+    let y = 50;
+    if (Math.abs(wn - 3400) < 100) y = 90;
+    if (Math.abs(wn - 2900) < 60) y = 78;
+    if (Math.abs(wn - 1650) < 50) y = 70;
+    if (Math.abs(wn - 1050) < 60) y = 85;
+    ftirItems.push({ x: wn, y: y + Math.random() * 5 });
+  }
+  plot('g11', 'spectrum', { type: 'spectrum', items: ftirItems });
+  plot('g12', 'heat', { type: 'heat', rows: ['T=4h','T=8h','T=12h'], cols: ['520','540','560'], values: [[220,240,235],[240,255,248],[245,260,242]], min: 200, max: 270 });
+  plot('g13', 'radar', { type: 'radar', series: [{label:'对照组',values:[78,82,75,88,70,80]},{label:'实验组',values:[92,95,90,94,88,86]}], axes: ['强度','硬度','韧性','疲劳','耐蚀','加工'] });
+  plot('g14', 'donut', { type: 'donut', items: [{label:'Mg2Si 相',value:42},{label:'α-Al 基体',value:32},{label:'MgO 氧化物',value:12},{label:'其他',value:14}] });
+  /* g15..17 use simple rendered SVG since MR.charts.box/pie/histo not implemented;
+     render via custom SVG inline */
+  document.getElementById('g15').innerHTML =
+    '<svg viewBox="0 0 280 170" width="100%" height="160">' +
+    ['A 组','B 组','C 组'].map(function (lb, i) {
+      var cx = 50 + i * 90;
+      return '<line x1="' + cx + '" y1="20" x2="' + cx + '" y2="150" stroke="rgba(255,255,255,.2)" stroke-width="1"/>' +
+        '<rect x="' + (cx-12) + '" y="50" width="24" height="60" fill="rgba(45,212,191,.55)"/>' +
+        '<line x1="' + cx + '" y1="40" x2="' + cx + '" y2="140" stroke="var(--acc)" stroke-width="2"/>' +
+        '<circle cx="' + cx + '" cy="80" r="3" fill="var(--acc)"/>' +
+        '<text x="' + cx + '" y="165" text-anchor="middle" fill="var(--ink-2)" font-size="10">' + lb + '</text>';
+    }).join('') +
+    '</svg>';
+  document.getElementById('g16').innerHTML =
+    '<svg viewBox="0 0 280 170" width="100%" height="160">' +
+    Array.from({length:18}).map(function(_, i){
+      var x = 16 + i * 14;
+      var h = [10,28,55,80,72,60,40,30,24,18,12,8,6,4,3,2,2,1][i];
+      return '<rect x="' + x + '" y="' + (160-h) + '" width="11" height="' + h + '" fill="rgba(45,212,191,.65)"/>';
+    }).join('') +
+    '</svg>';
+  document.getElementById('g17').innerHTML =
+    '<svg viewBox="0 0 280 170" width="100%" height="160">' +
+    (function(){ var tot = 100; var off = 0;
+      return [{c:'#2dd4bf',v:42},{c:'#60a5fa',v:28},{c:'#facc15',v:18},{c:'#f87171',v:12}].map(function(p) {
+        var a = off / tot * Math.PI * 2 - Math.PI / 2;
+        off += p.v;
+        var b = off / tot * Math.PI * 2 - Math.PI / 2;
+        var x1 = 140 + 60 * Math.cos(a), y1 = 85 + 60 * Math.sin(a);
+        var x2 = 140 + 60 * Math.cos(b), y2 = 85 + 60 * Math.sin(b);
+        var large = (b - a) > Math.PI ? 1 : 0;
+        var d = 'M140 85 L' + x1 + ' ' + y1 + ' A60 60 0 ' + large + ' 1 ' + x2 + ' ' + y2 + ' Z';
+        return '<path d="' + d + '" fill="' + p.c + '" opacity=".8"/>';
+      }).join('');
+    })() +
+    '</svg>';
+});
+
+/* 1-click render via CSV → 推荐类型 */
+document.getElementById('render').addEventListener('click', () => {
+  const csv = document.getElementById('csv').value.trim();
+  if (!csv) return;
+  const lines = csv.split(/\r?\n/).filter(Boolean);
+  const header = lines[0].split(',').map(function(s){return s.trim();});
+  const rows = lines.slice(1).map(function(l){return l.split(',').map(function(s){return s.trim();});});
+  const t = document.getElementById('recommended').value;
+  const out = document.getElementById('renderOut');
+  out.innerHTML = '';
+  const wrap = document.createElement('div');
+  out.appendChild(wrap);
+  try {
+    if (t === 'line') {
+      const items = rows.map(function(r){return { x: r[0], y: parseFloat(r[1]) };});
+      MR.charts.draw(wrap, { type: 'linePlain', items: items, max: Math.max.apply(null, items.map(function(i){return i.y;})), height: 180 });
+    } else if (t === 'bar') {
+      const items = rows.map(function(r){return { label: r[0], value: parseFloat(r[1]) };});
+      MR.charts.draw(wrap, { type: 'bars', items: items, max: Math.max.apply(null, items.map(function(i){return i.value;})), height: 180 });
+    } else if (t === 'scatter') {
+      const items = rows.map(function(r){return { x: parseFloat(r[0]), y: parseFloat(r[1]), err: parseFloat(r[2])||0 };});
+      MR.charts.draw(wrap, { type: 'scatterErr', items: items, max: Math.max.apply(null, items.map(function(i){return i.y;})), height: 180 });
+    } else if (t === 'heatmap') {
+      /* rows format: rowname,values... */
+      const rowsArr = [];
+      const colsArr = header.slice(1);
+      rows.forEach(function(r){
+        rowsArr.push(r[0]);
+      });
+      const values = rows.map(function(r){
+        return r.slice(1).map(function(v){return parseFloat(v);});
+      });
+      const flat = values.flat();
+      MR.charts.draw(wrap, { type: 'heat', rows: rowsArr, cols: colsArr, values: values, min: Math.min.apply(null, flat), max: Math.max.apply(null, flat), height: 220 });
+    } else if (t === 'violin' || t === 'waterfall' || t === 'sankey') {
+      const map = { violin: 'violin', waterfall: 'waterfall', sankey: 'sankey' };
+      /* fall back to simple made-up data */
+      if (t === 'violin') {
+        const data = rows.map(function(r){
+          var lo = parseFloat(r[0]), med = parseFloat(r[1] || (lo+5)), hi = parseFloat(r[2] || (med+8));
+          return { label: r[0], min: lo, q1: (lo+med)/2, median: med, q3: (med+hi)/2, max: hi, points: [lo, lo+1, med-1, med, med+1, hi-1, hi] };
+        });
+        MR.charts.draw(wrap, { type: 'violin', data: data, height: 220 });
+      } else if (t === 'waterfall') {
+        const items = [{ label: '起点', delta: 0, start: 100 }].concat(rows.slice(0, 5).map(function(r,i){
+          return { label: r[0] || ('因素'+(i+1)), delta: parseFloat(r[1]) || 0 };
+        }));
+        MR.charts.draw(wrap, { type: 'waterfall', items: items, height: 220 });
+      } else {
+        const links = [];
+        for (let i = 0; i < rows.length - 1; i++) {
+          links.push({ source: rows[i][0], target: rows[i+1][0], value: Math.abs(parseFloat(rows[i][1]) || 1) });
+        }
+        MR.charts.draw(wrap, { type: 'sankey', links: links, height: 220 });
+      }
+    }
+  } catch (e) { out.innerHTML = '<div style="color:var(--err);font-size:12px">' + e.message + '</div>'; }
+});
+</script>
+
+</body>
+</html>

@@ -93,6 +93,10 @@
         <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".6"/></svg>
         平台介绍
       </a>
+      <a class="btn btn--ghost" id="forgeLink" href="./forge.html" title="实验工坊：4 套 ChemAIForge 引擎 + chemtools 7 件套 + 论文联动" type="button" onclick="try { localStorage.setItem('lattice.forge.currentPaper', JSON.stringify({id:(MR.state.paper && MR.state.paper.id)||null, title:(MR.state.paper && MR.state.paper.name)||null, materials:(MR.state.profile && MR.state.profile.materials)||[], instruments:(MR.state.profile && MR.state.profile.instruments)||[], variables:(MR.state.profile && MR.state.profile.variables)||[], perf:(MR.state.profile && MR.state.profile.perf)||[]})); } catch(e){}; return true">
+        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        🧪 实验工坊
+      </a>
       <a class="btn btn--ghost" href="#design" onclick="MR.app.setView('design');return false" title="变量设计与安全评估（含虚拟实验台）" type="button">
         <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
         实验台
@@ -228,6 +232,8 @@
 <script src="assets/js/lab-experiments.js"></script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/figs.js"></script>
+<script src="assets/js/journal-recommender.js"></script>
+<script src="assets/js/forge.js"></script>
 <script src="assets/js/boot.js"></script>
 </body>
 </html>
