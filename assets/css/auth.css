@@ -50,16 +50,58 @@ input:focus-visible, textarea:focus-visible, .eq:focus-visible {
 .auth__sep { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--ink-3, #999); font-size: 11px; }
 .auth__sep::before, .auth__sep::after { content: ""; flex: 1; height: 1px; background: var(--line, #e3e3df); }
 
-/* —— 忘记密码链接 —— */
-.auth__links { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
-.auth__forgot {
-  background: none; border: none; padding: 0; cursor: pointer;
-  font: 500 12px/1 var(--sans, inherit);
-  color: var(--acc, #0E5C56); text-decoration: underline;
-  transition: color .14s var(--ease, ease);
+/* —— 密码行标签里嵌入「忘记密码？」链接 —— */
+.auth__rowlabel {
+  display: flex !important; align-items: center; justify-content: space-between;
+  margin-bottom: 5px !important; font-weight: 600 !important; font-size: 12px !important;
+  color: var(--ink-2, #555) !important;
+  text-transform: none !important; letter-spacing: 0 !important; font-family: var(--sans, inherit) !important;
 }
-.auth__forgot:hover { color: var(--sig, #B4761F); }
-.auth__forgot:disabled { color: var(--ink-3, #999); cursor: not-allowed; text-decoration: none; }
+.auth__forgot {
+  background: none; border: none; padding: 4px 6px; margin: -4px -6px -4px 0; cursor: pointer;
+  font: 500 12px/1 var(--sans, inherit); color: var(--acc, #0E5C56);
+  border-radius: 6px; transition: background .14s var(--ease, ease), color .14s var(--ease, ease);
+}
+.auth__forgot:hover { background: var(--acc-tint, #EDF3F2); }
+.auth__forgot:active { background: var(--acc-tint-2, #D8E5E3); }
+.auth__forgot:disabled { color: var(--ink-3, #999); cursor: not-allowed; background: transparent; }
+
+/* —— 反馈消息横幅（替代旧的细字 hint） —— */
+.auth__msg {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 12px; margin: 4px 0 10px;
+  border-radius: 9px; font-size: 12.5px; line-height: 1.45;
+  border: 1px solid transparent;
+  background: var(--surface-2, var(--surface, #fff));
+  color: var(--ink-2, #555);
+}
+.auth__msg svg, .auth__msg .auth__msg-spin { flex: 0 0 auto; }
+.auth__msg b { font-weight: 600; }
+.auth__msg.is-ok {
+  background: var(--acc-tint, #EDF3F2);
+  border-color: var(--acc-tint-2, #D8E5E3);
+  color: var(--acc-ink, #0C3D39);
+}
+.auth__msg.is-ok svg { color: var(--acc, #0E5C56); }
+.auth__msg.is-err {
+  background: #fbeaea;
+  border-color: #f3c5c5;
+  color: #8E3A2E;
+}
+.auth__msg.is-err svg { color: #8E3A2E; }
+.auth__msg.is-info {
+  background: var(--surface-3, #F2F3F5);
+  border-color: var(--line, #E4E6E9);
+  color: var(--ink-2, #555);
+}
+.auth__msg-spin {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid var(--ink-4, #ABAEB2);
+  border-top-color: var(--acc, #0E5C56);
+  border-radius: 50%;
+  animation: authSpin .8s linear infinite;
+}
+@keyframes authSpin { to { transform: rotate(360deg); } }
 
 /* —— 我的论文库条目 —— */
 .librow {

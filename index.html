@@ -210,6 +210,16 @@ main{position:relative;z-index:1}
 .auth__hint{font-size:12.5px;color:var(--ink-3);min-height:18px;margin-top:-6px;margin-bottom:4px}
 .auth__hint.is-err{color:var(--pink)}
 .auth__hint.is-ok{color:var(--acc)}
+.auth__msg{display:flex;align-items:center;gap:9px;padding:10px 12px;margin:6px 0 10px;border-radius:9px;font-size:12.5px;line-height:1.45;border:1px solid transparent;background:var(--surface-2);color:var(--ink-2)}
+.auth__msg svg,.auth__msg .auth__msg-spin{flex:0 0 auto}
+.auth__msg b{font-weight:600}
+.auth__msg.is-ok{background:rgba(45,212,191,.10);border-color:rgba(45,212,191,.25);color:#0c3d39}
+.auth__msg.is-ok svg{color:var(--acc)}
+.auth__msg.is-err{background:#fbeaea;border-color:#f3c5c5;color:#8e3a2e}
+.auth__msg.is-err svg{color:#8e3a2e}
+.auth__msg.is-info{background:var(--surface-2);border-color:var(--line-2);color:var(--ink-2)}
+.auth__msg-spin{display:inline-block;width:12px;height:12px;border:2px solid var(--ink-4);border-top-color:var(--acc);border-radius:50%;animation:authMsgSpin .8s linear infinite}
+@keyframes authMsgSpin{to{transform:rotate(360deg)}}
 .auth__submit{width:100%;background:var(--acc);color:var(--acc-ink);border:0;
   border-radius:var(--r-pill);padding:12px;font-size:14.5px;font-weight:600;
   cursor:pointer;transition:filter .16s,transform .16s}
@@ -518,11 +528,14 @@ main{position:relative;z-index:1}
           <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" required>
         </div>
         <div class="auth__row">
-          <label for="authPw">密码</label>
+          <label for="authEmail">邮箱</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="auth__row">
+          <label for="authPw" class="auth__rowlabel">密码 <button type="button" class="auth__forgot" id="authForgot" title="把密码重置链接发到你的邮箱">忘记密码？</button></label>
           <input type="password" id="authPw" placeholder="至少 6 位" autocomplete="current-password" required>
         </div>
-        <div class="auth__hint" id="authHint"></div>
-        <div class="auth__links"><button type="button" class="auth__forgot" id="authForgot">忘记密码？</button></div>
+        <div class="auth__msg" id="authHint" hidden></div>
         <button type="submit" class="auth__submit" id="authGo">登录</button>
         <div class="auth__sep"><span>或</span></div>
         <button type="button" class="auth__google" id="authGoogle">
@@ -1108,37 +1121,47 @@ document.querySelectorAll('.auth__tabs button').forEach(b => {
 });
 
 /* === 表单提交 === */
+function showMsg(kind, html, spinner) {
+  hint.classList.remove('is-err','is-ok','is-info');
+  if (!kind) { hint.hidden = true; hint.innerHTML = ''; return; }
+  hint.hidden = false;
+  hint.classList.add('is-' + kind);
+  var iconHtml = '';
+  if (spinner) iconHtml = '<span class="auth__msg-spin" aria-hidden="true"></span>';
+  else if (kind === 'ok') iconHtml = '<svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M2.5 7.4 5.6 10.5 11.5 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  else if (kind === 'err') iconHtml = '<svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 4.6v3.2M7 9.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  hint.innerHTML = iconHtml + '<span>' + html + '</span>';
+}
 authForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('authEmail').value.trim();
   const pw    = document.getElementById('authPw').value;
   const mode  = document.querySelector('.auth__tabs button.is-on').getAttribute('data-atab');
-  hint.classList.remove('is-err','is-ok');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { hint.textContent = '请填写有效的邮箱地址'; hint.classList.add('is-err'); return; }
-  if (pw.length < 6) { hint.textContent = '密码至少 6 位'; hint.classList.add('is-err'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showMsg('err', '请填写有效的邮箱地址'); return; }
+  if (pw.length < 6) { showMsg('err', '密码至少 6 位'); return; }
   submitBtn.disabled = true;
-  hint.textContent = '正在连接…';
+  showMsg('info', '正在连接…', true);
   try {
     if (!SB_ON) {
       /* 本地模式：模拟登录（仅存本机 user 标志，不做云端请求） */
       const u = { uid:'local-'+(btoa(email).slice(0,8)), email:email, name:email.split('@')[0], mode:'local' };
       persistUser(u); showLoggedIn(u);
-      hint.classList.add('is-ok'); hint.textContent = '本地模式登录，可进入主站继续工作';
+      showMsg('ok', '本地模式登录，可进入主站继续工作');
     } else {
       const fn = mode === 'signup' ? sbClient.auth.signUp : sbClient.auth.signInWithPassword;
       const { data, error } = await fn({ email, password: pw });
       if (error) throw error;
       if (mode === 'signup' && data && data.user && !data.session) {
-        hint.classList.add('is-ok'); hint.textContent = '注册成功：请到邮箱点击确认链接后再登录。';
+        showMsg('ok', '注册成功：请到邮箱点击确认链接后再登录。');
         return;
       }
       const u = data.user || data.session?.user;
       persistUser({ uid:u.id, email:u.email, name:u.email?.split('@')[0] });
       showLoggedIn({ uid:u.id, email:u.email, name:u.email?.split('@')[0] });
-      hint.classList.add('is-ok'); hint.textContent = '登录成功！点击下方进入主站。';
+      showMsg('ok', '登录成功！点击下方进入主站。');
     }
   } catch (err) {
-    hint.classList.add('is-err'); hint.textContent = (err && err.message) || '操作失败';
+    showMsg('err', (err && err.message) || '操作失败');
   } finally {
     submitBtn.disabled = false;
   }
@@ -1147,30 +1170,26 @@ authForm.addEventListener('submit', async (e) => {
 /* === 找回密码：发送重置邮件 === */
 document.getElementById('authForgot').addEventListener('click', async () => {
   if (!SB_ON || !sbClient) {
-    hint.classList.remove('is-err','is-ok');
-    hint.classList.add('is-err');
-    hint.textContent = '本地模式不支持找回密码：未启用 Supabase 后端。';
+    showMsg('err', '本地模式不支持找回密码：未启用 Supabase 后端。');
     return;
   }
   const email = document.getElementById('authEmail').value.trim();
-  hint.classList.remove('is-err','is-ok');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    hint.classList.add('is-err'); hint.textContent = '请填写有效的邮箱地址';
+    showMsg('err', '请先在上方填写注册邮箱');
+    document.getElementById('authEmail').focus();
     return;
   }
   const fb = document.getElementById('authForgot');
   fb.disabled = true;
-  hint.textContent = '正在发送重置邮件…';
+  showMsg('info', '正在发送重置邮件…', true);
   try {
     const { error } = await sbClient.auth.resetPasswordForEmail(email, {
       redirectTo: location.origin + location.pathname.replace(/[^/]*$/, 'reset.html')
     });
     if (error) throw error;
-    hint.classList.add('is-ok');
-    hint.textContent = '重置邮件已发送至 ' + email + '。请到邮箱点击链接设置新密码。';
+    showMsg('ok', '重置邮件已发送至 <b>' + email + '</b>。请到邮箱点击链接设置新密码。');
   } catch (err) {
-    hint.classList.add('is-err');
-    hint.textContent = (err && err.message) || '发送失败';
+    showMsg('err', (err && err.message) || '发送失败');
   } finally {
     fb.disabled = false;
   }

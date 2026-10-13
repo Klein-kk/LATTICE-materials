@@ -244,6 +244,21 @@ window.MR = window.MR || {};
   };
 
   /* ---------------- 登录 / 用户 UI ---------------- */
+  /* 把反馈（错误/成功/进度）渲染到弹窗里的醒目条带上：带图标 + 自适应颜色。
+     `kind`: 'ok' (绿色 acc) | 'err' (粉色 pink) | 'info' (灰色 ink-3 + spinner) | '' (清除) */
+  function showAuthMsg(box, kind, html, spinner, forceVisible) {
+    if (!box) return;
+    box.classList.remove('is-ok', 'is-err', 'is-info');
+    if (!kind) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    box.classList.add('is-' + kind);
+    var iconHtml;
+    if (spinner) iconHtml = '<span class="auth__msg-spin" aria-hidden="true"></span>';
+    else if (kind === 'ok') iconHtml = '<svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M2.5 7.4 5.6 10.5 11.5 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    else if (kind === 'err') iconHtml = '<svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 4.6v3.2M7 9.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    else iconHtml = '';
+    box.innerHTML = iconHtml + '<span>' + html + '</span>';
+  }
   MR.ui = {
     updateUser: function () {
       var btn = document.getElementById('loginBtn');
@@ -277,10 +292,9 @@ window.MR = window.MR || {};
         '<div class="auth">' +
         '<div class="auth__tabs"><button type="button" class="is-on" data-atab="signin">登录</button><button type="button" data-atab="signup">注册</button></div>' +
         '<div class="auth__row"><label>邮箱</label><input type="email" id="authEmail" class="eq" placeholder="you@example.com" autocomplete="email"></div>' +
-        '<div class="auth__row"><label>密码</label><input type="password" id="authPw" class="eq" placeholder="至少 6 位" autocomplete="current-password"></div>' +
-        '<div class="auth__hint" data-ahint></div>' +
-        '<div class="auth__links"><button type="button" class="auth__forgot" data-act="authForgot">忘记密码？</button></div>' +
-        '<button class="btn btn--primary" data-act="authGo" style="width:100%;margin-top:6px">登录</button>' +
+        '<div class="auth__row"><label class="auth__rowlabel">密码 <button type="button" class="auth__forgot" data-act="authForgot" title="把密码重置链接发到你的邮箱">忘记密码？</button></label><input type="password" id="authPw" class="eq" placeholder="至少 6 位" autocomplete="current-password"></div>' +
+        '<div class="auth__msg" data-ahint hidden></div>' +
+        '<button class="btn btn--primary" data-act="authGo" style="width:100%;margin-top:8px">登录</button>' +
         '<div class="auth__sep"><span>或</span></div>' +
         '<button class="btn" data-act="authGoogle" style="width:100%">' + MR.icon('lit', 14) + ' 使用 Google 账号登录</button>' +
         '<div class="note note--acc" style="margin-top:14px">' + MR.icon('review1', 14) +
@@ -304,18 +318,18 @@ window.MR = window.MR || {};
           var email = (document.getElementById('authEmail').value || '').trim();
           var pw = document.getElementById('authPw').value || '';
           var hint = box.querySelector('[data-ahint]');
-          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { if (hint) hint.textContent = '请填写有效的邮箱地址'; return; }
-          if (pw.length < 6) { if (hint) hint.textContent = '密码至少 6 位'; return; }
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showAuthMsg(hint, 'err', '请填写有效的邮箱地址'); return; }
+          if (pw.length < 6) { showAuthMsg(hint, 'err', '密码至少 6 位'); return; }
           var mode = box.querySelector('[data-atab].is-on').getAttribute('data-atab');
-          if (hint) hint.textContent = '正在连接…';
+          showAuthMsg(hint, 'info', '正在连接…', null, true);
           var p = (mode === 'signup') ? MR.cloud.signUpEmail(email, pw) : MR.cloud.signInEmail(email, pw);
           p.then(function () {
             if (mode === 'signup' && MR.cloud && MR.cloud.enabled && !MR.cloud.uid) {
-              if (hint) hint.textContent = '注册成功：若开启了邮箱确认，请到邮箱点击确认链接后再登录。';
+              showAuthMsg(hint, 'ok', '注册成功：若开启了邮箱确认，请到邮箱点击确认链接后再登录。');
               return;
             }
             MR.modal.close();
-          }).catch(function (e) { if (hint) hint.textContent = (e && e.message) || '操作失败'; });
+          }).catch(function (e) { showAuthMsg(hint, 'err', (e && e.message) || '操作失败'); });
         });
         var g = box.querySelector('[data-act="authGoogle"]');
         if (g) g.addEventListener('click', function () {
@@ -327,25 +341,21 @@ window.MR = window.MR || {};
           var hint = box.querySelector('[data-ahint]');
           var email = emailEl ? (emailEl.value || '').trim() : '';
           if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-            if (hint) { hint.textContent = '请先在上方填写注册邮箱'; hint.style.color = 'var(--pink)'; }
+            showAuthMsg(hint, 'err', '请先在上方填写注册邮箱');
             if (emailEl) emailEl.focus();
             return;
           }
-          if (hint) { hint.textContent = '正在发送重置邮件…'; hint.style.color = 'var(--ink-3)'; }
+          showAuthMsg(hint, 'info', '正在发送重置邮件…', null, true);
           fp.disabled = true;
           MR.cloud.requestPasswordReset(email).then(function (r) {
             fp.disabled = false;
             if (r && r.ok) {
-              if (hint) {
-                hint.textContent = '重置邮件已发送至 ' + email + '。请到邮箱点击链接设置新密码。';
-                hint.style.color = 'var(--acc)';
-              }
+              showAuthMsg(hint, 'ok', '重置邮件已发送至 <b>' + email + '</b>。请到邮箱点击链接设置新密码。');
               MR.log && MR.log('OK', '密码重置邮件已发送：<b>' + email + '</b>');
+              /* 顺手让密码框失焦，避免输入残留感 */
+              var pwEl = document.getElementById('authPw'); if (pwEl) pwEl.blur();
             } else {
-              if (hint) {
-                hint.textContent = (r && r.error && r.error.message) || '发送失败';
-                hint.style.color = 'var(--pink)';
-              }
+              showAuthMsg(hint, 'err', (r && r.error && r.error.message) || '发送失败');
             }
           });
         });
