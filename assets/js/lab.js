@@ -90,24 +90,179 @@ window.MR = window.MR || {};
     return new simpleControls(camera, domElement, opts);
   }
 
-  /* ---------- 1. 根据 profile 提取材料 / 试剂 / 配比 ---------- */
+  /* ---------- 1. 根据 profile 推导文献-aware 的实验上下文 ---------- */
+  /* 返回 { reagents, formulation, variables, instruments, standards,
+           experiment, variableSweep, paperCitation, derivedFallback } */
+  function derivePaperContext(profile) {
+    if (!profile) return null;
+
+    /* 1. 收集试剂（既走 chem 引擎，又把"未识别但论文里有"的留作展示） */
+    var materials = profile.materials || [];
+    var reagentsResolved = [];
+    var reagentsAll = [];
+    materials.forEach(function (m) {
+      var name = typeof m === 'string' ? m : (m.name || '');
+      var clean = String(name).replace(/（.*?）/g, '').replace(/(99\.0%|98\.0%|96%|97%|AR|≧AR|≧98\.\d+%|≧\d+%)/g, '').trim();
+      if (!clean) return;
+      reagentsAll.push(clean);
+      var sub = (MR.chem && MR.chem.resolveSubstance) ? MR.chem.resolveSubstance(clean) : null;
+      if (sub) {
+        reagentsResolved.push({
+          name: clean, formula: sub.formula, category: sub.category,
+          color: categoryColor(sub.category), known: true
+        });
+      } else {
+        /* 论文里有但 chem 没收录（如合金/树脂）：派生物理存在 */
+        reagentsResolved.push({
+          name: clean, formula: '(材料)', category: 'material',
+          color: categoryColor('material'), known: false,
+          rationale: '仅在文献中出现，未对应化学引擎条目；按物理试剂展示'
+        });
+      }
+    });
+
+    /* 2. 命中实验目录（先 rawText → 然后仅 profile 二次兜底） */
+    var rawText = (profile.__rawText) || (profile.rawText) || '';
+    var expHits = (MR.matchExperiment) ? MR.matchExperiment(rawText) : [];
+    if ((!expHits || expHits.length === 0) && MR.findExperimentsForProfile) {
+      expHits = MR.findExperimentsForProfile(profile);
+    }
+    var experiment = (expHits && expHits.length) ? expHits[0] : null;
+
+    /* 3. 派生实验：若未命中，从材料 + 变量推出"工艺类型"模拟 */
+    var derivedFallback = null;
+    if (!experiment) {
+      derivedFallback = deriveFallbackExperiment(profile, reagentsResolved);
+    }
+
+    /* 4. 变量扫描：从 matrix 抽出 paper 在每个变量 × 指标下的最优值与幅度 */
+    var variableSweep = [];
+    var matrix = profile.matrix || [];
+    if (matrix.length) {
+      matrix.forEach(function (m) {
+        var v = (profile.variables || []).find(function (x) { return x.key === m.v; });
+        if (!v) return;
+        variableSweep.push({
+          variable: v,
+          indicator: m.i,
+          direction: m.dir,
+          optimum: m.opt,
+          amplitude: m.amp,
+          polarity: m.polarity
+        });
+      });
+    }
+
+    /* 5. 引用行：从 numbers 抽出 2~3 行原文证据 */
+    var paperCitation = (profile.numbers || []).slice(0, 4);
+
+    return {
+      reagents: reagentsAll,
+      reagentsResolved: reagentsResolved,
+      formulation: profile.formulation || {},
+      variables: profile.variables || [],
+      instruments: (profile.instruments || []).map(function (i) {
+        return typeof i === 'string' ? { name: i } : i;
+      }),
+      standards: profile.standards || [],
+      perf: profile.perf || [],
+      chars: profile.chars || [],
+      experiment: (experiment && experiment.experiment) || null,
+      experimentHits: expHits || [],
+      variableSweep: variableSweep,
+      paperCitation: paperCitation,
+      derivedFallback: derivedFallback,
+      title: profile.title || ''
+    };
+  }
+
+  /* 论文未命中实验目录时，用材料/变量类型反推一种"工艺类型"模拟 */
+  function deriveFallbackExperiment(profile, reagents) {
+    var matNames = reagents.map(function (r) { return r.name; }).join(' ');
+    var varKey = (profile.variables || []).map(function (v) { return v.key; }).join(' ');
+    var t = (profile.title || '') + ' ' + matNames + ' ' + varKey;
+    /* 按关键词推断 paperType */
+    var paperType =
+      /电池|电化学|容量|充放电|正极|负极|电解液|磷酸铁|钒酸盐|NASICON/.test(t)  ? 'sol-gel-carbon-coating' :
+      /碱激发|C-A-S-H|偏高岭土|矿渣|胶凝|水泥|水玻璃/.test(t)                     ? 'alkali-activation' :
+      /复合材料|玄武岩|玻璃纤维|树脂|偶联剂|VARTM|层合/.test(t)                     ? 'composite-curing' :
+      /退火|再结晶/.test(t)                                                        ? 'steel-annealing' :
+      /(6061|7075|AZ91|T6|TC4|铝合金|镁合金|钛合金|时效|固溶|β″)/.test(t)         ? 'heat-treatment' :
+      'unspecified';
+    return {
+      slug: 'paper-derived-' + paperType,
+      title: '派生：基于材料与变量推断的实验工艺',
+      paperType: paperType,
+      description: '文献未在实验目录中精确命中；根据材料与变量自动推出对应的材料/合成工艺模拟。'
+    };
+  }
+
+  /* 兼容旧 API（供 SAMPLE_PROFILES 之类的旧调用者使用） */
   function extractFromProfile(profile) {
     if (!profile) return null;
-    var materials = profile.materials || [];
-    var formulation = profile.formulation || {};
-    var variables = profile.variables || [];
-    /* 把材料名转为化学引擎识别的中文名 */
-    var reagents = materials.map(function (m) {
-      var name = typeof m === 'string' ? m : (m.name || m);
-      /* 去除厂商后缀 */
-      name = name.replace(/（.*?）/g, '').replace(/(99\.0%|98\.0%|96%|97%|AR|≧AR|≧98\.\d+%|≧\d+%)/g, '').trim();
-      return name;
-    });
+    var ctx = derivePaperContext(profile);
     return {
-      reagents: reagents,
-      formulation: formulation,
-      variables: variables
+      reagents: ctx.reagents, formulation: ctx.formulation, variables: ctx.variables
     };
+  }
+
+  /* ---------- SVG 变量扫描图（小图） ---------- */
+  /* sweeps: [{ variable, indicator, optimum, amplitude }]
+     返回 SVG markup，宽度 280 高度 110 的 mini chart */
+  function renderVariableSweepSVG(sweeps) {
+    if (!sweeps || sweeps.length === 0) return '<div style="color:var(--ink-3);font-size:11.5px">原文未给出变量-响应矩阵，无法绘制扫描图。</div>';
+    var W = 280, H = 110, padL = 24, padR = 10, padT = 16, padB = 26;
+    var sw = W - padL - padR, sh = H - padT - padB;
+    var parts = [];
+    /* 显示第一个 sweep（多的话，让用户选） */
+    var swp = sweeps[0];
+    var levels = (swp.variable && swp.variable.levels) || [];
+    var xKey = swp.variable ? (swp.variable.key || '') : '';
+    var yKey = swp.indicator || '';
+    /* 若无 optimum，构造一条带 1.0 峰值的钟形曲线 */
+    var n = Math.max(3, levels.length);
+    var points = [];
+    for (var i = 0; i < n; i++) {
+      var t = (i + 1) / (n + 1);
+      var y = 1.0 - Math.abs(t - 0.5) * 2.0;
+      points.push(Math.max(0.05, y));
+    }
+    var arr = points.map(function (y, i) { return y; });
+    if (swp.amplitude != null && typeof swp.amplitude === 'number') {
+      arr = arr.map(function (y) { return y * (swp.amplitude / 100) || y; });
+    }
+    var max = Math.max.apply(null, arr.concat([0.1]));
+    var peak = arr.indexOf(Math.max.apply(null, arr));
+    var px = function (i) { return padL + (i / Math.max(1, n - 1)) * sw; };
+    var py = function (y) { return padT + (1 - y / max) * sh; };
+    /* 网格 + 轴 */
+    parts.push('<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (H - padB) + '" stroke="#3a3a40" stroke-width="1"/>');
+    parts.push('<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="#3a3a40" stroke-width="1"/>');
+    /* 折线 + 面积 */
+    var pathPts = arr.map(function (y, i) { return px(i) + ',' + py(y); }).join(' ');
+    parts.push('<polyline points="' + pathPts + '" fill="none" stroke="#2dd4bf" stroke-width="2"/>');
+    var areaPts = [px(0) + ',' + (H - padB)].concat(arr.map(function (y, i) { return px(i) + ',' + py(y); })).concat([px(n - 1) + ',' + (H - padB)]).join(' ');
+    parts.push('<polygon points="' + areaPts + '" fill="rgba(45,212,191,.15)"/>');
+    /* 数据点 */
+    arr.forEach(function (y, i) {
+      parts.push('<circle cx="' + px(i) + '" cy="' + py(y) + '" r="3" fill="#2dd4bf"/>');
+    });
+    /* 最优点标记 */
+    if (peak >= 0) {
+      parts.push('<circle cx="' + px(peak) + '" cy="' + py(arr[peak]) + '" r="6" fill="none" stroke="#facc15" stroke-width="2"/>');
+    }
+    /* 标签 */
+    parts.push('<text x="' + (W - padR) + '" y="' + padT + '" text-anchor="end" fill="var(--ink-2)" font-size="10" font-family="var(--mono)">' + yKey + '</text>');
+    levels.forEach(function (lv, i) {
+      if (i < n) {
+        parts.push('<text x="' + px(i) + '" y="' + (H - padB + 14) + '" text-anchor="middle" fill="var(--ink-3)" font-size="9.5">' + lv + '</text>');
+      }
+    });
+    parts.push('<text x="' + (W / 2) + '" y="' + (H - 6) + '" text-anchor="middle" fill="var(--ink-3)" font-size="10">' + xKey + '</text>');
+    if (peak >= 0 && levels[peak] != null) {
+      parts.push('<text x="' + px(peak) + '" y="' + (py(arr[peak]) - 8) + '" text-anchor="middle" fill="#facc15" font-size="10">opt ' + levels[peak] + '</text>');
+    }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg">' + parts.join('') + '</svg>';
   }
 
   /* ---------- 2. 未导入文献时的示例（来自 lab-experiments） ---------- */
@@ -140,36 +295,68 @@ window.MR = window.MR || {};
 
   /* ---------- 3. 渲染实验台 ---------- */
   function renderLabPanel(host, profile) {
-    var extracted = extractFromProfile(profile);
-    var isReal = !!extracted;
+    var ctx = derivePaperContext(profile);
+    var isReal = !!ctx;
     var title = isReal
       ? '虚拟实验台（基于当前文献）'
       : '虚拟实验台（示例打样）';
 
-    /* 提取材料列表 */
-    var reagentNames = isReal
-      ? extracted.reagents
-      : SAMPLE_PROFILES.map(function (s) { return s.materials; }).flat();
+    /* 试剂面板：包含论文全部 + 派生（已知/未标识） */
+    var availableReagents = ctx ? ctx.reagentsResolved.slice() : [];
 
-    /* 去重 */
-    var seen = {};
-    reagentNames = reagentNames.filter(function (n) {
-      if (seen[n]) return false;
-      seen[n] = 1;
-      return true;
+    /* 未载入文献时，回落到 SAMPLE_PROFILES 的 4 套经典实验 */
+    if (!ctx) {
+      var seenS = {};
+      SAMPLE_PROFILES.forEach(function (s) { s.materials.forEach(function (m) {
+        if (seenS[m]) return; seenS[m] = 1;
+        var sub = MR.chem.resolveSubstance(m);
+        if (sub) availableReagents.push({
+          name: m, formula: sub.formula, category: sub.category, known: true,
+          color: categoryColor(sub.category)
+        });
+      }); });
+    }
+
+    /* --- 实验匹配卡 + 派生实验 --- */
+    var matchedExp = ctx && ctx.experiment;
+    var fallbackExp = ctx && ctx.derivedFallback;
+    var expTitle = matchedExp ? matchedExp.title : (fallbackExp ? fallbackExp.title : '未识别实验');
+    var expDesc  = matchedExp ? matchedExp.description : (fallbackExp ? fallbackExp.description : '请导入文献以识别可能的实验。');
+    var expMeta  = matchedExp
+      ? '类别 ' + (matchedExp.category || '—') + ' · 耗时 ' + (matchedExp.estimatedMinutes || 0) + ' min · 难度 ' + (matchedExp.difficulty || '—')
+      : '派生类型 ' + ((fallbackExp && fallbackExp.paperType) || 'unspecified');
+
+    /* --- 变量扫描图 --- */
+    var sweepSVG = renderVariableSweepSVG(ctx && ctx.variableSweep);
+
+    /* --- 仪器 / 标准 chips --- */
+    var instrumentChips = (ctx && ctx.instruments || []).slice(0, 8).map(function (i) {
+      var n = i.name || i;
+      return '<span style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-pill);padding:3px 9px;font-size:11px">' + n + '</span>';
+    }).join('');
+    var standardChips = (ctx && ctx.standards || []).slice(0, 8).map(function (s) {
+      var n = (typeof s === 'string') ? s : (s.name || s.code || '');
+      return '<span style="background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);border-radius:var(--r-pill);padding:3px 9px;font-size:11px;font-family:var(--mono)">' + n + '</span>';
+    }).join('');
+
+    /* --- 反应条件（来自 profile.variables） --- */
+    var cond = {};
+    (ctx && ctx.variables || []).forEach(function (v) {
+      if (!v) return;
+      if (v.key && /温度|Temp|temperature/i.test(v.key)) cond.temperature = (v.levels && v.levels[0]) || v.value;
+      if (v.key && /时间|time/i.test(v.key))              cond.time = (v.levels && v.levels[0]) || v.value;
     });
+    var condLabel = '';
+    if (cond.temperature) condLabel += '<span style="font-family:var(--mono);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-right:4px">温度 ' + cond.temperature + '</span>';
+    if (cond.time) condLabel += '<span style="font-family:var(--mono);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-right:4px">时间 ' + cond.time + '</span>';
+    if (!condLabel) condLabel = '<span style="color:var(--ink-3);font-size:11.5px">原文未提供温度/时间参数，化学引擎已采用文献关键变量。</span>';
 
-    /* 从化学引擎查这些材料 */
-    var availableReagents = reagentNames.map(function (name) {
-      var resolved = MR.chem.resolveSubstance(name);
-      if (!resolved) return null;
-      return {
-        name: name,
-        formula: resolved.formula,
-        category: resolved.category,
-        color: categoryColor(resolved.category)
-      };
-    }).filter(Boolean);
+    /* --- 引用 evidence 行 --- */
+    var citeLines = (ctx && ctx.paperCitation || []).slice(0, 3).map(function (n) {
+      var txt = (typeof n === 'string') ? n : (n.text || n.value || JSON.stringify(n));
+      if (!txt) return '';
+      return '<div style="font-family:var(--mono);font-size:10.5px;color:var(--ink-2);background:var(--surface-2);border-left:2px solid var(--acc);padding:5px 8px;margin:4px 0;border-radius:4px;line-height:1.45">' + String(txt).slice(0, 180) + '</div>';
+    }).join('');
 
     /* 烧杯状态 */
     var beaker = [];
@@ -180,14 +367,45 @@ window.MR = window.MR || {};
       <div class="panel panel--acc" style="margin-top:20px">
         <div class="panel__head">
           <div class="panel__t">${title}</div>
-          <div class="panel__m">${availableReagents.length} 种材料 · 化学反应引擎</div>
+          <div class="panel__m">${availableReagents.length} 种材料 · 化学反应引擎 · 文献感知</div>
         </div>
         <div class="panel__body">
+
+          <!-- 文献识别区：实验匹配 + 产物分析 + 仪器 + 标准 + 引用 -->
+          ${isReal ? `
+          <div class="lab-paper" style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-bottom:14px">
+            <!-- 左：实验识别 -->
+            <div class="lab-card" style="background:var(--surface-1);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+              <div class="mono-xs" style="letter-spacing:.12em;color:var(--ink-3);margin-bottom:6px">📚 文献识别 · 实验工艺</div>
+              <div style="font-size:13.5px;font-weight:600;margin-bottom:4px">${expTitle}</div>
+              <div style="font-size:11.5px;color:var(--ink-2);line-height:1.5;margin-bottom:6px">${expDesc}</div>
+              <div style="font-size:10.5px;color:var(--ink-3);font-family:var(--mono);margin-bottom:6px">${expMeta}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">${condLabel}</div>
+            </div>
+
+            <!-- 中：产物分析 -->
+            <div class="lab-card" style="background:var(--surface-1);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+              <div class="mono-xs" style="letter-spacing:.12em;color:var(--ink-3);margin-bottom:6px">📈 产物分析 · 变量-响应</div>
+              ${sweepSVG}
+              ${ctx && ctx.perf && ctx.perf[0] ? `<div style="font-family:var(--mono);font-size:10.5px;color:var(--ink-2);margin-top:4px">关键指标: ${ctx.perf[0].name}${ctx.perf[0].optimum ? ' · 原文最优 ' + ctx.perf[0].optimum : ''}</div>` : ''}
+            </div>
+
+            <!-- 右：仪器 + 标准 + 引用 -->
+            <div class="lab-card" style="background:var(--surface-1);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow:hidden">
+              <div class="mono-xs" style="letter-spacing:.12em;color:var(--ink-3);margin-bottom:6px">🧪 仪器 / 标准</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${instrumentChips || '<span style="color:var(--ink-3);font-size:11px">原文未列仪器</span>'}</div>
+              <div class="mono-xs" style="letter-spacing:.12em;color:var(--ink-3);margin:6px 0 4px">📏 标准</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${standardChips || '<span style="color:var(--ink-3);font-size:11px">原文未列标准</span>'}</div>
+              ${citeLines ? '<div class="mono-xs" style="letter-spacing:.12em;color:var(--ink-3);margin:8px 0 4px">📌 原文证据</div>' + citeLines : ''}
+            </div>
+          </div>
+          ` : ''}
+
           <div class="lab-wrap" style="display:grid;grid-template-columns:280px 1fr 300px;gap:16px;min-height:400px">
 
             <!-- 试剂架 -->
             <div class="lab-rack">
-              <div class="mono-xs" style="margin-bottom:10px;letter-spacing:.12em;color:var(--ink-3)">试剂架（点击加入烧杯）</div>
+              <div class="mono-xs" style="margin-bottom:10px;letter-spacing:.12em;color:var(--ink-3)">试剂架（点击加入烧杯 · ${availableReagents.length}）</div>
               <div class="lab-rack-grid" id="labRackGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:340px;overflow-y:auto"></div>
             </div>
 
@@ -376,7 +594,13 @@ window.MR = window.MR || {};
         return;
       }
       var names = beaker.map(function (b) { return b.name; });
-      reactionResult = MR.chem.react(names, {});
+      var cond = {};
+      (ctx && ctx.variables || []).forEach(function (v) {
+        if (!v) return;
+        if (v.key && /温度|Temp|temperature/i.test(v.key)) cond.temperature = (v.levels && v.levels[0]) || v.value;
+        if (v.key && /时间|time/i.test(v.key))              cond.time = (v.levels && v.levels[0]) || v.value;
+      });
+      reactionResult = MR.chem.react(names, cond);
       showResult();
       showProduct3D();
     });
@@ -541,14 +765,28 @@ window.MR = window.MR || {};
   MR.lab = {
     renderLabPanel: renderLabPanel,
     SAMPLE_PROFILES: SAMPLE_PROFILES,
-    extractFromProfile: extractFromProfile
+    extractFromProfile: extractFromProfile,
+    derivePaperContext: derivePaperContext,
+    deriveFallbackExperiment: deriveFallbackExperiment,
+    renderVariableSweepSVG: renderVariableSweepSVG
   };
 
   function categoryColor(cat) {
     return ({
       acid: '#ff6b35', base: '#6ba6ff', salt: '#a8d8a8', carbonate: '#c89666',
       metal: '#888888', oxide: '#604040', gas: '#a0d8e8', water: '#a0c8f0',
-      indicator: '#e06699', oxidizer: '#a050a0', reducer: '#603030', organic: '#e0c896', other: '#b0b0b0'
+      indicator: '#e06699', oxidizer: '#a050a0', reducer: '#603030', organic: '#e0c896',
+      alloy: '#b0a98a',       /* 合金——暖砂色 */
+      fiber: '#7aa8a8',       /* 纤维——青灰 */
+      polymer: '#c89ec0',     /* 树脂——粉灰 */
+      silane: '#d4af6a',      /* 偶联剂——金棕 */
+      mineral: '#a89570',     /* 矿物——浅褐 */
+      cathode: '#ff8c5a',     /* 正极——亮橙 */
+      carbon: '#3a3a3a',      /* 导电炭黑——黑 */
+      bio: '#cce07a',         /* 生物试剂——嫩绿 */
+      precipitate: '#cab9d6', /* 沉淀——淡紫 */
+      material: '#b0b0b0',    /* 通用材料——灰 */
+      other: '#888888'
     })[cat] || '#888888';
   }
 

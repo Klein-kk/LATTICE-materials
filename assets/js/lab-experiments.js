@@ -290,7 +290,101 @@ window.MR = window.MR || {};
       objectives:['Fe³⁺ 检验','配位平衡','可逆反应'],
       probe:{ reagentKeys:['氯化铁','硫氰化钾'], expect:{ reacted:true, colorChange:true } },
       safety:['FeCl₃ 避免沾染衣物（黄色污渍）'],
-      products3D: { main: '[Fe(SCN)]2+', side: [], color:'血红色' } }
+      products3D: { main: '[Fe(SCN)]2+', side: [], color:'血红色' } },
+
+    /* ========== 材料加工与合成 (8) ========== */
+
+    { slug:'al6061-solution-aging', category:'金属与热处理', difficulty:D.MEDIUM,
+      title:'6061 铝合金固溶+时效热处理', estimatedMinutes:180,
+      description:'挤压/轧制态 6061 铝合金在 530±5 °C 固溶 30–60 min，水淬后于 175 °C 时效 6–12 h，得到 β″ 相强化。',
+      reagents:['6061 铝合金挤压型材','无水乙醇','金相砂纸','Keller 试剂'],
+      apparatus:['箱式电阻炉','淬火槽（冷水）','时效炉','硬度计','万能试验机','金相显微镜'],
+      objectives:['理解 T6 工艺','测试峰时效强度','观察晶内 β″析出相'],
+      probe:{ reagentKeys:['6061 铝合金'], expect:{ reacted:true, paperType:'heat-treatment' } },
+      safety:['高温炉穿戴防护手套','淬火介质防烫伤','乙醇防火'],
+      errorSources:['固溶温度偏离 ±10°C 导致过烧/欠烧','时效时间不足导致硬度未峰','淬火延迟导致析出'],
+      products3D: { main: 'Al-alloy-6061-T6', side: ['Mg2Si'], hardness:'约 95 HRB', peakStrength:'约 290 MPa' },
+      paperKeys:['al-alloy', 'solution-treatment', 'aging', '6061'] },
+
+    { slug:'basalt-epoxy-composite', category:'复合材料', difficulty:D.MEDIUM,
+      title:'玄武岩纤维/环氧树脂复合材料制备', estimatedMinutes:240,
+      description:'用 KH-550 硅烷偶联剂处理玄武岩纤维表面，与环氧树脂 E-51 + 固化剂按 30:100 质量比模压或真空导入（VARTM）成型。',
+      reagents:['玄武岩纤维短切或织物','环氧树脂 E-51','固化剂','KH-550 偶联剂','无水乙醇'],
+      apparatus:['VARTM 真空导入系统','模压机','真空干燥箱','万能试验机','SEM'],
+      objectives:['理解界面改性','优化纤维/树脂比例','测试弯曲/拉伸强度'],
+      probe:{ reagentKeys:['玄武岩纤维','环氧树脂'], expect:{ reacted:true, paperType:'composite-curing' } },
+      safety:['树脂避免接触皮肤','真空泵放空','乙醇防火'],
+      errorSources:['树脂粘度波动','偶联剂水解不当','气泡残留在层合板'],
+      products3D: { main: 'Basalt-Epoxy', side: ['Cured-E51'], tensileStrength:'约 220 MPa' },
+      paperKeys:['composite', 'basalt', 'epoxy', 'KH-550'] },
+
+    { slug:'nvp-carbon-coating', category:'电池材料合成', difficulty:D.HARD,
+      title:'Na3V2(PO4)3 / C 溶胶-凝胶碳包覆', estimatedMinutes:300,
+      description:'以 V2O5、NaOH、NH4H2PO4 为原料，柠檬酸为螯合剂 + 碳源，溶胶-凝胶 + 高温煅烧（700 °C / Ar）得到碳包覆 NASICON。',
+      reagents:['五氧化二钒 V2O5','氢氧化钠 NaOH','磷酸二氢铵 NH4H2PO4','柠檬酸','葡萄糖'],
+      apparatus:['磁力搅拌水浴','旋转蒸发仪','管式炉','手套箱','蓝电测试系统'],
+      objectives:['理解 NASICON 结构','优化碳源','测试半电池容量与循环'],
+      probe:{ reagentKeys:['Na3V2(PO4)3','柠檬酸'], expect:{ reacted:true, paperType:'sol-gel-carbon-coating' } },
+      safety:['手套箱操作金属钠','V2O5 氧化性粉尘','管式炉高温'],
+      errorSources:['磷钒摩尔比偏离','碳过多降低容量','煅烧温度不足结相'],
+      products3D: { main: 'NASICON-C', side: ['C-coated'], capacity:'~113 mAh/g' },
+      paperKeys:['NASICON', 'Na3V2(PO4)3', 'cathode', 'sodium-ion'] },
+
+    { slug:'alkali-activated-cement', category:'胶凝材料', difficulty:D.MEDIUM,
+      title:'矿渣/偏高岭土碱激发胶凝材料', estimatedMinutes:1440,
+      description:'矿渣粉 + 偏高岭土按 7:3 复掺，水玻璃（Na2SiO3 模数 1.4）作激活剂，标准养护 28 d 测试抗压强度。',
+      reagents:['矿渣粉 GBFS','偏高岭土','水玻璃','蒸馏水','标准砂'],
+      apparatus:['行星搅拌机','水泥胶砂振实台','标准养护箱','万能试验机 300 kN','XRD'],
+      objectives:['理解碱激发机理','优化配比','测试 28d 抗压强度'],
+      probe:{ reagentKeys:['矿渣','偏高岭土','水玻璃'], expect:{ reacted:true, paperType:'alkali-activation' } },
+      safety:['水玻璃碱性，避免飞溅','戴护目镜'],
+      errorSources:['养护湿度不够','水玻璃模数波动','骨胶比异常'],
+      products3D: { main: 'CASH-gel', side: [], strength28d:'30–60 MPa' },
+      paperKeys:['alkali-activated', 'metakaolin', 'slag', 'C-A-S-H'] },
+
+    { slug:'mg-alloy-aging', category:'金属与热处理', difficulty:D.MEDIUM,
+      title:'AZ91 镁合金时效处理', estimatedMinutes:300,
+      description:'固溶 415°C × 12h，水淬后 200°C 时效 4–16h，析出 β-Mg17Al12 强化相。',
+      reagents:['AZ91 镁合金铸锭','无水乙醇','苦味酸腐蚀液'],
+      apparatus:['箱式电阻炉','硬度计','万能试验机','SEM'],
+      objectives:['理解 Mg-Al 析出','测试峰时效硬度','观察 β 相'],
+      probe:{ reagentKeys:['AZ91'], expect:{ reacted:true, paperType:'heat-treatment' } },
+      safety:['镁合金粉尘严禁明火','高温防护'],
+      products3D: { main: 'Mg-alloy-aged', side: ['Mg17Al12'], hardness:'约 75 HV' },
+      paperKeys:['magnesium', 'AZ91', 'aging', 'beta-phase'] },
+
+    { slug:'pvdf-binder-prep', category:'电池材料合成', difficulty:D.EASY,
+      title:'PVDF 粘结剂 + 导电炭黑浆料制备', estimatedMinutes:120,
+      description:'PVDF 溶于 NMP，加入导电炭黑 Super P + 正极活性物质（90:5:5），磁力搅拌 12 h 均匀涂布铝箔。',
+      reagents:['聚偏氟乙烯 PVDF','导电炭黑 Super P','N-甲基吡咯烷酮 NMP','铝箔','正极活性物质'],
+      apparatus:['磁力搅拌器','涂布机','真空烘箱','手套箱'],
+      objectives:['理解浆料流变','控制粘度','涂布厚度均匀'],
+      probe:{ reagentKeys:['PVDF','导电炭黑'], expect:{ reacted:true, paperType:'binder-slurry' } },
+      safety:['NMP 通风橱操作','PVDF 粉尘避免吸入'],
+      products3D: { main: 'PVDF-binder', side: [], viscosity:'5000–8000 mPa·s' },
+      paperKeys:['PVDF', 'binder', 'slurry', 'coating'] },
+
+    { slug:'steel-annealing', category:'金属与热处理', difficulty:D.EASY,
+      title:'钢的退火处理', estimatedMinutes:240,
+      description:'冷轧态钢板加热至 Ac1 以下 20–30°C 保温 1 h，炉冷至 600°C 后空冷，消除冷作硬化。',
+      reagents:['Q235 冷轧钢板','无水乙醇','4% 硝酸酒精'],
+      apparatus:['箱式电阻炉','硬度计','金相显微镜'],
+      objectives:['理解再结晶','消除应力','观察等轴晶'],
+      probe:{ reagentKeys:['钢'], expect:{ reacted:true, paperType:'heat-treatment' } },
+      safety:['高温防护','炉门烫伤'],
+      errorSources:['保温温度偏移','冷却速率过快'],
+      products3D: { main: 'Annealed-steel', side: [], hardness:'降低 30%' },
+      paperKeys:['annealing', 'recrystallization', 'steel'] },
+
+    { slug:'glass-fiber-drawing', category:'复合材料', difficulty:D.HARD,
+      title:'玻璃纤维拉丝', estimatedMinutes:180,
+      description:'将玻璃原料熔融后通过铂金漏板拉伸为 5–24 μm 直径玻璃纤维。',
+      reagents:['E-玻璃配合料','浸润剂'],
+      apparatus:['玻璃熔炉','铂金漏板','绕丝机','张力仪'],
+      objectives:['理解玻璃熔融拉丝','控制直径','测试拉伸强度'],
+      probe:{ reagentKeys:['玻璃纤维'], expect:{ reacted:true } },
+      safety:['熔融玻璃高温','铂金泄漏','绕丝缠绕'],
+      errorKeys:['glass-fiber', 'drawing', 'fiber-diameter'] }
   ];
 
   MR.experiments = EXPERIMENTS;
@@ -314,7 +408,18 @@ window.MR = window.MR || {};
     'fe3-scn-blood-red': ['铁离子','硫氰化钾','血红色','配离子','Fe³⁺'],
     'limewater-co2': ['石灰水','石灰水变浑浊','澄清石灰水','CO₂检验','二氧化碳'],
     'metal-activity-cuso4': ['金属活动性','活泼性','顺序','比较反应'],
-    'acid-base-titration': ['滴定终点','标准溶液','未知浓度']
+    'acid-base-titration': ['滴定终点','标准溶液','未知浓度'],
+    /* paper-aware 关键词（material-science） */
+    'al6061-solution-aging': ['6061','铝合金','固溶','时效','T6','挤压型材','β″','析出相','抗拉强度','金相','Keller'],
+    'basalt-epoxy-composite': ['玄武岩纤维','复合材料','环氧树脂','E-51','VARTM','模压','偶联剂','KH-550','界面','层合板'],
+    'nvp-carbon-coating': ['NASICON','Na3V2(PO4)3','磷酸钒钠','钠离子电池','正极','碳包覆','溶胶凝胶','柠檬酸','半电池','倍率'],
+    'alkali-activated-cement': ['矿渣','偏高岭土','水玻璃','碱激发','C-A-S-H','抗压强度','胶凝材料','Na2SiO3','模数'],
+    'mg-alloy-aging': ['AZ91','镁合金','固溶','时效','β-Mg17Al12','铸态'],
+    'pvdf-binder-prep': ['PVDF','粘结剂','浆料','NMP','涂布','铝箔','Super P','导电炭黑','正极浆料'],
+    'steel-annealing': ['退火','再结晶','冷轧','Q235','Ac1','消除应力','冷作硬化','等轴晶'],
+    'glass-fiber-drawing': ['玻璃纤维','拉丝','漏板','浸润剂','E-玻璃','直径','张力'],
+    'nh4cu-deepblue': ['铜氨','配离子','深蓝色','络合'],
+    'alcohol-fermentation': ['发酵','酵母','葡萄糖','酒精','酿造']
   };
 
   /* ---- 跨类别聚合 ---- */
@@ -323,5 +428,55 @@ window.MR = window.MR || {};
     if (!MR.experimentsByCategory[e.category]) MR.experimentsByCategory[e.category] = [];
     MR.experimentsByCategory[e.category].push(e);
   });
+
+  /* ---- 由正文扫描最优匹配实验 ----
+     返回 { slug, hits, weight, experiment } 数组，按命中分排序 */
+  function matchExperiment(rawText) {
+    rawText = (rawText || '').toLowerCase();
+    var hits = [];
+    Object.keys(MR.experimentKeywords).forEach(function(slug){
+      var keys = MR.experimentKeywords[slug] || [];
+      var hit = 0, weighted = 0;
+      keys.forEach(function(k){
+        var kk = String(k).toLowerCase();
+        if (!kk) return;
+        var found = false;
+        try {
+          var re = new RegExp(kk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          var m = rawText.match(re);
+          if (m && m.length) { hit += m.length; weighted += m.length * kk.length; found = true; }
+        } catch (e) { /* ignore */ }
+        if (!found && rawText.indexOf(kk) !== -1) hit += 1;
+      });
+      if (hit > 0) {
+        var exp = null;
+        for (var i = 0; i < EXPERIMENTS.length; i++) {
+          if (EXPERIMENTS[i].slug === slug) { exp = EXPERIMENTS[i]; break; }
+        }
+        hits.push({ slug: slug, hits: hit, weight: weighted, experiment: exp });
+      }
+    });
+    hits.sort(function (a, b) {
+      if (b.weight !== a.weight) return b.weight - a.weight;
+      return b.hits - a.hits;
+    });
+    return hits;
+  }
+  MR.matchExperiment = matchExperiment;
+
+  /* ---- 由 profile（材料/变量/仪器）反推 ----
+     返回与 matchExperiment 同样 shape，但不依赖 rawText */
+  function findExperimentsForProfile(profile) {
+    if (!profile) return [];
+    var text = '';
+    (profile.materials || []).forEach(function (m) {
+      text += ' ' + (typeof m === 'string' ? m : (m.name || ''));
+    });
+    (profile.instruments || []).forEach(function (i) {
+      text += ' ' + (typeof i === 'string' ? i : JSON.stringify(i));
+    });
+    return matchExperiment(text);
+  }
+  MR.findExperimentsForProfile = findExperimentsForProfile;
 
 })();
