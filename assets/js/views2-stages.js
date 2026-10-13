@@ -1225,8 +1225,8 @@ MR.views2 = {};
     /* 工艺流程图（FIG.5） */
     var fig5Host = host.querySelector('#figsFig5');
     if (fig5Host && (pf.steps || []).length >= 3) {
-      var steps = pf.steps.slice(0, 9).map(function (s) { return s.name || s.step || s; });
-      var subSteps = pf.steps.slice(0, 9).map(function (s) { return s.condition || s.detail || ''; });
+      var steps = pf.steps.slice(0, 9).map(function (s) { return s.t || s.name || s.step || String(s); });
+      var subSteps = pf.steps.slice(0, 9).map(function (s) { return s.cond || s.condition || s.detail || ''; });
       MR.figs.renderFlow(fig5Host, {
         steps: steps,
         subSteps: subSteps,
