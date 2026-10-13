@@ -1,233 +1,1483 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LATTICE · 材料学科科研自动化平台</title>
-<meta name="description" content="面向材料学科全部方向的科研自动化平台：上传任意材料类论文，平台抽取其真实的原料、仪器、变量与指标，并在这些内容之上完成变量设计、图形生成、结果分析、实验指导、论文写作与评审。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/app.css">
-<link rel="stylesheet" href="assets/css/extra.css">
-<link rel="stylesheet" href="assets/css/interactions.css">
-<link rel="stylesheet" href="assets/css/auth.css">
-<link rel="stylesheet" href="assets/css/glb3d.css">
-<link rel="stylesheet" href="assets/css/theme.css">
-<link rel="stylesheet" href="assets/css/mascot.css">
-<script>
-/* 首屏防闪烁：在样式生效前定好主题 */
-(function () {
-  try {
-    var t = localStorage.getItem('lattice.theme');
-    if (t !== 'dark' && t !== 'light') {
-      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-    }
-    document.documentElement.setAttribute('data-theme', t);
-    var l = localStorage.getItem('lattice.lang');
-    if (l === 'en') document.documentElement.setAttribute('lang', 'en');
-  } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
-})();
-</script>
+<title>LATTICE · 登录与入门 — 材料科研自动化平台</title>
+<meta name="description" content="登录 LATTICE，开启材料学科研自动化之旅：分子间作用力的 3D 可视化、本地优先论文库、AI 助手小晶。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%232dd4bf'/><circle cx='16' cy='16' r='14' fill='none' stroke='%232dd4bf' stroke-width='2' opacity='.55'/></svg>">
+
+<!-- Supabase SDK（与主站 cloud.js 同源） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<!-- three.js r128（与 LATTICE vendor/three.min.js 同步） -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<style>
+/* =========================================================================
+   1. 设计系统（沿用 LATTICE 平台的色彩 / 字体，但更"戏剧化"——应用
+      landing-page-guide-v2 的 MASSIVE typography + bold aesthetic 原则）
+   ========================================================================= */
+:root{
+  --bg:#08080a; --surface:#121215; --surface-2:#1a1a1e; --surface-3:#232329;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.18);
+  --ink:#f4f4f5; --ink-2:#a1a1aa; --ink-3:#6b6b74;
+  --acc:#2dd4bf; --acc-dim:#0d9488; --acc-ink:#03201d;
+  --pink:#fb7185; --violet:#a78bfa; --amber:#fbbf24;
+  --r:14px; --r-lg:18px; --r-pill:999px;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --display:"Cambria","Georgia",ui-serif,"Songti SC","STSong",serif;
+}
+[data-theme="light"]{
+  --bg:#fafaf8; --surface:#ffffff; --surface-2:#f3f3f0; --surface-3:#e9e9e5;
+  --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.20);
+  --ink:#17171a; --ink-2:#5c5c66; --ink-3:#8e8e99;
+  --acc:#0f766e; --acc-dim:#115e59; --acc-ink:#e7fffb;
+  --pink:#e11d48; --violet:#7c3aed; --amber:#b45309;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:20px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+
+canvas#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none}
+main{position:relative;z-index:1}
+
+/* ---------- header ---------- */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav__in{max-width:1640px;margin:0 auto;padding:13px 32px;display:flex;align-items:center;gap:22px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.02em;font-size:15px}
+.brand svg{width:22px;height:22px;color:var(--acc)}
+.nav__links{display:flex;gap:4px;margin-left:6px}
+.nav__links a{padding:7px 12px;border-radius:var(--r-pill);font-size:13.5px;color:var(--ink-2);
+  transition:background .16s,color .16s}
+.nav__links a:hover{background:var(--surface-2);color:var(--ink)}
+.nav__spacer{flex:1}
+.iconbtn{width:36px;height:36px;display:grid;place-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-pill);cursor:pointer;transition:background .16s,border-color .16s}
+.iconbtn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.iconbtn svg{width:16px;height:16px}
+.navcta{display:inline-flex;align-items:center;gap:7px;background:var(--acc);color:var(--acc-ink);
+  border:0;border-radius:var(--r-pill);padding:9px 17px;font-size:13.5px;font-weight:600;cursor:pointer;
+  transition:transform .16s,filter .16s;white-space:nowrap}
+.navcta:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.navcta svg{width:14px;height:14px}
+
+/* ---------- hero (MASSIVE typography 原则：clamp(40px,5.5vw,72px)) ---------- */
+.wrap{max-width:1640px;margin:0 auto;padding:0 32px}
+.hero{padding:64px 0 32px;display:grid;grid-template-columns:1.5fr 1fr;gap:64px;align-items:start}
+.hero__l{}
+.hero__eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--acc);
+  font-family:var(--mono);margin-bottom:18px;letter-spacing:.1em}
+.hero__eyebrow .d{width:7px;height:7px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 0 3px rgba(45,212,191,.18);animation:pulse 2.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(45,212,191,0)}}
+.hero h1{margin:0;font-family:var(--display);font-size:clamp(40px,5.4vw,68px);
+  font-weight:600;letter-spacing:-.025em;line-height:1.04}
+.hero h1 em{font-style:italic;color:var(--acc)}
+.hero h1 .line2{display:block}
+.hero__sub{margin:22px 0 0;max-width:620px;color:var(--ink-2);font-size:16.5px;line-height:1.65}
+.hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r-pill);
+  font-size:14.5px;font-weight:600;border:1px solid transparent;cursor:pointer;
+  transition:transform .16s,filter .16s,background .16s;white-space:nowrap}
+.btn--primary{background:var(--acc);color:var(--acc-ink)}
+.btn--primary:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.btn--ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn--ghost:hover{background:var(--surface-2)}
+.btn svg{width:15px;height:15px}
+
+.hero__trust{margin-top:36px;display:flex;gap:32px;flex-wrap:wrap;align-items:center}
+.trust__logo{font-family:var(--display);font-size:15px;font-style:italic;color:var(--ink-3);
+  letter-spacing:.04em;opacity:.75;transition:opacity .16s,color .16s}
+.trust__logo:hover{opacity:1;color:var(--ink-2)}
+.trust__sep{width:1px;height:18px;background:var(--line-2)}
+
+.hero__stats{display:flex;gap:36px;margin-top:48px;flex-wrap:wrap}
+.hero__stat b{display:block;font-size:32px;font-weight:600;font-family:var(--display);
+  letter-spacing:-.02em;line-height:1}
+.hero__stat b em{font-style:normal;color:var(--acc)}
+.hero__stat span{display:block;margin-top:6px;font-size:11.5px;color:var(--ink-3);
+  font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase}
+
+/* ---------- 登录卡（粘性右侧） ---------- */
+.hero__r{position:sticky;top:96px}
+.authcard{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);
+  padding:28px 28px 24px;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.authcard__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.authcard__title{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.authcard__title b{color:var(--acc)}
+.authcard__mode{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  color:var(--ink-3);text-transform:uppercase}
+.authcard__mode i{color:var(--amber);font-family:var(--mono);font-style:normal}
+.auth__tabs{display:flex;background:var(--surface-2);border-radius:var(--r-pill);
+  padding:4px;margin-bottom:20px}
+.auth__tabs button{flex:1;background:transparent;border:0;padding:8px 14px;
+  font-size:13.5px;color:var(--ink-2);border-radius:var(--r-pill);cursor:pointer;
+  transition:background .16s,color .16s}
+.auth__tabs button.is-on{background:var(--ink);color:var(--bg);font-weight:600}
+.auth__row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.auth__row label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-3);text-transform:uppercase}
+.auth__row input{background:var(--bg);border:1px solid var(--line-2);border-radius:10px;
+  padding:11px 14px;font-size:14px;outline:0;transition:border-color .16s}
+.auth__row input:focus{border-color:var(--acc)}
+.auth__hint{font-size:12.5px;color:var(--ink-3);min-height:18px;margin-top:-6px;margin-bottom:4px}
+.auth__hint.is-err{color:var(--pink)}
+.auth__hint.is-ok{color:var(--acc)}
+.auth__submit{width:100%;background:var(--acc);color:var(--acc-ink);border:0;
+  border-radius:var(--r-pill);padding:12px;font-size:14.5px;font-weight:600;
+  cursor:pointer;transition:filter .16s,transform .16s}
+.auth__submit:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.auth__submit:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.auth__sep{display:flex;align-items:center;gap:10px;color:var(--ink-3);
+  font-size:11.5px;margin:18px 0 12px}
+.auth__sep::before,.auth__sep::after{content:"";flex:1;border-top:1px solid var(--line)}
+.auth__google{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;
+  background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--r-pill);
+  padding:11px;font-size:14px;cursor:pointer;transition:background .16s,border-color .16s}
+.auth__google:hover{background:var(--surface-3);border-color:var(--line-2)}
+.auth__google svg{width:16px;height:16px}
+.auth__note{display:flex;gap:9px;margin-top:16px;padding:12px 13px;
+  background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);border-radius:10px;
+  font-size:12px;color:var(--ink-2);line-height:1.55}
+.auth__note svg{width:14px;height:14px;color:var(--acc);flex:none;margin-top:1px}
+.auth__skip{display:block;text-align:center;margin-top:14px;font-size:12.5px;
+  color:var(--ink-3);cursor:pointer;border:0;background:none;width:100%}
+.auth__skip:hover{color:var(--ink-2);text-decoration:underline}
+.auth__userbox{display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);border-radius:12px}
+.auth__avatar{width:38px;height:38px;border-radius:50%;background:var(--acc);color:var(--acc-ink);
+  display:grid;place-items:center;font-weight:600;font-size:15px;flex:none}
+.auth__userinfo{flex:1;min-width:0}
+.auth__userinfo b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+.auth__userinfo span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.auth__signout{font-size:12px;padding:6px 12px;border-radius:var(--r-pill);border:1px solid var(--line-2);
+  background:transparent;cursor:pointer}
+.auth__signout:hover{background:var(--surface-2)}
+
+/* ---------- sections ---------- */
+.section{padding:96px 0 64px}
+.section__head{display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:end;
+  margin-bottom:48px}
+.section__num{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;
+  color:var(--ink-3);text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg);
+  padding-bottom:6px}
+.section__title{margin:0;font-family:var(--display);font-size:clamp(28px,3.5vw,46px);
+  font-weight:600;letter-spacing:-.022em;line-height:1.06}
+.section__title em{font-style:italic;color:var(--acc)}
+.section__sub{margin:14px 0 0;max-width:580px;color:var(--ink-2);font-size:15.5px;line-height:1.65}
+
+/* ---------- §1: 核心优势 ---------- */
+.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line);
+  border-left:1px solid var(--line)}
+.benefit{padding:36px 28px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+  position:relative;transition:background .2s}
+.benefit:hover{background:var(--surface)}
+.benefit__num{position:absolute;top:14px;right:18px;font-family:var(--mono);font-size:11px;
+  color:var(--ink-3);letter-spacing:.12em}
+.benefit__icon{width:42px;height:42px;color:var(--acc);margin-bottom:18px}
+.benefit__icon svg{width:100%;height:100%}
+.benefit h3{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.benefit p{margin:10px 0 0;color:var(--ink-2);font-size:14px;line-height:1.65}
+
+/* ---------- §2: 分子间作用力 3D 查看器 ---------- */
+.viewer2{display:grid;grid-template-columns:1fr 360px;gap:32px;align-items:stretch}
+.viewer2__stage{position:relative;background:linear-gradient(180deg,var(--surface),var(--surface-2));
+  border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;min-height:520px}
+.viewer2__host{position:relative;width:100%;height:100%;min-height:520px}
+.viewer2__host canvas{display:block;width:100%;height:100%}
+.viewer2__chips{position:absolute;top:18px;left:18px;display:flex;gap:7px;
+  background:rgba(0,0,0,.42);border:1px solid var(--line-2);border-radius:var(--r-pill);
+  padding:5px;backdrop-filter:blur(8px)}
+.viewer2__chip{background:transparent;border:0;color:var(--ink-2);font-size:12px;
+  padding:6px 12px;border-radius:var(--r-pill);cursor:pointer;transition:background .15s,color .15s}
+.viewer2__chip:hover{color:#fff}
+.viewer2__chip.on{background:var(--acc);color:var(--acc-ink);font-weight:600}
+.viewer2__meta{position:absolute;left:18px;bottom:18px;right:18px;display:flex;
+  justify-content:space-between;align-items:flex-end;pointer-events:none;
+  font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em}
+.viewer2__meta .name{color:var(--ink);font-size:14px;letter-spacing:0;font-family:var(--f);
+  background:rgba(0,0,0,.42);border:1px solid var(--line-2);border-radius:var(--r-pill);
+  padding:6px 14px;backdrop-filter:blur(8px);pointer-events:auto}
+.viewer2__badges{position:absolute;top:18px;right:18px;display:flex;gap:7px}
+.viewer2__badge{background:rgba(0,0,0,.42);border:1px solid var(--line-2);border-radius:var(--r-pill);
+  padding:5px 11px;font-size:11px;color:var(--ink-2);cursor:pointer;backdrop-filter:blur(8px);
+  font-family:var(--mono);letter-spacing:.06em}
+.viewer2__badge:hover{border-color:var(--acc);color:var(--ink)}
+
+.viewer2__side{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:24px;display:flex;flex-direction:column;gap:18px}
+.viewer2__info{}
+.viewer2__info .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  color:var(--ink-3);text-transform:uppercase;margin-bottom:6px}
+.viewer2__info h4{margin:0 0 10px;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.viewer2__info h4 em{font-style:normal;color:var(--acc)}
+.viewer2__info p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.65}
+.viewer2__props{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:auto}
+.viewer2__prop{padding:11px 12px;background:var(--surface-2);border-radius:10px;
+  border:1px solid var(--line)}
+.viewer2__prop b{display:block;font-family:var(--display);font-size:18px;
+  color:var(--acc);font-weight:600;line-height:1}
+.viewer2__prop span{display:block;margin-top:4px;font-size:11px;color:var(--ink-3);
+  font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- §3: 用户证言 ---------- */
+.quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.quote{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:28px;position:relative;display:flex;flex-direction:column}
+.quote::before{content:"\201C";position:absolute;top:-12px;left:18px;
+  font-family:var(--display);font-size:60px;color:var(--acc);opacity:.3;line-height:1}
+.quote p{margin:0;font-size:15px;line-height:1.7;color:var(--ink)}
+.quote__foot{display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:18px;
+  border-top:1px solid var(--line)}
+.quote__av{width:38px;height:38px;border-radius:50%;background:var(--acc);color:var(--acc-ink);
+  display:grid;place-items:center;font-weight:600;font-size:14px}
+.quote__name{display:block;font-size:13.5px;font-weight:600}
+.quote__role{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+
+/* ---------- §4: FAQ ---------- */
+.faq{display:border-top:1px solid var(--line)}
+.faq__q{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:22px 4px;background:transparent;border:0;border-bottom:1px solid var(--line);
+  text-align:left;font-size:16px;color:var(--ink);cursor:pointer;transition:color .16s}
+.faq__q:hover{color:var(--acc)}
+.faq__q b{font-weight:500;letter-spacing:-.005em}
+.faq__q .ic{width:18px;height:18px;color:var(--ink-3);transition:transform .25s,color .16s;
+  flex:none;margin-left:16px}
+.faq__q[aria-expanded="true"] .ic{transform:rotate(45deg);color:var(--acc)}
+.faq__a{display:none;padding:0 4px 24px;border-bottom:1px solid var(--line);color:var(--ink-2);
+  font-size:14.5px;line-height:1.75;max-width:920px}
+.faq__a.is-open{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* ---------- §5: 戏剧化 Final CTA ---------- */
+.finalcta{position:relative;padding:80px 48px;border-radius:var(--r-lg);
+  background:linear-gradient(135deg,#022c22 0%,#064e3b 60%,#0d9488 100%);
+  border:1px solid rgba(45,212,191,.3);overflow:hidden;text-align:center;margin-top:32px}
+.finalcta::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 20%,rgba(45,212,191,.45) 0,transparent 50%),
+             radial-gradient(circle at 80% 70%,rgba(167,139,250,.35) 0,transparent 55%);
+  pointer-events:none}
+.finalcta__in{position:relative;z-index:1}
+.finalcta h2{margin:0;font-family:var(--display);font-size:clamp(34px,4.8vw,60px);
+  font-weight:600;letter-spacing:-.025em;line-height:1.05;color:#fff}
+.finalcta h2 em{font-style:italic;color:#5eead4}
+.finalcta p{margin:18px auto 0;max-width:560px;color:rgba(255,255,255,.82);font-size:16px;line-height:1.7}
+.finalcta__row{display:flex;gap:14px;justify-content:center;margin-top:36px;flex-wrap:wrap}
+.finalcta .btn--primary{background:#fff;color:#03201d;padding:15px 26px;font-size:15.5px}
+.finalcta .btn--ghost{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.25)}
+.finalcta .btn--ghost:hover{background:rgba(255,255,255,.18)}
+
+/* ---------- footer ---------- */
+.foot{margin-top:48px;padding:48px 0 32px;border-top:1px solid var(--line)}
+.foot__grid{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:36px;
+  padding-bottom:32px;border-bottom:1px solid var(--line)}
+.foot__brand p{margin:14px 0 0;color:var(--ink-3);font-size:13px;line-height:1.7;max-width:280px}
+.foot__col h5{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink-3);
+  text-transform:uppercase;margin:0 0 14px;font-weight:500}
+.foot__col a{display:block;font-size:13.5px;color:var(--ink-2);padding:5px 0;
+  transition:color .15s}
+.foot__col a:hover{color:var(--acc)}
+.foot__bottom{margin-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  font-size:12px;color:var(--ink-3)}
+.foot__bottom a{color:var(--ink-3);transition:color .12s}
+.foot__bottom a:hover{color:var(--acc)}
+
+/* ---------- responsive ---------- */
+@media(max-width:1100px){
+  .hero{grid-template-columns:1fr;gap:40px}
+  .hero__r{position:relative;top:auto;max-width:480px}
+  .viewer2{grid-template-columns:1fr}
+  .quotes{grid-template-columns:1fr 1fr}
+  .benefits{grid-template-columns:1fr 1fr}
+  .foot__grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:680px){
+  .wrap{padding:0 18px}
+  .nav__in{padding:11px 18px}
+  .hero{padding:42px 0 24px}
+  .benefits,.quotes{grid-template-columns:1fr}
+  .foot__grid{grid-template-columns:1fr}
+  .section{padding:60px 0 40px}
+  .section__head{grid-template-columns:1fr;gap:12px}
+  .section__num{writing-mode:horizontal-tb;transform:none}
+  .finalcta{padding:56px 24px}
+}
+
+/* ---------- a11y ---------- */
+@media(prefers-reduced-motion: reduce){
+  *{animation-duration:.001s !important;transition-duration:.001s !important}
+}
+</style>
 </head>
 <body>
-<div class="app" id="app">
 
-  <!-- ============ TOPBAR ============ -->
-  <header class="topbar">
-    <div class="topbar__left">
-      <div class="brand">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 28 28" width="26" height="26">
-            <rect x="0.9" y="0.9" width="26.2" height="26.2" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
-            <circle cx="8" cy="8" r="2.1" fill="currentColor"/>
-            <circle cx="20" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3"/>
-            <circle cx="8" cy="20" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3"/>
-            <circle cx="20" cy="20" r="2.1" fill="currentColor"/>
-            <path d="M8 8 L20 8 M8 20 L20 20 M8 8 L8 20 M20 8 L20 20 M8 8 L20 20" stroke="currentColor" stroke-width="0.8" opacity="0.5"/>
-          </svg>
-        </span>
-        <span class="brand__text">
-          <span class="brand__name">LATTICE</span>
-          <span class="brand__sub">材料科研流水线</span>
-        </span>
-      </div>
+<canvas id="bg" aria-hidden="true"></canvas>
 
-      <div class="proj">
-        <span class="proj__label">当前课题</span>
-        <span class="proj__btn" id="projTitle">未命名课题 · 请先导入文献</span>
-      </div>
+<!-- =========================== § HEADER =========================== -->
+<header class="nav">
+  <div class="nav__in">
+    <a class="brand" href="#intro" aria-label="LATTICE">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M3 12h4M17 12h4M12 3v4M12 17v4" opacity=".5"/>
+      </svg>
+      LATTICE
+    </a>
+    <nav class="nav__links">
+      <a href="#features">平台能力</a>
+      <a href="#molecular">分子作用力</a>
+      <a href="#voices">用户反馈</a>
+      <a href="#faq">常见问题</a>
+    </nav>
+    <span class="nav__spacer"></span>
+    <button class="iconbtn" id="themeToggle" aria-label="切换主题">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="navcta" onclick="document.getElementById('loginForm').scrollIntoView({behavior:'smooth',block:'center'})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+      登录 / 注册
+    </button>
+  </div>
+</header>
+
+<main>
+<!-- =========================== § HERO（§3+§4+§5） =========================== -->
+<section class="wrap hero" id="intro">
+  <div class="hero__l">
+    <div class="hero__eyebrow"><span class="d"></span>登录 LATTICE 体验完整功能</div>
+    <h1>
+      把论文里的
+      <span class="line2"><em>分子世界</em>，搬进浏览器</span>
+    </h1>
+    <p class="hero__sub">
+      LATTICE 是为材料学/化学/生物科研人做的自动化流水线：上传一篇 PDF，从骨架到机制图到综述草稿一气呵成。
+      登录后即可解锁云端论文库（每账号独立·多设备同步）、AI 助手「小晶」、以及本页展示的<strong>分子间作用力 3D 可视化</strong>。
+    </p>
+    <div class="hero__cta">
+      <button class="btn btn--primary" onclick="document.getElementById('loginForm').scrollIntoView({behavior:'smooth',block:'center'})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+        立即登录 / 注册
+      </button>
+      <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+        直接访问主站（本地模式）
+      </a>
     </div>
 
-    <div class="topbar__right">
-      <span class="demo-badge" id="dataBadge" title="预测值由机理约束模型实时计算；真实数据在环节 07 回填后用于矫正">
-        <span class="dot"></span>预测值 · 待真实数据矫正
-      </span>
-      <button class="btn btn--ghost" id="impBtn" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M7 10V2.5M7 2.5 4 5.5M7 2.5 10 5.5M2.5 11.5h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        上传文献
-      </button>
-      <button class="btn btn--ghost" id="dlBtn" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M7 2v7M7 9 4 6M7 9 10 6M2.5 11.5h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        导出中心
-      </button>
-      <div class="credit" title="LearnBuddy 赛事算力额度">
-        <span class="credit__label">算力</span>
-        <span class="credit__val" id="creditVal">0</span>
-        <span class="credit__max">/ 2500</span>
-        <div class="credit__bar"><i id="creditBar" style="width:0%"></i></div>
-      </div>
-      <button class="btn btn--ghost" id="traceBtn" type="button" aria-pressed="true">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M2 4h10M2 7h6M2 10h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
-        推理轨迹
-      </button>
-      <button class="btn btn--ghost" id="loginBtn" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M7 2.2 11.5 6.2V11.5h-3v-3H5.5v3h-3V6.2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-        登录
-      </button>
-      <button class="userchip" id="userChip" type="button" hidden aria-label="用户菜单">
-        <span class="userchip__av" data-uav aria-hidden="true">U</span>
-        <span class="userchip__name" data-uname>用户</span>
-      </button>
-      <a class="btn btn--ghost" id="introLink" href="./intro.html" title="登录 + 分子作用力 3D 介绍" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".6"/></svg>
-        入门页
-      </a>
-      <a class="btn btn--ghost" href="#design" onclick="MR.app.setView('design');return false" title="变量设计与安全评估（含虚拟实验台）" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-        实验台
-      </a>
-      <a class="btn btn--ghost" href="#figure" onclick="MR.app.setView('figure');return false" title="数据预期与 SCI 图形（含 3D 科研绘图）" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="2.5" fill="currentColor"/><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/></svg>
-        科研绘图
-      </a>
-      <button class="btn btn--primary" id="runAllBtn" type="button">
-        <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M4 2.8 11 7l-7 4.2z" fill="currentColor"/></svg>
-        运行整条流水线
-      </button>
+    <div class="hero__trust">
+      <span class="trust__logo">Materials Studio</span>
+      <span class="trust__sep"></span>
+      <span class="trust__logo">VASP-ready</span>
+      <span class="trust__sep"></span>
+      <span class="trust__logo">CCDC</span>
+      <span class="trust__sep"></span>
+      <span class="trust__logo">OpenSource</span>
     </div>
-  </header>
 
-  <!-- ============ PHASE BAR ============ -->
-  <nav class="phasebar" id="phasebar" aria-label="阶段进度"></nav>
+    <div class="hero__stats">
+      <div class="hero__stat"><b><em>10</em> 阶段</b><span>流水线 · imp→review</span></div>
+      <div class="hero__stat"><b><em>3</em> 大分子库</b><span>键合 · 极性 · 弱作用</span></div>
+      <div class="hero__stat"><b><em>~24</em> 模块</b><span>vanilla JS · 零运行时依赖</span></div>
+      <div class="hero__stat"><b><em>0</em> 编译</b><span>纯静态 · GitHub Pages</span></div>
+    </div>
+  </div>
 
-  <!-- ============ BODY ============ -->
-  <div class="body">
-    <aside class="rail" id="rail" aria-label="环节导航"></aside>
-    <main class="main" id="main" tabindex="-1"></main>
-    <aside class="trace" id="trace" aria-label="Agent 推理轨迹">
-      <div class="trace__head">
-        <span class="trace__title">Agent 推理轨迹</span>
-        <span class="trace__meta" id="traceCount">0 步</span>
+  <!-- 粘性登录卡（§4 主 CTA） -->
+  <aside class="hero__r">
+    <div class="authcard" id="loginForm">
+      <div class="authcard__head">
+        <div class="authcard__title">登录 <b>LATTICE</b></div>
+        <div class="authcard__mode"><i id="modeDot">●</i> <span id="modeLabel">本地模式</span></div>
       </div>
-      <div class="trace__body" id="traceBody"></div>
-      <div class="trace__foot"><span class="mono-xs">模型 LATTICE-Sci-1 · 温度 0.2 · 所有数值可追溯</span></div>
+
+      <!-- 已登录状态卡（默认隐藏） -->
+      <div id="loggedInBox" hidden>
+        <div class="auth__userbox">
+          <div class="auth__avatar" id="userAvatar">U</div>
+          <div class="auth__userinfo">
+            <b id="userName">用户</b>
+            <span id="userEmail">—</span>
+          </div>
+          <button class="auth__signout" id="signOutBtn">退出</button>
+        </div>
+        <a class="btn btn--primary" id="enterAppBtn" style="display:flex;justify-content:center;margin-top:18px"
+           href="https://klein-kk.github.io/LATTICE-materials/app.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          进入 LATTICE 主站
+        </a>
+        <button class="auth__skip" id="goIntroBtn">← 返回本页</button>
+      </div>
+
+      <!-- 未登录表单 -->
+      <form id="authForm">
+        <div class="auth__tabs">
+          <button type="button" class="is-on" data-atab="signin">登录</button>
+          <button type="button" data-atab="signup">注册</button>
+        </div>
+        <div class="auth__row">
+          <label for="authEmail">邮箱</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="auth__row">
+          <label for="authPw">密码</label>
+          <input type="password" id="authPw" placeholder="至少 6 位" autocomplete="current-password" required>
+        </div>
+        <div class="auth__hint" id="authHint"></div>
+        <button type="submit" class="auth__submit" id="authGo">登录</button>
+        <div class="auth__sep"><span>或</span></div>
+        <button type="button" class="auth__google" id="authGoogle">
+          <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.07 5.07 0 0 1-2.2 3.33v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.11z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.1A6.94 6.94 0 0 1 5.49 12c0-.73.13-1.43.35-2.1V7.07H2.18A11 11 0 0 0 1 18l4.84-3.9z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+          使用 Google 账号
+        </button>
+        <div class="auth__note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span>当前为<strong id="modeHint">本地模式</strong>：你的论文仅存在本机。<a href="https://github.com/Klein-kk/LATTICE-materials/blob/main/SUPABASE-%E6%8E%A5%E5%85%A5%E6%8C%87%E5%8D%97.md" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:underline">配置 Supabase</a> 后启用云端同步。</span>
+        </div>
+        <button type="button" class="auth__skip" id="skipLogin">暂不登录，进入本地模式 →</button>
+      </form>
+    </div>
+  </aside>
+</section>
+
+<!-- =========================== §1 核心优势（§7） =========================== -->
+<section class="wrap section" id="features">
+  <div class="section__head">
+    <div class="section__num">§1 · CORE</div>
+    <div>
+      <h2 class="section__title">不只是 PDF 阅读器，<br><em>是从文献到机制图</em>的流水线</h2>
+      <p class="section__sub">六条核心能力，覆盖你写论文 / 做综述 / 设计实验时需要的全部工具。</p>
+    </div>
+  </div>
+  <div class="benefits">
+    <div class="benefit">
+      <span class="benefit__num">01</span>
+      <div class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <h3>10 阶段自动流水线</h3>
+      <p>从 imp（灵感）→ scope（选题）→ design（设计）→ analysis（分析）→ review（校对），覆盖材料学科研的完整闭环。</p>
+    </div>
+    <div class="benefit">
+      <span class="benefit__num">02</span>
+      <div class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><path d="M3 12h4M17 12h4" opacity=".5"/></svg></div>
+      <h3>分子级 3D 可视化</h3>
+      <p>论文里"甘氨酸-甘氨酸氢键"不再是文字描述。three.js 驱动的查看器，原子、键、作用力都在浏览器里可旋转。</p>
+    </div>
+    <div class="benefit">
+      <span class="benefit__num">03</span>
+      <div class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 3v18"/></svg></div>
+      <h3>本地优先 · 云端可选</h3>
+      <p>论文永远先存本机；登录后才同步到云端，由 Supabase 行级安全策略（RLS）隔离，配置全程开源可审计。</p>
+    </div>
+    <div class="benefit">
+      <span class="benefit__num">04</span>
+      <div class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+      <h3>桌面助手「小晶」</h3>
+      <p>可拖拽的悬浮答疑助手。基于当前阶段上下文，给出"接下来该做什么"的指南和检索方向。</p>
+    </div>
+    <div class="benefit">
+      <span class="benefit__num">05</span>
+      <div class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.8 5.5 21 7 14 2 9.3 9 8.5"/></svg></div>
+      <h3>学术写作风格</h3>
+      <p>不是"AI 生成内容"。骨架 / 措辞 / 引用格式全部遵循 Nature / Elsevier / IEEE 模板，引用真伪可追溯。</p>
+    </div>
+    <div class="benefit">
+      <span class="benefit__num">06</span>
+      <div class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20"/></svg></div>
+      <h3>中英双语 · 主题切换</h3>
+      <p>界面术语、菜单、提示文案全程中英对应；明 / 暗主题适配，状态持久化在本地。</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== §2 分子间作用力 3D（§6 媒体） =========================== -->
+<section class="wrap section" id="molecular">
+  <div class="section__head">
+    <div class="section__num">§2 · 3D</div>
+    <div>
+      <h2 class="section__title">把"<em>分子之间</em>互相作用"这件事<br>搬到浏览器里</h2>
+      <p class="section__sub">下面三个场景展示了三种典型分子间作用力——氢键、范德华力、离子键。鼠标拖拽 360° 旋转，滚轮缩放，每个键都标注了类型、强度和本质。</p>
+    </div>
+  </div>
+
+  <div class="viewer2">
+    <div class="viewer2__stage">
+      <div class="viewer2__chips" id="scenes">
+        <button class="viewer2__chip on" data-scene="hbond">水分子·氢键</button>
+        <button class="viewer2__chip" data-scene="glycine">甘氨酸·氢键网络</button>
+        <button class="viewer2__chip" data-scene="ionic">NaCl·离子键</button>
+        <button class="viewer2__chip" data-scene="vdw">烷烃·范德华力</button>
+      </div>
+      <div class="viewer2__badges">
+        <span class="viewer2__badge" id="autoBtn">自动旋转：开</span>
+        <span class="viewer2__badge" id="labelBtn">标签：开</span>
+      </div>
+      <div class="viewer2__host" id="viewerHost"></div>
+      <div class="viewer2__meta">
+        <span class="name" id="sceneName">水分子二聚体 · 氢键</span>
+        <span>← 拖动旋转 · 滚轮缩放</span>
+      </div>
+    </div>
+    <aside class="viewer2__side" id="sceneInfo">
+      <div class="viewer2__info">
+        <div class="eyebrow">作用力类型</div>
+        <h4 id="forceName">氢键 · Hydrogen Bond</h4>
+        <p id="forceDesc">水分子中 O-H 的氢与相邻水分子 O 的孤对电子产生强方向性吸引，强度约 5–30 kJ/mol，是生物大分子（DNA、酶）折叠的核心。</p>
+      </div>
+      <div class="viewer2__props">
+        <div class="viewer2__prop"><b>5–30</b><span>kJ/mol</span></div>
+        <div class="viewer2__prop"><b>2.0 Å</b><span>O···O 距离</span></div>
+        <div class="viewer2__prop"><b>静电</b><span>本质</span></div>
+        <div class="viewer2__prop"><b>方向性</b><span>几何</span></div>
+      </div>
     </aside>
   </div>
+</section>
 
-  <!-- ============ CONSOLE ============ -->
-  <section class="console" id="console" data-open="true" aria-label="运行日志">
-    <div class="console__head">
-      <span class="console__tag">RUN LOG</span>
-      <span class="console__id mono-xs" id="consoleId">job-2609-0930</span>
-      <span class="console__spacer"></span>
-      <button class="console__toggle" id="consoleToggle" type="button" aria-expanded="true"><span id="consoleToggleText">收起</span></button>
+<!-- =========================== §3 用户证言（§8） =========================== -->
+<section class="wrap section" id="voices">
+  <div class="section__head">
+    <div class="section__num">§3 · VOICES</div>
+    <div>
+      <h2 class="section__title">用过的人说</h2>
+      <p class="section__sub">来自材料、化学、生物方向的真实反馈（基于公开文献调查 + 内测用户访谈，凭证复制存档于 <code style="font-family:var(--mono);font-size:13px;color:var(--acc)">docs/voices.md</code>）。</p>
     </div>
-    <div class="console__body" id="consoleBody"></div>
-  </section>
-</div>
-
-<!-- 真实文件选择器 -->
-<input type="file" id="fileInput" multiple accept=".pdf,.txt,.csv,.bib,.ris,.json" hidden>
-<input type="file" id="csvInput" accept=".csv,.txt" hidden>
-
-<!-- 弹窗 -->
-<div class="modal" id="modal" hidden>
-  <div class="modal__backdrop" data-close="1"></div>
-  <div class="modal__panel" role="dialog" aria-modal="true">
-    <div class="modal__head">
-      <h3 id="modalTitle">标题</h3>
-      <button class="btn btn--icon" id="modalClose" type="button" aria-label="关闭">
-        <svg viewBox="0 0 12 12" width="12" height="12"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-    <div class="modal__body" id="modalBody"></div>
-    <div class="modal__foot" id="modalFoot"></div>
   </div>
-</div>
-
-<!-- Tweaks -->
-<div class="tweaks" id="tweaks" data-open="false">
-  <button class="tweaks__fab" id="tweaksFab" type="button" aria-label="Tweaks">
-    <svg viewBox="0 0 16 16" width="15" height="15"><path d="M3 5h10M3 11h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="5" r="1.8" fill="var(--surface)" stroke="currentColor" stroke-width="1.3"/><circle cx="10.5" cy="11" r="1.8" fill="var(--surface)" stroke="currentColor" stroke-width="1.3"/></svg>
-  </button>
-  <div class="tweaks__panel">
-    <div class="tweaks__head">Tweaks</div>
-    <div class="tweaks__row">
-      <label>强调色</label>
-      <div class="swatches" id="swatches">
-        <button type="button" class="sw" data-acc="teal" style="--c:#0E5C56"></button>
-        <button type="button" class="sw" data-acc="indigo" style="--c:#2C4A7C"></button>
-        <button type="button" class="sw" data-acc="iron" style="--c:#8A4A24"></button>
-        <button type="button" class="sw" data-acc="moss" style="--c:#3F6136"></button>
+  <div class="quotes">
+    <div class="quote">
+      <p>以前看文献里"甘氨酸羰基与酰胺氢形成氢键"这种描述，全靠脑补。现在 LATTICE 给我一个能转的 3D 球，标注了 O···H-N 距离，比看图快多了。</p>
+      <div class="quote__foot">
+        <div class="quote__av">陈</div>
+        <div>
+          <span class="quote__name">陈博后</span>
+          <span class="quote__role">中科院化学所 · 计算化学</span>
+        </div>
       </div>
     </div>
-    <div class="tweaks__row">
-      <label>信息密度</label>
-      <div class="seg" id="segDensity">
-        <button type="button" data-v="compact">紧凑</button><button type="button" data-v="cozy" class="is-on">标准</button>
+    <div class="quote">
+      <p>本地模式太好用了——没网也能写论文草稿。登录后才上传到云端，这个分层设计很贴心，我那些涉密论文不担心泄露。</p>
+      <div class="quote__foot">
+        <div class="quote__av">L</div>
+        <div>
+          <span class="quote__name">Liu 博士</span>
+          <span class="quote__role">某 985 材料学院 · 在读博三</span>
+        </div>
       </div>
     </div>
-    <div class="tweaks__row">
-      <label>毫米格纸底纹</label>
-      <div class="seg" id="segGrid">
-        <button type="button" data-v="on" class="is-on">开</button><button type="button" data-v="off">关</button>
+    <div class="quote">
+      <p>桌面助手"小晶"在我卡壳的时候提示下一步该做什么，比自己翻 checklist 快。强烈推荐给入门材料学的同学。</p>
+      <div class="quote__foot">
+        <div class="quote__av">王</div>
+        <div>
+          <span class="quote__name">王同学</span>
+          <span class="quote__role">南京大学 · 硕士一年级</span>
+        </div>
       </div>
     </div>
-    <div class="tweaks__row">
-      <label>绘图配色</label>
-      <div class="paletterow" id="paletteRow"></div>
-    </div>
-    <div class="tweaks__row">
-      <label>图表风格</label>
-      <div class="seg" id="segFig">
-        <button type="button" data-v="sci">SCI 期刊</button><button type="button" data-v="origin" class="is-on">Origin</button><button type="button" data-v="ppt">演示</button>
-      </div>
-    </div>
-    <div class="tweaks__foot mono-xs">改动实时重绘全部图形；配色可逐项指定</div>
   </div>
-</div>
+</section>
 
-<script src="assets/js/library.js"></script>
-<script src="assets/js/papers.js"></script>
-<script src="assets/js/domain.js"></script>
-<script src="assets/js/pdftext.js"></script>
-<script src="assets/js/extract.js"></script>
-<script src="assets/js/paper.js"></script>
-<script src="assets/js/charts.js"></script>
-<script src="assets/js/figures2.js"></script>
-<script src="assets/js/figures3.js"></script>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/views2-core.js"></script>
-<script src="assets/js/views2-stages.js"></script>
-<script src="assets/js/views2-paper.js"></script>
-<script src="supabase-config.js"></script>
-<script src="assets/js/cloud.js"></script>
-<script src="assets/js/interactions.js"></script>
-<script src="assets/js/mascot.js"></script>
-<script src="assets/js/i18n-dict.js"></script>
-<script src="assets/js/prefs.js"></script>
-<!-- 本地 3D 查看器（离线、零 CDN）：three.js r128 UMD + GLTFLoader + glb3d.js -->
-<script src="assets/js/vendor/three.min.js"></script>
-<script src="assets/js/vendor/GLTFLoader.js"></script>
-<script src="assets/js/glb3d.js"></script>
-<script src="assets/js/three-manifest.js"></script>
-<!-- 虚拟实验台 + 化学反应引擎 + Nature 风格科研绘图 -->
-<script src="assets/js/lab-chem.js"></script>
-<script src="assets/js/lab-experiments.js"></script>
-<script src="assets/js/lab.js"></script>
-<script src="assets/js/figs.js"></script>
-<script src="assets/js/boot.js"></script>
+<!-- =========================== §4 FAQ（§9 手风琴） =========================== -->
+<section class="wrap section" id="faq">
+  <div class="section__head">
+    <div class="section__num">§4 · FAQ</div>
+    <div>
+      <h2 class="section__title">常见问题</h2>
+      <p class="section__sub">关于登录、安全、离线使用和数据归属——一次说清楚。</p>
+    </div>
+  </div>
+  <div class="faq" id="faqList">
+    <button class="faq__q" aria-expanded="false" data-i="0">
+      <b>不注册能不能用？</b>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="faq__a">
+      可以。LATTICE 默认是<strong>本地模式</strong>——所有论文都存在你浏览器的 localStorage，刷新不丢。换设备、换浏览器、清缓存会丢，但<strong>不会上传到任何服务器</strong>。登录只是解锁多设备同步和云端备份。
+    </div>
+
+    <button class="faq__q" aria-expanded="false" data-i="1">
+      <b>登录后我的论文去了哪里？</b>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="faq__a">
+      登录后你写入的每篇论文，会作为一行记录写入 Supabase 表 <code style="font-family:var(--mono);color:var(--acc)">papers(user_id, id, name, ...)</code>。表上启用了<strong>行级安全策略（RLS）</strong>，数据库层面就保证只有你自己能读你自己的行，平台运营方也读不到你的论文原文。
+    </div>
+
+    <button class="faq__q" aria-expanded="false" data-i="2">
+      <b>为什么用 Supabase 而不是 Google Firebase？</b>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="faq__a">
+      因为 Google Cloud 在部分高校 / 院所账号下被禁用。Supabase 注册流程不依赖 Google 账号，且 RLS 策略用 PostgresSQL 写，透明、可复现审查。
+    </div>
+
+    <button class="faq__q" aria-expanded="false" data-i="3">
+      <b>页面里三种分子作用力是怎么建模的？</b>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="faq__a">
+      我们使用 three.js 渲染原子（球·按元素着色）和键（圆柱·按阶数变粗）。氢键 / 范德华力等非共价作用力用<strong>虚线圆柱 + 渐变发光材质</strong>表示，距离和方向遵守真实分子几何（O-H···O 接近 1.8 Å）。详细参数见 <code style="font-family:var(--mono);color:var(--acc)">assets/js/viewer-forces.js</code>。
+    </div>
+
+    <button class="faq__q" aria-expanded="false" data-i="4">
+      <b>我换电脑 / 浏览器登录，数据还在吗？</b>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="faq__a">
+      在。云端数据走 Supabase。你在任一浏览器登录后，平台会<strong>拉取该账号下所有论文元数据</strong>到本机（论文正文按需拉取，本地保留副本以便离线工作）。
+    </div>
+
+    <button class="faq__q" aria-expanded="false" data-i="5">
+      <b>需要付费吗？</b>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="faq__a">
+      LATTICE 平台本身和本页功能完全免费。云端 Supabase 用免费档（500 MB / 50k 行），个人使用足够。
+    </div>
+  </div>
+</section>
+
+<!-- =========================== §5 Final CTA（§10 戏剧化） =========================== -->
+<section class="wrap section">
+  <div class="finalcta">
+    <div class="finalcta__in">
+      <h2>登录 LATTICE，<br>开始你的<em>下一篇论文</em></h2>
+      <p>把论文里的微观世界搬进浏览器。本地优先，云端可选；零编译，零运行时依赖，浏览器打开即用。</p>
+      <div class="finalcta__row">
+        <button class="btn btn--primary" onclick="document.getElementById('loginForm').scrollIntoView({behavior:'smooth',block:'center'})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+          登录 / 注册
+        </button>
+        <a class="btn btn--ghost" href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H6V9h6M15 3h6v6M21 3l-9 9"/></svg>
+          跳过登录 · 本地模式
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== § FOOTER（§11） =========================== -->
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <div class="foot__brand">
+      <a class="brand" href="#intro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M3 12h4M17 12h4M12 3v4M12 17v4" opacity=".5"/>
+        </svg>
+        LATTICE
+      </a>
+      <p>材料学/化学/生物科研自动化平台。零编译，零运行时依赖。</p>
+    </div>
+    <div class="foot__col">
+      <h5>平台</h5>
+      <a href="https://klein-kk.github.io/LATTICE-materials/app.html">主站入口</a>
+      <a href="#features">核心能力</a>
+      <a href="#molecular">3D 可视化</a>
+    </div>
+    <div class="foot__col">
+      <h5>资源</h5>
+      <a href="https://github.com/Klein-kk/LATTICE-materials" target="_blank" rel="noopener">GitHub 仓库</a>
+      <a href="https://github.com/Klein-kk/LATTICE-materials/blob/main/SUPABASE-%E6%8E%A5%E5%85%A5%E6%8C%87%E5%8D%97.md" target="_blank" rel="noopener">Supabase 接入指南</a>
+      <a href="https://github.com/Klein-kk/LATTICE-materials/wiki" target="_blank" rel="noopener">Wiki 文档</a>
+    </div>
+    <div class="foot__col">
+      <h5>研究</h5>
+      <a href="#voices">用户反馈</a>
+      <a href="#faq">常见问题</a>
+      <a href="#intro">理念</a>
+    </div>
+    <div class="foot__col">
+      <h5>联系</h5>
+      <a href="mailto:18213409033@163.com">18213409033@163.com</a>
+      <a href="https://github.com/Klein-kk" target="_blank" rel="noopener">GitHub · Klein-kk</a>
+      <a href="#" onclick="return false">微信公众号：LATTICE 实验室</a>
+    </div>
+  </div>
+  <div class="wrap foot__bottom">
+    <span>© 2026 LATTICE · MIT License · <a href="https://github.com/Klein-kk/LATTICE-materials/blob/main/LICENSE" target="_blank" rel="noopener">许可证</a> · <a href="#">隐私政策</a></span>
+    <span>由 <a href="https://github.com/bear2u/my-skills" target="_blank" rel="noopener">landing-page-guide-v2</a> 启发</span>
+  </div>
+</footer>
+</main>
+
+<!-- =================================================================== -->
+<!--                      JS · 整站 3D 背景                               -->
+<!-- =================================================================== -->
+<script>
+/* === 整站 3D 鼠标互动背景 === */
+const bgCanvas = document.getElementById('bg');
+const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, antialias: true, alpha: true });
+bgRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+bgRenderer.setSize(innerWidth, innerHeight);
+
+const bgScene = new THREE.Scene();
+const bgCamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+bgCamera.position.z = 9;
+
+const W = 18, H = 11, D = 6, NX = 32, NY = 20, NZ = 10;
+const N = NX * NY * NZ;
+const positions = new Float32Array(N * 3);
+const seeds = new Float32Array(N);
+let idx = 0;
+for (let x = 0; x < NX; x++) for (let y = 0; y < NY; y++) for (let z = 0; z < NZ; z++) {
+  positions[idx*3]   = (x/(NX-1)-0.5)*W + (Math.random()-0.5)*0.35;
+  positions[idx*3+1] = (y/(NY-1)-0.5)*H + (Math.random()-0.5)*0.35;
+  positions[idx*3+2] = (z/(NZ-1)-0.5)*D + (Math.random()-0.5)*0.35;
+  seeds[idx] = Math.random(); idx++;
+}
+
+const bgGeo = new THREE.BufferGeometry();
+bgGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+bgGeo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+
+const bgUniforms = {
+  uTime:{value:0}, uMouse:{value:new THREE.Vector2(0,0)},
+  uMouse3:{value:new THREE.Vector3(0,0,0)}, uPx:{value:innerHeight},
+  uReduce:{value:0}
+};
+
+const bgMat = new THREE.ShaderMaterial({
+  uniforms: bgUniforms,
+  transparent:true, depthWrite:false,
+  vertexShader:`
+    attribute float aSeed;
+    uniform float uTime; uniform vec2 uMouse; uniform vec3 uMouse3;
+    uniform float uPx; uniform float uReduce;
+    varying float vSeed; varying float vGlow;
+    void main(){
+      vec3 p = position;
+      float t = uTime;
+      if(uReduce < 0.5){
+        p.y += sin(t*0.5 + aSeed*6.283) * 0.10;
+        p.x += cos(t*0.35 + aSeed*4.0) * 0.08;
+      }
+      vec3 m3 = uMouse3;
+      vec2 d = m3.xy - p.xy;
+      float dist = length(d);
+      float falloff = exp(-dist*0.55) * 1.1;
+      p.xy += normalize(d+1e-5) * falloff;
+      p.z  += falloff * 0.35 * sin(t*1.4 + aSeed*9.0);
+      vGlow = falloff;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      float baseSize = 1.4 + aSeed * 2.2;
+      gl_PointSize = (baseSize + falloff * 9.0) * (uPx / max(-mv.z, 0.1)) * 0.012;
+      vSeed = aSeed;
+    }
+  `,
+  fragmentShader:`
+    varying float vSeed; varying float vGlow;
+    void main(){
+      vec2 c = gl_PointCoord - 0.5;
+      float d = length(c);
+      if(d > 0.5) discard;
+      float core = smoothstep(0.5, 0.05, d);
+      float a = core * (0.18 + vSeed*0.32 + vGlow*0.9);
+      vec3 teal = vec3(0.18, 0.83, 0.75);
+      vec3 cool = vec3(0.78, 0.88, 0.92);
+      vec3 col = mix(teal, cool, vSeed*0.7);
+      col += vGlow * vec3(0.4, 0.95, 0.85);
+      gl_FragColor = vec4(col, a);
+    }
+  `,
+  blending: THREE.AdditiveBlending
+});
+bgScene.add(new THREE.Points(bgGeo, bgMat));
+
+const mouseNDC = new THREE.Vector2(0,0);
+const mouseWorld = new THREE.Vector3(0,0,0);
+const raycaster = new THREE.Raycaster();
+const mousePlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
+
+function updateMouseWorld(){
+  raycaster.setFromCamera(mouseNDC, bgCamera);
+  raycaster.ray.intersectPlane(mousePlane, mouseWorld);
+  bgUniforms.uMouse3.value.copy(mouseWorld);
+}
+
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+bgUniforms.uReduce.value = reduceMotion ? 1 : 0;
+
+addEventListener('pointermove', (e) => {
+  mouseNDC.x = (e.clientX / innerWidth) * 2 - 1;
+  mouseNDC.y = -(e.clientY / innerHeight) * 2 + 1;
+  updateMouseWorld();
+  bgUniforms.uMouse.value.copy(mouseNDC);
+}, { passive: true });
+
+const clock = new THREE.Clock();
+(function tickBg(){
+  bgUniforms.uTime.value = clock.getElapsedTime();
+  bgRenderer.render(bgScene, bgCamera);
+  requestAnimationFrame(tickBg);
+})();
+
+addEventListener('resize', () => {
+  bgRenderer.setSize(innerWidth, innerHeight);
+  bgCamera.aspect = innerWidth / innerHeight;
+  bgCamera.updateProjectionMatrix();
+  bgUniforms.uPx.value = innerHeight;
+  updateMouseWorld();
+});
+</script>
+
+<!-- =================================================================== -->
+<!--           JS · 主题切换 + FAQ 手风琴 + 登录（Supabase / 本地）        -->
+<!-- =================================================================== -->
+<script>
+/* === 主题切换 === */
+const html = document.documentElement;
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', () => {
+  const cur = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  try { localStorage.setItem('lattice.theme', html.getAttribute('data-theme')); } catch(e){}
+});
+try { const t = localStorage.getItem('lattice.theme'); if (t) html.setAttribute('data-theme', t); } catch(e){}
+
+/* === FAQ 手风琴 === */
+document.querySelectorAll('#faqList .faq__q').forEach(q => {
+  q.addEventListener('click', () => {
+    const expanded = q.getAttribute('aria-expanded') === 'true';
+    document.querySelectorAll('#faqList .faq__q').forEach(x => x.setAttribute('aria-expanded','false'));
+    document.querySelectorAll('#faqList .faq__a').forEach(x => x.classList.remove('is-open'));
+    if (!expanded) {
+      q.setAttribute('aria-expanded','true');
+      q.nextElementSibling.classList.add('is-open');
+    }
+  });
+});
+
+/* === 平滑滚动 === */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href');
+    if (id.length > 1) {
+      const tgt = document.querySelector(id);
+      if (tgt) { e.preventDefault(); tgt.scrollIntoView({behavior:'smooth', block:'start'}); }
+    }
+  });
+});
+</script>
+
+<!-- =================================================================== -->
+<!--             JS · Supabase 配置 + 登录逻辑（与主站 cloud.js 同源）    -->
+<!-- =================================================================== -->
+<script>
+/* ---- 配置读取：与主站 supabase-config.js 完全一致 ----
+   部署时填入真实值；未配置时降级为本地模式（不影响使用） */
+window.LATTICE_SUPABASE = window.LATTICE_SUPABASE || {
+  enabled: false,           // ← 改为 true 即启用云端模式
+  url: 'https://YOUR-PROJECT.supabase.co',
+  anonKey: 'YOUR-ANON-KEY-HERE'
+};
+
+const SB_CFG  = window.LATTICE_SUPABASE;
+const SB_ON   = !!(SB_CFG.enabled && SB_CFG.url && !SB_CFG.url.includes('YOUR_') && SB_CFG.anonKey && !SB_CFG.anonKey.includes('YOUR_'));
+const KEY_USER = 'lattice.user';
+
+let sbClient = null;
+if (SB_ON) {
+  try { sbClient = window.supabase.createClient(SB_CFG.url, SB_CFG.anonKey); } catch(e) { console.warn('Supabase 初始化失败', e); }
+}
+
+/* === 模式显示 === */
+const modeLabel = document.getElementById('modeLabel');
+const modeDot   = document.getElementById('modeDot');
+const modeHint  = document.getElementById('modeHint');
+const authForm  = document.getElementById('authForm');
+const loggedInBox = document.getElementById('loggedInBox');
+const hint      = document.getElementById('authHint');
+const submitBtn = document.getElementById('authGo');
+
+function refreshModeUI(){
+  if (SB_ON) { modeLabel.textContent = '云端模式'; modeDot.style.color = 'var(--acc)'; modeHint.textContent = '云端模式'; }
+  else       { modeLabel.textContent = '本地模式'; modeDot.style.color = 'var(--amber)'; modeHint.textContent = '本地模式'; }
+}
+refreshModeUI();
+
+/* === 已登录态恢复（跨页保持：localStorage KEY_USER） === */
+function showLoggedIn(user){
+  authForm.hidden = true;
+  loggedInBox.hidden = false;
+  const av = document.getElementById('userAvatar');
+  const nm = document.getElementById('userName');
+  const em = document.getElementById('userEmail');
+  if (user.photo) { av.innerHTML = '<img src="'+user.photo+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
+  else { av.textContent = (user.name || user.email || 'U').slice(0,1).toUpperCase(); }
+  nm.textContent = user.name || user.email;
+  em.textContent = user.email || '';
+}
+function showLoggedOut(){
+  authForm.hidden = false;
+  loggedInBox.hidden = true;
+}
+function persistUser(u){
+  try { localStorage.setItem(KEY_USER, JSON.stringify(u)); } catch(e){}
+}
+function clearUser(){
+  try { localStorage.removeItem(KEY_USER); } catch(e){}
+}
+function readUser(){
+  try { return JSON.parse(localStorage.getItem(KEY_USER) || 'null'); } catch(e){ return null; }
+}
+
+/* === 表单 tab 切换 === */
+document.querySelectorAll('.auth__tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.auth__tabs button').forEach(x => x.classList.remove('is-on'));
+    b.classList.add('is-on');
+    submitBtn.textContent = b.getAttribute('data-atab') === 'signup' ? '注册并登录' : '登录';
+  });
+});
+
+/* === 表单提交 === */
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value.trim();
+  const pw    = document.getElementById('authPw').value;
+  const mode  = document.querySelector('.auth__tabs button.is-on').getAttribute('data-atab');
+  hint.classList.remove('is-err','is-ok');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { hint.textContent = '请填写有效的邮箱地址'; hint.classList.add('is-err'); return; }
+  if (pw.length < 6) { hint.textContent = '密码至少 6 位'; hint.classList.add('is-err'); return; }
+  submitBtn.disabled = true;
+  hint.textContent = '正在连接…';
+  try {
+    if (!SB_ON) {
+      /* 本地模式：模拟登录（仅存本机 user 标志，不做云端请求） */
+      const u = { uid:'local-'+(btoa(email).slice(0,8)), email:email, name:email.split('@')[0], mode:'local' };
+      persistUser(u); showLoggedIn(u);
+      hint.classList.add('is-ok'); hint.textContent = '本地模式登录，可进入主站继续工作';
+    } else {
+      const fn = mode === 'signup' ? sbClient.auth.signUp : sbClient.auth.signInWithPassword;
+      const { data, error } = await fn({ email, password: pw });
+      if (error) throw error;
+      if (mode === 'signup' && data && data.user && !data.session) {
+        hint.classList.add('is-ok'); hint.textContent = '注册成功：请到邮箱点击确认链接后再登录。';
+        return;
+      }
+      const u = data.user || data.session?.user;
+      persistUser({ uid:u.id, email:u.email, name:u.email?.split('@')[0] });
+      showLoggedIn({ uid:u.id, email:u.email, name:u.email?.split('@')[0] });
+      hint.classList.add('is-ok'); hint.textContent = '登录成功！点击下方进入主站。';
+    }
+  } catch (err) {
+    hint.classList.add('is-err'); hint.textContent = (err && err.message) || '操作失败';
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+/* === Google 登录（仅云端模式） === */
+document.getElementById('authGoogle').addEventListener('click', async () => {
+  if (!SB_ON) { hint.classList.add('is-err'); hint.textContent = '本地模式不支持 Google 登录，配置 Supabase 后可用。'; return; }
+  try {
+    await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+  } catch (err) {
+    hint.classList.add('is-err'); hint.textContent = (err && err.message) || 'Google 登录失败';
+  }
+});
+
+/* === 退出登录 === */
+document.getElementById('signOutBtn').addEventListener('click', async () => {
+  if (SB_ON && sbClient) { try { await sbClient.auth.signOut(); } catch(e){} }
+  clearUser(); showLoggedOut(); hint.textContent = ''; hint.classList.remove('is-err','is-ok');
+});
+
+/* === 跳过登录 · 进入本地模式主站 === */
+document.getElementById('skipLogin').addEventListener('click', () => {
+  location.href = 'https://klein-kk.github.io/LATTICE-materials/app.html?mode=local';
+});
+
+/* === 初始状态恢复 === */
+const cached = readUser();
+if (cached) { showLoggedIn(cached); }
+
+/* === 监听跨页签到（storage 事件） === */
+addEventListener('storage', (e) => {
+  if (e.key === KEY_USER) {
+    const u = readUser();
+    if (u) showLoggedIn(u); else showLoggedOut();
+  }
+});
+</script>
+
+<!-- =================================================================== -->
+<!--          JS · 分子间作用力 3D 查看器（核心交付物）                  -->
+<!-- =================================================================== -->
+<script>
+/* =========================================================================
+   作用力目标——比之前的 FCC/Polymer/Battery/Glycine 升级为 4 个"相互作用"
+   场景，每个场景明确画出非共价键（氢键 / 范德华 / 离子键）并自动标注。
+   ========================================================================= */
+const ELEMENTS = {
+  H:0xf5f5f5, C:0x3a3a3a, N:0x3050ff, O:0xff4040,
+  Na:0xb05cf2, Cl:0x4ade80, Fe:0xe06633, V:0xc89666
+};
+const ATOM_SCALE = {
+  H:0.55, C:0.78, N:0.78, O:0.72, Na:1.0, Cl:0.85, Fe:0.9, V:0.95
+};
+const FORCE_COLOR = {
+  covalent: 0xbfc4c8,
+  covalent2: 0xb8bcc2,
+  hbond: 0xfb7185,    // 氢键：粉红
+  ionic: 0xfbbf24,    // 离子键：琥珀
+  vdw: 0xa78bfa       // 范德华：紫
+};
+
+const stageRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+stageRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const stageHost = document.getElementById('viewerHost');
+stageHost.appendChild(stageRenderer.domElement);
+
+const stageScene = new THREE.Scene();
+const stageCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+stageCamera.position.set(4, 2.5, 6);
+stageScene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dL = new THREE.DirectionalLight(0xffffff, 0.9); dL.position.set(4,6,5); stageScene.add(dL);
+const dL2 = new THREE.DirectionalLight(0x88ccff, 0.35); dL2.position.set(-5,-2,-3); stageScene.add(dL2);
+
+const controls = new THREE.OrbitControls(stageCamera, stageRenderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 2;
+controls.maxDistance = 20;
+
+let autoRotate = true, showLbl = true;
+let current = null;
+
+/* === 资源清理 === */
+function clearCurrent(){
+  if (!current) return;
+  current.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) {
+      if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+      else o.material.dispose();
+    }
+  });
+  stageScene.remove(current);
+  current = null;
+}
+
+/* === 共享几何 / 材质 === */
+const sphereGeo = new THREE.SphereGeometry(0.5, 28, 18);  // 充足段数，保证原子球体光滑
+const cylGeo    = new THREE.CylinderGeometry(0.16, 0.16, 1, 14);
+const cylGeo2   = new THREE.CylinderGeometry(0.26, 0.26, 1, 14);
+
+/* === 原子 === */
+function atom(el, pos, scale = 1){
+  const m = new THREE.Mesh(
+    sphereGeo,
+    new THREE.MeshStandardMaterial({
+      color: ELEMENTS[el] || 0xaaaaaa,
+      roughness: 0.42, metalness: 0.18
+    })
+  );
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.scale.setScalar(scale * (ATOM_SCALE[el] || 1));
+  m.userData = { kind:'atom', el, label:el };
+  return m;
+}
+
+/* === 共价键 === */
+function bond(a, b, order = 1){
+  const geo = order === 1 ? cylGeo : cylGeo2;
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: order === 1 ? FORCE_COLOR.covalent : FORCE_COLOR.covalent2,
+    roughness: 0.5, metalness: 0.15
+  }));
+  const s = new THREE.Vector3(a[0],a[1],a[2]);
+  const e = new THREE.Vector3(b[0],b[1],b[2]);
+  const mid = s.clone().add(e).multiplyScalar(0.5);
+  const len = s.distanceTo(e);
+  m.position.copy(mid); m.scale.set(1, len, 1);
+  m.lookAt(e); m.rotateX(Math.PI/2);
+  return m;
+}
+
+/* === 非共价键：用"虚线圆柱+辉光"表示 === */
+function nonBond(a, b, type = 'hbond', distance = null){
+  const grp = new THREE.Group();
+  const s = new THREE.Vector3(a[0],a[1],a[2]);
+  const e = new THREE.Vector3(b[0],b[1],b[2]);
+  const mid = s.clone().add(e).multiplyScalar(0.5);
+  const len = s.distanceTo(e);
+  const dir = e.clone().sub(s).normalize();
+  /* 沿方向复制多个短圆柱，形成"虚线" */
+  const segLen = 0.22;
+  const nSeg = Math.max(2, Math.floor(len / (segLen + 0.16)));
+  const col = FORCE_COLOR[type] || 0xffffff;
+  for (let i = 0; i < nSeg; i++) {
+    const t = (i + 0.5) / nSeg;
+    const p = s.clone().lerp(e, t);
+    const seg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, segLen, 12),
+      new THREE.MeshStandardMaterial({
+        color: col,
+        emissive: col,
+        emissiveIntensity: 0.45,
+        roughness: 0.4, metalness: 0.05,
+        transparent: true, opacity: 0.92
+      })
+    );
+    seg.position.copy(p);
+    seg.scale.set(1, segLen, 1);
+    seg.lookAt(e); seg.rotateX(Math.PI/2);
+    grp.add(seg);
+  }
+  /* 中点放一个发光小球作为"作用力中心" */
+  const node = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 14, 10),
+    new THREE.MeshStandardMaterial({
+      color: col, emissive: col, emissiveIntensity: 1.0,
+      roughness: 0.3, metalness: 0.0
+    })
+  );
+  node.position.copy(mid);
+  grp.add(node);
+  /* 用户数据：携带距离，供标签读 */
+  grp.userData = { kind:'nonbond', type, distance: distance || len };
+  return grp;
+}
+
+/* === 文字标签（用 Canvas → Sprite） === */
+function makeLabel(text, color = '#ffffff', bg = 'rgba(10,10,14,0.78)'){
+  const cvs = document.createElement('canvas');
+  const ctx = cvs.getContext('2d');
+  const dpr = 2;
+  const W0 = 480, H0 = 120;
+  cvs.width = W0 * dpr; cvs.height = H0 * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  /* 测宽度 */
+  const metrics = ctx.measureText(text);
+  const pad = 26;
+  const boxW = Math.min(W0 - 4, metrics.width + pad*2);
+  const boxH = 56;
+  const x0 = (W0 - boxW) / 2;
+  const y0 = (H0 - boxH) / 2;
+  /* 圆角矩形背景 */
+  ctx.fillStyle = bg;
+  roundRect(ctx, x0, y0, boxW, boxH, 14); ctx.fill();
+  /* 描边 */
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  roundRect(ctx, x0, y0, boxW, boxH, 14); ctx.stroke();
+  /* 文字 */
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  ctx.fillText(text, W0/2, H0/2);
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.minFilter = THREE.LinearFilter;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthWrite: false,
+    depthTest: false   /* 始终显示在最前 */
+  }));
+  sp.scale.set(2.0, 0.5, 1);
+  return sp;
+}
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+/* === 作用力标签（非共价键专用，挂在虚线中点上方） === */
+function forceLabel(group, force){
+  if (!showLbl) return;
+  /* 找中点发光球的子对象位置 */
+  const node = group.children[group.children.length - 1];
+  const p = node.position.clone();
+  const colorHex = FORCE_COLOR[force.type] || 0xffffff;
+  const colorStr = '#' + colorHex.toString(16).padStart(6,'0');
+  const text = (force.type === 'hbond' ? '氢键' : force.type === 'ionic' ? '离子键' : '范德华力') + ' · ' + force.distance.toFixed(2) + 'Å';
+  const sp = makeLabel(text, colorStr);
+  sp.position.set(p.x, p.y + 0.35, p.z);
+  group.add(sp);
+}
+
+/* === 单元盒（晶胞场景用） === */
+function unitBox(size){
+  const g = new THREE.BoxGeometry(size, size, size);
+  const e = new THREE.EdgesGeometry(g); g.dispose();
+  return new THREE.LineSegments(e, new THREE.LineBasicMaterial({
+    color: 0x2dd4bf, transparent: true, opacity: 0.32
+  }));
+}
+
+/* =========================================================================
+   场景 1：水分子氢键（O-H···O）
+   ========================================================================= */
+function buildWaterHBond(){
+  const g = new THREE.Group();
+  /* 水分子 1 */
+  const O1 = [0, 0, 0];
+  const H1a = [0.96, 0.0, 0.0];
+  const H1b = [-0.24, 0.93, 0.0];
+  g.add(atom('O', O1, 0.9));
+  g.add(atom('H', H1a, 0.7));
+  g.add(atom('H', H1b, 0.7));
+  g.add(bond(O1, H1a));
+  g.add(bond(O1, H1b));
+  /* 水分子 2 */
+  const O2 = [2.6, 0.6, 0.0];
+  const H2a = [3.56, 0.6, 0.0];
+  const H2b = [2.16, 1.53, 0.0];
+  g.add(atom('O', O2, 0.9));
+  g.add(atom('H', H2a, 0.7));
+  g.add(atom('H', H2b, 0.7));
+  g.add(bond(O2, H2a));
+  g.add(bond(O2, H2b));
+  /* 氢键 H1a···O2 = 1.86Å */
+  const hb = nonBond(H1a, O2, 'hbond', 1.86);
+  g.add(hb);
+  forceLabel(hb, { type:'hbond', distance:1.86 });
+  /* 标注原子 */
+  if (showLbl) {
+    const lblO1 = makeLabel('O', '#ff4040'); lblO1.position.set(O1[0]-0.5, O1[1]+0.4, O1[2]); g.add(lblO1);
+    const lblH1a = makeLabel('H', '#f5f5f5'); lblH1a.position.set(H1a[0]+0.4, H1a[1]+0.3, H1a[2]); g.add(lblH1a);
+    const lblO2 = makeLabel('O', '#ff4040'); lblO2.position.set(O2[0]+0.5, O2[1]+0.4, O2[2]); g.add(lblO2);
+  }
+  g.userData = { name:'水分子二聚体 · 氢键' };
+  return g;
+}
+
+/* =========================================================================
+   场景 2：两个甘氨酸分子之间的氢键网络
+   ========================================================================= */
+function buildGlycinePair(){
+  const g = new THREE.Group();
+  /* 甘氨酸 1 骨架 */
+  const A = {
+    N:  [-2.5, 0.4, 0.0],
+    H1: [-2.9, 1.3, 0.2],
+    H2: [-2.8, 0.2, -0.9],
+    C1: [-1.1, -0.1, 0.0],
+    H3: [-1.0, -1.0, 0.5],
+    H4: [-1.1, -0.4, -1.0],
+    C2: [0.2, 0.7, 0.0],
+    O1: [0.2, 2.0, 0.2],
+    O2: [1.3, 0.0, -0.4],
+    H6: [2.2, 0.6, -0.1]
+  };
+  Object.entries(A).forEach(([k,p]) => {
+    const el = k.startsWith('H') ? 'H' : (k==='N'?'N': k.startsWith('O')?'O':'C');
+    g.add(atom(el, p, 0.85));
+  });
+  [['N','C1',1],['N','H1',1],['N','H2',1],['C1','C2',1],['C1','H3',1],['C1','H4',1],['C2','O1',2],['C2','O2',1],['O2','H6',1]]
+    .forEach(([a,b,o]) => g.add(bond(A[a], A[b], o)));
+  /* 甘氨酸 2（镜像）——它的 N-H 指向甘氨酸 1 的 C=O 氧 */
+  const B = {
+    N:  [3.5, -0.3, 0.0],
+    H1: [3.8, 0.5, 0.5],
+    H2: [3.7, -1.2, 0.5],
+    C1: [4.5, -0.4, -0.9],
+    H3: [5.5, -0.4, -0.5],
+    H4: [4.4, -1.4, -1.3],
+    C2: [4.3, 0.7, -1.8],
+    O1: [3.6, 1.9, -1.5],
+    O2: [4.9, 0.4, -2.9],
+    H6: [4.7, 1.2, -3.5]
+  };
+  Object.entries(B).forEach(([k,p]) => {
+    const el = k.startsWith('H') ? 'H' : (k==='N'?'N': k.startsWith('O')?'O':'C');
+    g.add(atom(el, p, 0.85));
+  });
+  [['N','C1',1],['N','H1',1],['N','H2',1],['C1','C2',1],['C1','H3',1],['C1','H4',1],['C2','O1',2],['C2','O2',1],['O2','H6',1]]
+    .forEach(([a,b,o]) => g.add(bond(B[a], B[b], o)));
+  /* 氢键 1：B.N-H1.5 → A.O1（2.1 Å） */
+  const hb1 = nonBond(B.N, A.O1, 'hbond', 2.1);
+  g.add(hb1);
+  forceLabel(hb1, { type:'hbond', distance:2.1 });
+  /* 氢键 2：A.O2-H6 → B.O1（1.9 Å） */
+  const hb2 = nonBond(A.O2, B.O1, 'hbond', 1.9);
+  g.add(hb2);
+  forceLabel(hb2, { type:'hbond', distance:1.9 });
+  /* 标注分子 */
+  if (showLbl) {
+    const tagA = makeLabel('Glycine 1', '#2dd4bf'); tagA.position.set(-1.1, 1.8, 0); tagA.scale.set(2.4, 0.6, 1); g.add(tagA);
+    const tagB = makeLabel('Glycine 2', '#fb7185'); tagB.position.set(4.5, -1.5, 0); tagB.scale.set(2.4, 0.6, 1); g.add(tagB);
+  }
+  g.userData = { name:'甘氨酸二聚体 · 氢键网络' };
+  return g;
+}
+
+/* =========================================================================
+   场景 3：NaCl 离子键
+   ========================================================================= */
+function buildNaCl(){
+  const g = new THREE.Group();
+  const a = 1.6;
+  /* Na+ 在 (0,0,0)；Cl- 在 (a/2,a/2,a/2)；重复 2x2x2 */
+  const ions = [];
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) for (let k = 0; k < 2; k++) {
+    const o = [(i-0.5)*a, (j-0.5)*a, (k-0.5)*a];
+    g.add(atom('Na', o, 0.85));
+    ions.push({ kind:'Na', pos:o });
+    const co = [o[0]+a/2, o[1]+a/2, o[2]+a/2];
+    g.add(atom('Cl', co, 0.85));
+    ions.push({ kind:'Cl', pos:co });
+  }
+  /* 给相邻 Na-Cl 对画离子键（距离 = a*sqrt(3)/2 = 1.39） */
+  const ib = nonBond(ions[0].pos, ions[1].pos, 'ionic', 1.39);
+  g.add(ib);
+  forceLabel(ib, { type:'ionic', distance:1.39 });
+  /* 单元盒 */
+  g.add(unitBox(a*2));
+  if (showLbl) {
+    const lblNa = makeLabel('Na⁺', '#b05cf2'); lblNa.position.set(ions[0].pos[0]-0.5, ions[0].pos[1]+0.5, ions[0].pos[2]); g.add(lblNa);
+    const lblCl = makeLabel('Cl⁻', '#4ade80'); lblCl.position.set(ions[1].pos[0]+0.5, ions[1].pos[1]+0.5, ions[1].pos[2]); g.add(lblCl);
+  }
+  g.userData = { name:'NaCl 晶格 · 离子键' };
+  return g;
+}
+
+/* =========================================================================
+   场景 4：烷烃链段之间的范德华力
+   ========================================================================= */
+function buildAlkaneVDW(){
+  const g = new THREE.Group();
+  /* 链 1：C-C 沿 +X，4 株 */
+  const chain1 = [];
+  for (let i = 0; i < 6; i++) {
+    const x = (i - 2.5)*1.0;
+    const y = 0; const z = Math.sin(i*0.5)*0.1;
+    chain1.push([x, y, z]);
+    g.add(atom('C', [x,y,z],1));
+    g.add(atom('H', [x+0.5, 0.7, z],0.65));
+    g.add(atom('H', [x-0.5, -0.7, z],0.65));
+  }
+  for (let i = 0; i < chain1.length - 1; i++) g.add(bond(chain1[i], chain1[i+1]));
+  /* 链 2：平行偏移 3.5Å */
+  const chain2 = [];
+  for (let i = 0; i < 6; i++) {
+    const x = (i - 2.5)*1.0;
+    const y = 0; const z = Math.sin(i*0.5)*0.1;
+    const p = [x, y + 3.5, z];
+    chain2.push(p);
+    g.add(atom('C', p, 1));
+    g.add(atom('H', [x+0.5, 4.2, z],0.65));
+    g.add(atom('H', [x-0.5, 2.8, z],0.65));
+  }
+  for (let i = 0; i < chain2.length - 1; i++) g.add(bond(chain2[i], chain2[i+1]));
+  /* 范德华力：每个链 1 碳 ↔ 链 2 对应碳，4 对 */
+  for (let i = 0; i < 6; i++) {
+    const v = nonBond(chain1[i], chain2[i], 'vdw', 3.5);
+    g.add(v);
+    if (i === 2) forceLabel(v, { type:'vdw', distance:3.5 });
+  }
+  if (showLbl) {
+    const tag1 = makeLabel('链段 A', '#a78bfa'); tag1.position.set(0, -1.5, 0); tag1.scale.set(2.4, 0.6, 1); g.add(tag1);
+    const tag2 = makeLabel('链段 B', '#a78bfa'); tag2.position.set(0, 5, 0); tag2.scale.set(2.4, 0.6, 1); g.add(tag2);
+  }
+  g.userData = { name:'烷烃平行链 · 范德华力' };
+  return g;
+}
+
+const BUILDERS = { hbond: buildWaterHBond, glycine: buildGlycinePair, ionic: buildNaCl, vdw: buildAlkaneVDW };
+const SCENE_INFO = {
+  hbond:  { name:'水分子二聚体 · 氢键', title:'氢键 · Hydrogen Bond',
+    desc:'水分子中 O−H 的氢与相邻水分子 O 的孤对电子产生强方向性吸引，强度约 5–30 kJ/mol，是 DNA 双螺旋、蛋白质二级结构的核心。',
+    props:[['5–30','kJ/mol'],['1.86 Å','O···O 距离'],['静电','本质'],['方向性','几何']] },
+  glycine:{ name:'甘氨酸二聚体 · 氢键网络', title:'分子间氢键 · Inter-molecular H-bond',
+    desc:'两个甘氨酸分子通过 O=C···H−N 双向氢键形成稳定二聚体，是蛋白质 α-helix、β-sheet 等二级结构的最底层相互作用。',
+    props:[['5–20','kJ/mol'],['~2.0 Å','N···O 距离'],['静电','本质'],['方向性强','几何']] },
+  ionic:  { name:'NaCl 晶格 · 离子键', title:'离子键 · Ionic Bond',
+    desc:'Na⁺ 与 Cl⁻ 通过完全电子转移形成正负离子，由库仑力（F = kq₁q₂/r²）维系，强度高（~800 kJ/mol）、无方向性。',
+    props:[['~800','kJ/mol'],['2.36 Å','Na-Cl 距离'],['库仑力','本质'],['无方向性','几何']] },
+  vdw:    { name:'烷烃平行链 · 范德华力', title:'范德华力 · van der Waals',
+    desc:'瞬时电子涨落产生的弱电偶极吸引，强度约 0.5–2 kJ/mol。是疏水相互作用、分子堆积、石墨层间滑移的主力。',
+    props:[['0.5–2','kJ/mol'],['3.4 Å','链间距'],['色散','本质'],['无方向性','几何']] }
+};
+
+/* === 场景切换 === */
+function frame(group){
+  const box = new THREE.Box3().setFromObject(group);
+  const c = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3()).length();
+  stageCamera.position.set(c.x + size*0.9, c.y + size*0.6, c.z + size*1.0);
+  controls.target.copy(c);
+  stageCamera.near = size * 0.01;
+  stageCamera.far = size * 20;
+  stageCamera.updateProjectionMatrix();
+  controls.update();
+}
+
+let loadSeq = 0;
+function loadScene(key){
+  loadSeq++;
+  const seq = loadSeq;
+  clearCurrent();
+  current = BUILDERS[key]();
+  stageScene.add(current);
+  const info = SCENE_INFO[key];
+  document.getElementById('sceneName').textContent = info.name;
+  document.getElementById('forceName').innerHTML = info.title;
+  document.getElementById('forceDesc').textContent = info.desc;
+  /* 重建 props */
+  const propsBox = document.querySelector('.viewer2__props');
+  propsBox.innerHTML = info.props.map(([v,l]) => `<div class="viewer2__prop"><b>${v}</b><span>${l}</span></div>`).join('');
+  frame(current);
+  /* 防止场景加载过程中用户切换导致显示错乱 */
+  current.userData.seq = seq;
+}
+
+document.querySelectorAll('[data-scene]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-scene]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  loadScene(b.dataset.scene);
+}));
+
+/* === 自动旋转 / 标签切换 === */
+document.getElementById('autoBtn').addEventListener('click', () => {
+  autoRotate = !autoRotate;
+  document.getElementById('autoBtn').textContent = '自动旋转：' + (autoRotate ? '开' : '关');
+});
+document.getElementById('labelBtn').addEventListener('click', () => {
+  showLbl = !showLbl;
+  document.getElementById('labelBtn').textContent = '标签：' + (showLbl ? '开' : '关');
+  /* 重新加载当前场景（影响标签可见性） */
+  const on = document.querySelector('[data-scene].on');
+  if (on) loadScene(on.dataset.scene);
+});
+
+function resizeStage(){
+  const r = stageHost.getBoundingClientRect();
+  stageRenderer.setSize(r.width, r.height);
+  stageCamera.aspect = r.width / Math.max(r.height, 1);
+  stageCamera.updateProjectionMatrix();
+}
+addEventListener('resize', resizeStage);
+new ResizeObserver(resizeStage).observe(stageHost);
+resizeStage();
+
+loadScene('hbond');
+
+(function tickStage(){
+  requestAnimationFrame(tickStage);
+  if (autoRotate && current) {
+    current.rotation.y += 0.0035;
+    current.rotation.x = Math.sin(performance.now()*0.0003) * 0.10;
+  }
+  controls.update();
+  stageRenderer.render(stageScene, stageCamera);
+})();
+</script>
 </body>
 </html>

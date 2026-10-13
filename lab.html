@@ -256,7 +256,7 @@ p.lead{margin:14px 0 0;max-width:760px;color:var(--ink-2);font-size:14.5px;line-
 <!-- ================== HEADER ================== -->
 <header class="nav">
   <div class="nav__in">
-    <a class="brand" href="https://klein-kk.github.io/LATTICE-materials/">
+    <a class="brand" href="https://klein-kk.github.io/LATTICE-materials/app.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
         <circle cx="12" cy="12" r="10"/>
@@ -264,8 +264,8 @@ p.lead{margin:14px 0 0;max-width:760px;color:var(--ink-2);font-size:14.5px;line-
       LATTICE
     </a>
     <nav class="nav__links">
-      <a href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">主站</a>
-      <a href="./intro.html">入门页</a>
+      <a href="https://klein-kk.github.io/LATTICE-materials/app.html" target="_blank" rel="noopener">主站</a>
+      <a href="./index.html">入门页</a>
       <a href="./lab.html" style="color:var(--ink);background:var(--surface-2)">实验台</a>
       <a href="./fig3d.html">3D 科研绘图</a>
     </nav>
@@ -431,7 +431,7 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 });
 try { const t = localStorage.getItem('lattice.theme'); if (t) html.setAttribute('data-theme', t); } catch(e){}
 
-/* ================== 背景（同 intro.html 模式） ================== */
+/* ================== 背景（同 index.html 模式） ================== */
 const bgCanvas = document.getElementById('bg');
 const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, antialias: true, alpha: true });
 bgRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
