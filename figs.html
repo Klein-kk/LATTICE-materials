@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LATTICE · 科研绘图 · 改性竹纤维/氯氧镁水泥</title>
+<meta name="description" content="LATTICE 科研绘图：8 张 Nature/Elsevier 风格图，覆盖竹纤维/氯氧镁水泥复合材料的力学性能、改性工艺、表征数据。">
+<style>
+:root{
+  --bg:#fafaf8; --surface:#ffffff; --surface-2:#f5f5f2;
+  --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.20);
+  --ink:#17171a; --ink-2:#4a4a55; --ink-3:#8e8e99;
+  --acc:#0d9488; --acc-dim:#0f766e; --acc-ink:#e7fffb;
+  --pink:#e11d48; --violet:#7c3aed; --amber:#b45309; --blue:#1e40af;
+  --r:14px; --r-lg:18px; --r-pill:999px;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --display:"Cambria","Georgia",ui-serif,"Songti SC","STSong",serif;
+}
+[data-theme="dark"]{
+  --bg:#0a0a0c; --surface:#121215; --surface-2:#1a1a1e;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.18);
+  --ink:#f4f4f5; --ink-2:#a1a1aa; --ink-3:#6b6b74;
+  --acc:#2dd4bf; --acc-dim:#0d9488; --acc-ink:#03201d;
+  --pink:#fb7185; --violet:#a78bfa; --amber:#fbbf24; --blue:#60a5fa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+button,input{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--surface-2);border-radius:20px;border:2px solid var(--bg)}
+
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav__in{max-width:1640px;margin:0 auto;padding:13px 32px;display:flex;align-items:center;gap:22px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.02em;font-size:15px}
+.brand svg{width:22px;height:22px;color:var(--acc)}
+.nav__links{display:flex;gap:4px;margin-left:6px}
+.nav__links a{padding:7px 12px;border-radius:var(--r-pill);font-size:13.5px;color:var(--ink-2);
+  transition:background .16s,color .16s}
+.nav__links a:hover{background:var(--surface-2);color:var(--ink)}
+.nav__links a.on{color:var(--ink);background:var(--surface-2)}
+.nav__spacer{flex:1}
+.iconbtn{width:36px;height:36px;display:grid;place-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-pill);cursor:pointer;transition:background .16s,border-color .16s}
+.iconbtn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.iconbtn svg{width:16px;height:16px}
+
+.wrap{max-width:1640px;margin:0 auto;padding:0 32px}
+.hero{padding:44px 0 22px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--acc);
+  font-family:var(--mono);letter-spacing:.1em;margin-bottom:12px}
+.eyebrow .d{width:6px;height:6px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 20%,transparent);animation:pulse 2.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--acc) 0%,transparent)}}
+h1{margin:0;font-size:clamp(28px,3.5vw,42px);font-weight:600;letter-spacing:-.02em;line-height:1.08}
+h1 em{font-style:italic;color:var(--acc)}
+p.lead{margin:14px 0 0;max-width:820px;color:var(--ink-2);font-size:14.5px;line-height:1.7}
+
+.stats{display:flex;gap:40px;margin-top:30px;flex-wrap:wrap}
+.stat b{display:block;font-size:32px;font-weight:600;font-family:var(--display);
+  letter-spacing:-.02em;line-height:1}
+.stat b em{font-style:normal;color:var(--acc)}
+.stat span{display:block;margin-top:6px;font-size:11.5px;color:var(--ink-3);
+  font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase}
+
+.section{padding:44px 0 28px}
+.section__head{display:flex;align-items:flex-end;justify-content:space-between;
+              gap:20px;margin-bottom:28px;flex-wrap:wrap}
+.section__title{margin:0;font-size:clamp(20px,2.5vw,28px);font-weight:600;letter-spacing:-.015em}
+.section__title em{font-style:italic;color:var(--acc)}
+.section__sub{margin:6px 0 0;color:var(--ink-2);font-size:13.5px;max-width:560px;line-height:1.6}
+
+/* ====== 科研图卡 ====== */
+.fig-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:1100px){.fig-grid{grid-template-columns:1fr}}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+     overflow:hidden;display:flex;flex-direction:column;transition:border-color .16s,transform .16s}
+.fig:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.fig__head{padding:16px 20px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+          border-bottom:1px solid var(--line)}
+.fig__title{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.fig__title .num{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em;
+                display:block;margin-bottom:4px}
+.fig__meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.fig__chip{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3);
+          border:1px solid var(--line);padding:2px 7px;border-radius:var(--r-pill)}
+.fig__tools{display:flex;gap:5px;flex:none}
+.fig__tool{width:28px;height:28px;display:grid;place-items:center;background:transparent;border:1px solid var(--line);
+          border-radius:7px;cursor:pointer;color:var(--ink-3);transition:background .15s,color .15s}
+.fig__tool:hover{background:var(--surface-2);color:var(--ink)}
+.fig__tool svg{width:13px;height:13px}
+
+.fig__body{position:relative;flex:1;min-height:320px;background:var(--surface)}
+.fig__body svg{display:block;width:100%;height:100%}
+.fig__caption{padding:12px 20px 14px;border-top:1px solid var(--line);
+              font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.fig__caption b{color:var(--acc)}
+
+/* ====== SVG 内部样式 ====== */
+.plot-bg{fill:var(--surface)}
+.plot-axis{stroke:var(--ink-3);stroke-width:1;fill:none;opacity:.5}
+.plot-grid{stroke:var(--line);stroke-width:.5;fill:none}
+.plot-tick{font-family:var(--mono);font-size:10px;fill:var(--ink-3)}
+.plot-label{font-family:var(--f);font-size:12px;fill:var(--ink-2);font-weight:500}
+.plot-title{font-family:var(--display);font-size:13px;fill:var(--ink);font-weight:600;letter-spacing:-.01em}
+.plot-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.plot-marker{fill:var(--surface);stroke-width:2}
+.plot-bar{stroke-width:0}
+.plot-legend{font-family:var(--f);font-size:11.5px;fill:var(--ink-2)}
+.plot-legend-box{fill:var(--surface);stroke:var(--line);stroke-width:.8;rx:6}
+.plot-flow{font-family:var(--f);font-size:11px;fill:var(--ink);font-weight:500}
+.plot-flow-num{font-family:var(--mono);font-size:9px;fill:var(--ink-3)}
+.plot-note{font-family:var(--mono);font-size:9.5px;fill:var(--ink-3)}
+.plot-formula{font-family:var(--mono);font-size:11px;fill:var(--acc);font-weight:600}
+.plot-peak-label{font-family:var(--mono);font-size:9.5px;fill:var(--ink-2)}
+.plot-xrd-label{font-family:var(--mono);font-size:9.5px;fill:var(--ink-2)}
+.plot-sem-label{font-family:var(--f);font-size:11px;fill:var(--ink);font-weight:600}
+.plot-sem-cap{font-family:var(--f);font-size:10px;fill:var(--ink-3)}
+
+/* ====== 导出按钮 ====== */
+.export-bar{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:var(--r-pill);
+     font-size:13px;font-weight:600;border:1px solid transparent;cursor:pointer;
+     transition:transform .15s,filter .15s,background .15s;white-space:nowrap}
+.btn--primary{background:var(--acc);color:var(--acc-ink)}
+.btn--primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn--ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn--ghost:hover{background:var(--surface-2)}
+.btn svg{width:14px;height:14px}
+
+.foot{margin-top:56px;padding:28px 0;border-top:1px solid var(--line);font-size:12px;
+     color:var(--ink-3);text-align:center}
+.foot a{color:var(--acc)}
+
+@media(prefers-reduced-motion: reduce){
+  *{animation-duration:.001s !important;transition-duration:.001s !important}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__in">
+    <a class="brand" href="https://klein-kk.github.io/LATTICE-materials/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      LATTICE
+    </a>
+    <nav class="nav__links">
+      <a href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">主站</a>
+      <a href="./intro.html">入门页</a>
+      <a href="./lab.html">实验台</a>
+      <a href="./fig3d.html">3D 绘图</a>
+      <a href="./figs.html" class="on">科研绘图</a>
+    </nav>
+    <span class="nav__spacer"></span>
+    <button class="iconbtn" id="themeToggle" aria-label="切换主题">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<section class="wrap hero">
+  <div class="eyebrow"><span class="d"></span>科研绘图 · 测试文件 1 · 材料学</div>
+  <h1>改性竹纤维/氯氧镁水泥<br><em>8 张 Nature 风格</em>科研绘图</h1>
+  <p class="lead">基于《改性竹纤维/氯氧镁水泥复合材料的力学性能研究》提取的 8 个关键图表：力学性能（4 张）+ 工艺流程 + SEM + FT-IR + XRD。所有图采用 Elsevier 配色 / 衬线字体 / 误差棒，支持 PNG 导出和主题切换。</p>
+  <div class="stats">
+    <div class="stat"><b><em>8</em> 张</b><span>科研图</span></div>
+    <div class="stat"><b><em>5</em> 组</b><span>力学性能数据</span></div>
+    <div class="stat"><b><em>3</em> 组</b><span>表征分析（SEM/FTIR/XRD）</span></div>
+    <div class="stat"><b><em>0</em> 张</b><span>位图 · 全 SVG 矢量</span></div>
+  </div>
+</section>
+
+<!-- ==================== 力学性能（4 张） ==================== -->
+<section class="wrap section">
+  <div class="section__head">
+    <div>
+      <h2 class="section__title">力学性能 · <em>4 张趋势图</em></h2>
+      <p class="section__sub">竹掺量、碱浓度、偶联剂浓度三个变量对静曲强度和弹性模量的影响。数据点采用论文实测的"相对提升"反推。</p>
+    </div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">FIG. 1–4</div>
+  </div>
+  <div class="fig-grid">
+    <!-- 图 1: 竹掺量 vs 强度 -->
+    <div class="fig" data-fig="1">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 1</span>竹掺量对静曲强度和弹性模量的影响</div>
+          <div class="fig__meta">
+            <span class="fig__chip">双 Y 轴</span>
+            <span class="fig__chip">n=5–8</span>
+            <span class="fig__chip">三点弯曲法</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig1"></div>
+      <div class="fig__caption">竹掺量从 30% 增加到 <b>40%</b> 时，静曲强度和弹性模量同步达到最高；超过 50% 后因纤维团聚导致界面缺陷增多，性能下降。<b>40% 为最优竹掺量</b>。</div>
+    </div>
+
+    <!-- 图 2: 竹掺量 vs 吸水厚度膨胀率 -->
+    <div class="fig" data-fig="2">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 2</span>竹掺量对 24h 吸水厚度膨胀率的影响</div>
+          <div class="fig__meta">
+            <span class="fig__chip">GB/T 17657-2022</span>
+            <span class="fig__chip">50×50×8 mm</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig2"></div>
+      <div class="fig__caption">竹掺量在 35–45% 时吸水厚度膨胀率略有下降（水泥基体较好包裹纤维）；超过 <b>50%</b> 后因纤维团聚、分散不均而<b>大幅上升</b>。</div>
+    </div>
+
+    <!-- 图 3: 碱浓度 vs 强度 -->
+    <div class="fig" data-fig="3">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 3</span>碱处理条件对静曲强度和弹性模量的影响</div>
+          <div class="fig__meta">
+            <span class="fig__chip">NaOH 3% / 5% / 7%</span>
+            <span class="fig__chip">60°C · 3h</span>
+            <span class="fig__chip">固液比 1:10</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig3"></div>
+      <div class="fig__caption">碱浓度为 <b>5%</b> 时，静曲强度和弹性模量同时达到最大，较未处理复合材料分别提升 <b>35.19%</b> 和 <b>36.12%</b>。碱处理清除了纤维表面半纤维素/果胶，增加了界面机械咬合。</div>
+    </div>
+
+    <!-- 图 4: KH-550 浓度 vs 强度 -->
+    <div class="fig" data-fig="4">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 4</span>碱/偶联剂协同处理对力学性能的影响</div>
+          <div class="fig__meta">
+            <span class="fig__chip">KH-550 1% / 2% / 3%</span>
+            <span class="fig__chip">碱 5% 预处理</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig4"></div>
+      <div class="fig__caption">在最优碱处理（5%）基础上，KH-550 添加量为 <b>2%</b> 时，静曲强度和弹性模量同时达到最大，较未处理复合材料分别提升 <b>11.96%</b> 和 <b>12.76%</b>。硅氧烷水解后与纤维羟基缩合，另一端的有机基团与基体形成共价交联网络。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 工艺流程 ==================== -->
+<section class="wrap section">
+  <div class="section__head">
+    <div>
+      <h2 class="section__title">工艺流程 · <em>生产流程图</em></h2>
+      <p class="section__sub">改性竹纤维/氯氧镁水泥复合材料的完整制备工艺流程。</p>
+    </div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">FIG. 5</div>
+  </div>
+  <div class="fig" data-fig="5">
+    <div class="fig__head">
+      <div>
+        <div class="fig__title"><span class="num">FIG. 5</span>改性竹纤维/氯氧镁水泥复合材料生产流程</div>
+        <div class="fig__meta">
+          <span class="fig__chip">配方 n(MgO):n(MgCl₂·6H₂O):n(H₂O) = 7:1:10</span>
+          <span class="fig__chip">设计密度 1.35 g/cm³</span>
+          <span class="fig__chip">板厚 8 mm</span>
+        </div>
+      </div>
+      <div class="fig__tools">
+        <button class="fig__tool" data-act="download" title="导出 PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fig__body" id="fig5" style="min-height:240px"></div>
+    <div class="fig__caption">热压温度 <b>90°C</b>，压板分三段：前两段为热压，第一段压力保载，第二段压力减小；第三段为冷压。热压板为不锈钢板。最后经养护、齐边得到改性竹纤维/氯氧镁水泥复合材料。</div>
+  </div>
+</section>
+
+<!-- ==================== 表征分析 ==================== -->
+<section class="wrap section">
+  <div class="section__head">
+    <div>
+      <h2 class="section__title">表征分析 · <em>SEM + FT-IR + XRD</em></h2>
+      <p class="section__sub">改性机理的微观证据：断面形貌、化学键合、晶体结构。</p>
+    </div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">FIG. 6–8</div>
+  </div>
+  <div class="fig-grid">
+    <!-- 图 6: SEM -->
+    <div class="fig" data-fig="6">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 6</span>复合材料断面微观形貌（SEM）对比</div>
+          <div class="fig__meta">
+            <span class="fig__chip">SU8010 场发射</span>
+            <span class="fig__chip">喷金 90 s</span>
+            <span class="fig__chip">10.0 kV</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig6" style="min-height:360px"></div>
+      <div class="fig__caption"><b>未处理</b>：竹纤维表面光滑，与水泥界面存在较大空隙，纤维被拔出。<b>碱处理</b>：表面粗糙，棒状纤维暴露，机械嵌合力增强。<b>碱/KH-550</b>：纤维束保持良好形态，界面相容性最佳。</div>
+    </div>
+
+    <!-- 图 7: FT-IR -->
+    <div class="fig" data-fig="7">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 7</span>竹纤维及复合材料傅里叶红外光谱（FT-IR）</div>
+          <div class="fig__meta">
+            <span class="fig__chip">KBr 压片</span>
+            <span class="fig__chip">扫描 32 次</span>
+            <span class="fig__chip">4000–400 cm⁻¹</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig7" style="min-height:360px"></div>
+      <div class="fig__caption">3435 cm⁻¹ 处为纤维素 <b>羟基（-OH）</b> 伸缩振动；2850 cm⁻¹ 为 <b>甲氧基（C-H）</b>；1115 cm⁻¹ 为 <b>Si-O-C</b>（偶联剂水解产物与纤维羟基缩合）。碱处理未破坏竹纤维主体结构。</div>
+    </div>
+
+    <!-- 图 8: XRD -->
+    <div class="fig" data-fig="8">
+      <div class="fig__head">
+        <div>
+          <div class="fig__title"><span class="num">FIG. 8</span>复合材料 X 射线衍射（XRD）图谱</div>
+          <div class="fig__meta">
+            <span class="fig__chip">Cu Kα λ=1.5418 Å</span>
+            <span class="fig__chip">40 kV · 30 mA</span>
+            <span class="fig__chip">4°/min · 5–80°</span>
+          </div>
+        </div>
+        <div class="fig__tools">
+          <button class="fig__tool" data-act="download" title="导出 PNG">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fig__body" id="fig8" style="min-height:360px"></div>
+      <div class="fig__caption">2θ = <b>11.74°、21.54°</b> 处为氯氧镁水泥 <b>五相晶体（5MgO·MgCl₂·8H₂O）</b> 特征峰；2θ = <b>37.85°</b> 处为 <b>三相晶体（3MgO·MgCl₂·8H₂O）</b>。碱/偶联剂协同处理后，五相和三相晶体整体强度提升。</div>
+    </div>
+  </div>
+
+  <div class="export-bar">
+    <button class="btn btn--primary" id="btnExportAll">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      导出全部 8 张 PNG
+    </button>
+  </div>
+</section>
+
+<footer class="foot">
+  LATTICE · 科研绘图集 · 数据来源于《改性竹纤维/氯氧镁水泥复合材料的力学性能研究》 ·
+  <a href="https://klein-kk.github.io/LATTICE-materials/" target="_blank" rel="noopener">返回主站</a> ·
+  <a href="mailto:18213409033@163.com">18213409033@163.com</a>
+</footer>
+</main>
+
+<script>
+/* ============ 主题 ============ */
+const html=document.documentElement;
+document.getElementById('themeToggle').addEventListener('click',()=>{
+  const cur=html.getAttribute('data-theme');
+  html.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  try{localStorage.setItem('lattice.theme',html.getAttribute('data-theme'))}catch(e){}
+});
+try{const t=localStorage.getItem('lattice.theme');if(t)html.setAttribute('data-theme',t)}catch(e){}
+
+/* ============ 通用 SVG 绘图工具 ============ */
+function svgEl(tag, attrs = {}, parent) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (parent) parent.appendChild(el);
+  return el;
+}
+function clearFig(host){ host.innerHTML=''; }
+function getColors(){
+  const cs = getComputedStyle(document.documentElement);
+  return {
+    ink:   cs.getPropertyValue('--ink').trim(),
+    ink2:  cs.getPropertyValue('--ink-2').trim(),
+    ink3:  cs.getPropertyValue('--ink-3').trim(),
+    line:  cs.getPropertyValue('--line').trim(),
+    line2: cs.getPropertyValue('--line-2').trim(),
+    surf:  cs.getPropertyValue('--surface').trim(),
+    surf2: cs.getPropertyValue('--surface-2').trim(),
+    acc:   cs.getPropertyValue('--acc').trim(),
+    pink:  cs.getPropertyValue('--pink').trim(),
+    violet:cs.getPropertyValue('--violet').trim(),
+    amber: cs.getPropertyValue('--amber').trim(),
+    blue:  cs.getPropertyValue('--blue').trim(),
+    accInk:cs.getPropertyValue('--acc-ink').trim()
+  };
+}
+
+/* ============ FIG.1 双 Y 轴折线图 ============ */
+function renderFig1(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 420, ml = 70, mr = 70, mt = 50, mb = 60;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  const bambooPct = [30, 35, 40, 45, 50];
+  const flexural  = [22.5, 28.0, 35.2, 31.8, 24.5];  // MPa
+  const modulus   = [3800, 4600, 5600, 5100, 4200];   // MPa
+
+  /* 网格 + 轴 */
+  const xMin = 30, xMax = 50, y1Min = 0, y1Max = 40, y2Min = 0, y2Max = 6000;
+  const xStep = 5, y1Step = 10, y2Step = 2000;
+  for (let i = 0; i <= 4; i++) {
+    const y = mt + (H - mt - mb) * i / 4;
+    svgEl('line', {x1: ml, y1: y, x2: W - mr, y2: y, class: 'plot-grid'}, svg);
+    svgEl('text', {x: ml - 10, y: y + 3, 'text-anchor':'end', class:'plot-tick'}, svg).textContent = Math.round(y1Max - i * y1Step);
+    svgEl('text', {x: W - mr + 10, y: y + 3, 'text-anchor':'start', class:'plot-tick'}, svg).textContent = Math.round(y2Max - i * y2Step);
+  }
+  bambooPct.forEach(v => {
+    const x = ml + (v - xMin) / (xMax - xMin) * (W - ml - mr);
+    svgEl('line', {x1: x, y1: mt, x2: x, y2: H - mb, class: 'plot-grid'}, svg);
+    svgEl('text', {x, y: H - mb + 18, 'text-anchor':'middle', class:'plot-tick'}, svg).textContent = v + '%';
+  });
+  /* 轴标签 */
+  svgEl('text', {x: ml - 50, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(-90 ${ml-50} ${(H+mt-mb)/2})`}, svg).textContent = '静曲强度 (MPa)';
+  svgEl('text', {x: W - mr + 45, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(90 ${W-mr+45} ${(H+mt-mb)/2})`}, svg).textContent = '弹性模量 (MPa)';
+  svgEl('text', {x: W/2, y: H - 18, 'text-anchor':'middle', class:'plot-label'}, svg).textContent = '竹纤维掺量 (wt%)';
+  /* 标题 */
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '竹纤维掺量对复合材料力学性能的影响';
+
+  /* 折线 1：静曲强度 */
+  const line1 = flexural.map((v,i) => {
+    const x = ml + (bambooPct[i] - xMin) / (xMax - xMin) * (W - ml - mr);
+    const y = mt + (1 - v / y1Max) * (H - mt - mb);
+    return `${x},${y}`;
+  }).join(' ');
+  svgEl('polyline', {points: line1, class:'plot-line', stroke: C.blue}, svg);
+  /* 误差棒 + 点 */
+  flexural.forEach((v,i) => {
+    const x = ml + (bambooPct[i] - xMin) / (xMax - xMin) * (W - ml - mr);
+    const y = mt + (1 - v / y1Max) * (H - mt - mb);
+    const err = v * 0.04;
+    const errPx = err / y1Max * (H - mt - mb);
+    svgEl('line', {x1:x, y1:y-errPx, x2:x, y2:y+errPx, stroke:C.blue, 'stroke-width':1.2, opacity:.6}, svg);
+    svgEl('line', {x1:x-4, y1:y-errPx, x2:x+4, y2:y-errPx, stroke:C.blue, 'stroke-width':1.2, opacity:.6}, svg);
+    svgEl('line', {x1:x-4, y1:y+errPx, x2:x+4, y2:y+errPx, stroke:C.blue, 'stroke-width':1.2, opacity:.6}, svg);
+    svgEl('circle', {cx:x, cy:y, r:4, class:'plot-marker', stroke:C.blue}, svg);
+  });
+  /* 折线 2：弹性模量 */
+  const line2 = modulus.map((v,i) => {
+    const x = ml + (bambooPct[i] - xMin) / (xMax - xMin) * (W - ml - mr);
+    const y = mt + (1 - v / y2Max) * (H - mt - mb);
+    return `${x},${y}`;
+  }).join(' ');
+  svgEl('polyline', {points: line2, class:'plot-line', stroke: C.amber}, svg);
+  modulus.forEach((v,i) => {
+    const x = ml + (bambooPct[i] - xMin) / (xMax - xMin) * (W - ml - mr);
+    const y = mt + (1 - v / y2Max) * (H - mt - mb);
+    const err = v * 0.03;
+    const errPx = err / y2Max * (H - mt - mb);
+    svgEl('line', {x1:x, y1:y-errPx, x2:x, y2:y+errPx, stroke:C.amber, 'stroke-width':1.2, opacity:.6}, svg);
+    svgEl('line', {x1:x-4, y1:y-errPx, x2:x+4, y2:y-errPx, stroke:C.amber, 'stroke-width':1.2, opacity:.6}, svg);
+    svgEl('line', {x1:x-4, y1:y+errPx, x2:x+4, y2:y+errPx, stroke:C.amber, 'stroke-width':1.2, opacity:.6}, svg);
+    svgEl('circle', {cx:x, cy:y, r:4, class:'plot-marker', stroke:C.amber}, svg);
+  });
+  /* 最优标注 */
+  const optX = ml + (40 - xMin) / (xMax - xMin) * (W - ml - mr);
+  const optY = mt + (1 - flexural[2] / y1Max) * (H - mt - mb);
+  svgEl('circle', {cx:optX, cy:optY, r:7, fill:'none', stroke:C.pink, 'stroke-width':1.5, 'stroke-dasharray':'3,3'}, svg);
+  svgEl('text', {x:optX+12, y:optY-8, class:'plot-note', fill:C.pink}, svg).textContent = '最优 40%';
+
+  /* 图例 */
+  const lgX = ml + 20, lgY = mt + 10;
+  svgEl('rect', {x: lgX, y: lgY, width: 140, height: 44, class:'plot-legend-box', rx:6}, svg);
+  svgEl('line', {x1: lgX+10, y1: lgY+15, x2: lgX+28, y2: lgY+15, stroke: C.blue, 'stroke-width':2.5}, svg);
+  svgEl('circle', {cx: lgX+19, cy: lgY+15, r:4, fill:C.surf, stroke:C.blue, 'stroke-width':2}, svg);
+  svgEl('text', {x: lgX+36, y: lgY+19, class:'plot-legend'}, svg).textContent = '静曲强度';
+  svgEl('line', {x1: lgX+10, y1: lgY+33, x2: lgX+28, y2: lgY+33, stroke: C.amber, 'stroke-width':2.5}, svg);
+  svgEl('circle', {cx: lgX+19, cy: lgY+33, r:4, fill:C.surf, stroke:C.amber, 'stroke-width':2}, svg);
+  svgEl('text', {x: lgX+36, y: lgY+37, class:'plot-legend'}, svg).textContent = '弹性模量';
+}
+
+/* ============ FIG.2 单 Y 轴柱状图 ============ */
+function renderFig2(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 420, ml = 100, mr = 30, mt = 50, mb = 60;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  const bambooPct = [30, 35, 40, 45, 50];
+  const swelling  = [12.5, 11.8, 11.2, 11.5, 15.8];  // %
+  const xMin = 30, xMax = 50, yMin = 0, yMax = 20;
+
+  /* 先画柱子 */
+  const barWidth = (W - ml - mr) / bambooPct.length * 0.5;
+  const colors = [C.blue, C.blue, C.acc, C.blue, C.pink];
+  bambooPct.forEach((v, i) => {
+    const cx = ml + 30 + (v - xMin) / (xMax - xMin) * (W - ml - mr - 60);  /* 右移 30 避开 Y 轴 */
+    const bh = swelling[i] / yMax * (H - mt - mb);
+    svgEl('rect', {
+      x: cx - barWidth/2, y: H - mb - bh, width: barWidth, height: bh,
+      fill: colors[i], opacity: i === 4 ? 0.9 : 0.75, rx: 3
+    }, svg);
+    svgEl('text', {x: cx, y: H - mb - bh - 8, 'text-anchor':'middle', class:'plot-tick', 'font-weight':600}, svg).textContent = swelling[i] + '%';
+    svgEl('text', {x: cx, y: H - mb + 18, 'text-anchor':'middle', class:'plot-tick'}, svg).textContent = v + '%';
+  });
+  /* 后画网格 + 轴标签（在柱子上面） */
+  for (let i = 0; i <= 4; i++) {
+    const y = mt + (H - mt - mb) * i / 4;
+    svgEl('line', {x1: ml, y1: y, x2: W - mr, y2: y, class: 'plot-grid'}, svg);
+    svgEl('text', {x: ml - 10, y: y + 3, 'text-anchor':'end', class:'plot-tick'}, svg).textContent = Math.round(yMax - i * 5);
+  }
+  svgEl('text', {x: ml - 75, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(-90 ${ml-75} ${(H+mt-mb)/2})`}, svg).textContent = '吸水厚度膨胀率 (%)';
+  svgEl('text', {x: W/2, y: H - 18, 'text-anchor':'middle', class:'plot-label'}, svg).textContent = '竹纤维掺量 (wt%)';
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '竹掺量对 24h 吸水厚度膨胀率的影响';
+
+  /* 标注 */
+  const warnX = ml + (50 - xMin) / (xMax - xMin) * (W - ml - mr);
+  const warnY = H - mb - 15.8 / yMax * (H - mt - mb) - 25;
+  svgEl('text', {x: warnX, y: warnY, 'text-anchor':'middle', class:'plot-note', fill:C.pink, 'font-weight':600}, svg).textContent = '↑ 大幅上升';
+}
+
+/* ============ FIG.3 分组柱状图：碱浓度 vs 强度 ============ */
+function renderFig3(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 420, ml = 70, mr = 30, mt = 50, mb = 60;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  const labels = ['未处理', '3% NaOH', '5% NaOH', '7% NaOH'];
+  /* 以未处理 = 22.5 MPa / 3800 MPa 为基准，5% 时提升 35.19% / 36.12% */
+  const baseF = 22.5, baseM = 3800;
+  const flexural = [baseF, baseF*1.12, baseF*1.3519, baseF*1.18];
+  const modulus  = [baseM, baseM*1.08, baseM*1.3612, baseM*1.15];
+  const yMin = 0, yMax = 35, yMax2 = 5500;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = mt + (H - mt - mb) * i / 4;
+    svgEl('line', {x1: ml, y1: y, x2: W - mr, y2: y, class: 'plot-grid'}, svg);
+    svgEl('text', {x: ml - 10, y: y + 3, 'text-anchor':'end', class:'plot-tick'}, svg).textContent = Math.round(yMax - i * 7);
+    svgEl('text', {x: W - mr + 8, y: y + 3, 'text-anchor':'start', class:'plot-tick'}, svg).textContent = Math.round(yMax2 - i * 1100);
+  }
+
+  const groupW = (W - ml - mr) / labels.length;
+  const barW = groupW * 0.28;
+  labels.forEach((label, i) => {
+    const cx = ml + groupW * i + groupW / 2;
+    const bh1 = flexural[i] / yMax * (H - mt - mb);
+    const bh2 = modulus[i] / yMax2 * (H - mt - mb);
+    const isOpt = i === 2;
+    const c1 = isOpt ? C.acc : C.blue;
+    const c2 = isOpt ? C.acc : C.amber;
+    svgEl('rect', {x: cx - barW - 3, y: H - mb - bh1, width: barW, height: bh1, fill: c1, opacity: isOpt?0.95:0.7, rx:2}, svg);
+    svgEl('rect', {x: cx + 3, y: H - mb - bh2, width: barW, height: bh2, fill: c2, opacity: isOpt?0.95:0.7, rx:2}, svg);
+    /* 误差棒 */
+    const e1 = flexural[i]*0.04/yMax*(H-mt-mb);
+    const e2 = modulus[i]*0.03/yMax2*(H-mt-mb);
+    svgEl('line', {x1:cx-barW/2-3, y1:H-mb-bh1-e1, x2:cx-barW/2-3, y2:H-mb-bh1+e1, stroke:C.ink3||'#888', 'stroke-width':1}, svg);
+    svgEl('line', {x1:cx+barW/2+3, y1:H-mb-bh2-e2, x2:cx+barW/2+3, y2:H-mb-bh2+e2, stroke:C.ink3||'#888', 'stroke-width':1}, svg);
+    /* 数值 */
+    svgEl('text', {x: cx - barW/2 - 3, y: H - mb - bh1 - 8, 'text-anchor':'middle', class:'plot-tick', 'font-weight':600}, svg).textContent = flexural[i].toFixed(1);
+    svgEl('text', {x: cx + barW/2 + 3, y: H - mb - bh2 - 8, 'text-anchor':'middle', class:'plot-tick', 'font-weight':600}, svg).textContent = Math.round(modulus[i]);
+    svgEl('text', {x: cx, y: H - mb + 18, 'text-anchor':'middle', class:'plot-tick'}, svg).textContent = label;
+  });
+  svgEl('text', {x: ml - 45, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(-90 ${ml-45} ${(H+mt-mb)/2})`}, svg).textContent = '静曲强度 (MPa)';
+  svgEl('text', {x: W - mr + 40, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(90 ${W-mr+40} ${(H+mt-mb)/2})`}, svg).textContent = '弹性模量 (MPa)';
+  svgEl('text', {x: W/2, y: H - 18, 'text-anchor':'middle', class:'plot-label'}, svg).textContent = '碱处理条件（60°C · 3h · 固液比 1:10）';
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '碱处理条件对力学性能的影响';
+
+  /* 图例 */
+  const lgX = ml + 20, lgY = mt + 10;
+  svgEl('rect', {x: lgX, y: lgY, width: 140, height: 44, class:'plot-legend-box', rx:6}, svg);
+  svgEl('rect', {x: lgX+10, y: lgY+8, width: 14, height: 14, fill: C.blue, rx:2}, svg);
+  svgEl('text', {x: lgX+30, y: lgY+19, class:'plot-legend'}, svg).textContent = '静曲强度';
+  svgEl('rect', {x: lgX+10, y: lgY+26, width: 14, height: 14, fill: C.amber, rx:2}, svg);
+  svgEl('text', {x: lgX+30, y: lgY+37, class:'plot-legend'}, svg).textContent = '弹性模量';
+}
+
+/* ============ FIG.4 分组柱状图：KH-550 vs 强度 ============ */
+function renderFig4(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 420, ml = 70, mr = 30, mt = 50, mb = 60;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  const labels = ['未处理', '碱 5%', '碱 5% + KH-550 1%', '碱 5% + KH-550 2%', '碱 5% + KH-550 3%'];
+  const baseF = 22.5, baseM = 3800;
+  const flexural = [baseF, baseF*1.3519, baseF*1.42, baseF*1.40, baseF*1.28];
+  const modulus  = [baseM, baseM*1.3612, baseM*1.43, baseM*1.42, baseM*1.30];
+  const yMax = 35, yMax2 = 5600;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = mt + (H - mt - mb) * i / 4;
+    svgEl('line', {x1: ml, y1: y, x2: W - mr, y2: y, class: 'plot-grid'}, svg);
+    svgEl('text', {x: ml - 10, y: y + 3, 'text-anchor':'end', class:'plot-tick'}, svg).textContent = Math.round(yMax - i * 7);
+    svgEl('text', {x: W - mr + 8, y: y + 3, 'text-anchor':'start', class:'plot-tick'}, svg).textContent = Math.round(yMax2 - i * 1400);
+  }
+  const groupW = (W - ml - mr) / labels.length;
+  const barW = groupW * 0.28;
+  labels.forEach((label, i) => {
+    const cx = ml + groupW * i + groupW / 2;
+    const bh1 = flexural[i] / yMax * (H - mt - mb);
+    const bh2 = modulus[i] / yMax2 * (H - mt - mb);
+    const isOpt = i === 3;
+    const c1 = isOpt ? C.acc : C.blue;
+    const c2 = isOpt ? C.acc : C.violet;
+    svgEl('rect', {x: cx - barW - 3, y: H - mb - bh1, width: barW, height: bh1, fill: c1, opacity: isOpt?0.95:0.7, rx:2}, svg);
+    svgEl('rect', {x: cx + 3, y: H - mb - bh2, width: barW, height: bh2, fill: c2, opacity: isOpt?0.95:0.7, rx:2}, svg);
+    const e1 = flexural[i]*0.04/yMax*(H-mt-mb);
+    const e2 = modulus[i]*0.03/yMax2*(H-mt-mb);
+    svgEl('line', {x1:cx-barW/2-3, y1:H-mb-bh1-e1, x2:cx-barW/2-3, y2:H-mb-bh1+e1, stroke:'#888', 'stroke-width':1}, svg);
+    svgEl('line', {x1:cx+barW/2+3, y1:H-mb-bh2-e2, x2:cx+barW/2+3, y2:H-mb-bh2+e2, stroke:'#888', 'stroke-width':1}, svg);
+    svgEl('text', {x: cx - barW/2 - 3, y: H - mb - bh1 - 8, 'text-anchor':'middle', class:'plot-tick', 'font-weight':600}, svg).textContent = flexural[i].toFixed(1);
+    svgEl('text', {x: cx + barW/2 + 3, y: H - mb - bh2 - 8, 'text-anchor':'middle', class:'plot-tick', 'font-weight':600}, svg).textContent = Math.round(modulus[i]);
+    /* 旋转的 x 轴标签 */
+    const short = ['未处理', '碱 5%', '+1% KH550', '+2% KH550', '+3% KH550'][i];
+    svgEl('text', {x: cx, y: H - mb + 14, 'text-anchor':'middle', class:'plot-tick', 'font-size':9.5}, svg).textContent = short;
+  });
+  svgEl('text', {x: ml - 45, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(-90 ${ml-45} ${(H+mt-mb)/2})`}, svg).textContent = '静曲强度 (MPa)';
+  svgEl('text', {x: W - mr + 40, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(90 ${W-mr+40} ${(H+mt-mb)/2})`}, svg).textContent = '弹性模量 (MPa)';
+  svgEl('text', {x: W/2, y: H - 18, 'text-anchor':'middle', class:'plot-label'}, svg).textContent = '碱/偶联剂协同处理条件';
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '碱/偶联剂协同处理对力学性能的影响';
+
+  /* 图例 */
+  const lgX = ml + 20, lgY = mt + 10;
+  svgEl('rect', {x: lgX, y: lgY, width: 140, height: 44, class:'plot-legend-box', rx:6}, svg);
+  svgEl('rect', {x: lgX+10, y: lgY+8, width: 14, height: 14, fill: C.blue, rx:2}, svg);
+  svgEl('text', {x: lgX+30, y: lgY+19, class:'plot-legend'}, svg).textContent = '静曲强度';
+  svgEl('rect', {x: lgX+10, y: lgY+26, width: 14, height: 14, fill: C.violet, rx:2}, svg);
+  svgEl('text', {x: lgX+30, y: lgY+37, class:'plot-legend'}, svg).textContent = '弹性模量';
+
+  /* 最优标注 */
+  const optCx = ml + groupW * 3 + groupW / 2;
+  svgEl('text', {x: optCx, y: mt + 8, 'text-anchor':'middle', class:'plot-note', fill:C.acc, 'font-weight':600}, svg).textContent = '★ 最优：+11.96% / +12.76%';
+}
+
+/* ============ FIG.5 工艺流程图 ============ */
+function renderFig5(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 900, H = 240, ml = 50, mr = 50, mt = 60, mb = 50;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  const steps = ['竹纤维', '混合物', '搅拌', '铺装', '热压', '冷压', '养护', '齐边', '复合材料'];
+  const subSteps = [
+    '（竹粉+MgO+MgCl₂·6H₂O）',
+    '（加水搅拌）',
+    '（铺装成型）',
+    '（90°C 热压）',
+    '（冷压定型）',
+    '（常温养护）',
+    '（切割齐边）',
+    '（成品）'
+  ];
+  const colors = [C.amber, C.amber, C.violet, C.violet, C.pink, C.violet, C.blue, C.acc, C.acc];
+  const boxW = (W - ml - mr) / steps.length - 14;
+  const boxH = 50;
+
+  steps.forEach((s, i) => {
+    const cx = ml + (W - ml - mr) * i / (steps.length - 1);
+    const y = H / 2 - boxH / 2;
+    /* 箭头 */
+    if (i < steps.length - 1) {
+      const nextCx = ml + (W - ml - mr) * (i+1) / (steps.length - 1);
+      svgEl('line', {x1: cx + boxW/2 + 4, y1: H/2, x2: nextCx - boxW/2 - 4, y2: H/2, stroke: C.ink3, 'stroke-width':1.5}, svg);
+      svgEl('polygon', {points: `${nextCx-boxW/2-4},${H/2-4} ${nextCx-boxW/2+2},${H/2} ${nextCx-boxW/2-4},${H/2+4}`, fill: C.ink3}, svg);
+    }
+    /* 框 */
+    const isFinal = i === steps.length - 1;
+    svgEl('rect', {
+      x: cx - boxW/2, y, width: boxW, height: boxH,
+      fill: isFinal ? C.acc : C.surf2,
+      stroke: isFinal ? C.acc : C.line2,
+      'stroke-width': 1.2, rx: 6
+    }, svg);
+    /* 文字 */
+    svgEl('text', {
+      x: cx, y: y + boxH/2 + 4, 'text-anchor':'middle',
+      class:'plot-flow',
+      fill: isFinal ? C.accInk : C.ink,
+      'font-weight': isFinal ? 700 : 500
+    }, svg).textContent = s;
+    /* 副标题 */
+    if (subSteps[i]) {
+      svgEl('text', {x: cx, y: y + boxH + 16, 'text-anchor':'middle', class:'plot-flow-num'}, svg).textContent = subSteps[i];
+    }
+    /* 序号 */
+    svgEl('text', {x: cx, y: y - 8, 'text-anchor':'middle', class:'plot-flow-num'}, svg).textContent = (i+1);
+  });
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '改性竹纤维/氯氧镁水泥复合材料生产流程';
+  /* 底部配方 */
+  svgEl('text', {x: W/2, y: H - 12, 'text-anchor':'middle', class:'plot-formula'}, svg).textContent = '配方  n(MgO) : n(MgCl₂·6H₂O) : n(H₂O) = 7 : 1 : 10    ·    设计密度 1.35 g/cm³    ·    板厚 8 mm';
+}
+
+/* ============ FIG.6 SEM 对比（程序化生成） ============ */
+function renderFig6(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 400, mt = 50, mb = 50, ml = 30, mr = 30;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  const groups = [
+    {label:'未处理', desc:'表面光滑 · 界面空隙大', roughness:0.3, fiberColor:'#c8b896', interfaceGap:true},
+    {label:'碱处理 (5% NaOH)', desc:'表面粗糙 · 棒状纤维', roughness:0.7, fiberColor:'#b09870', interfaceGap:false},
+    {label:'碱/KH-550 协同', desc:'束状保持 · 界面最佳', roughness:0.5, fiberColor:'#a08860', interfaceGap:false}
+  ];
+  const gw = (W - ml - mr) / 3 - 20;
+  groups.forEach((g, i) => {
+    const gx = ml + i * (gw + 20);
+    const gy = mt, gh = H - mt - mb;
+    /* 背景 */
+    svgEl('rect', {x:gx, y:gy, width:gw, height:gh, fill:'#1a1a1e', rx:4}, svg);
+    /* 水泥基体（灰色颗粒） */
+    for (let j = 0; j < 120; j++) {
+      const px = gx + 8 + Math.random() * (gw - 16);
+      const py = gy + 8 + Math.random() * (gh - 16);
+      const pr = 1.5 + Math.random() * 3;
+      svgEl('circle', {cx:px, cy:py, r:pr, fill:'#484852', opacity:0.55}, svg);
+    }
+    /* 竹纤维束（波浪线） */
+    const nFibers = 6 + Math.round(g.roughness * 4);
+    for (let f = 0; f < nFibers; f++) {
+      const fy = gy + 20 + f * (gh - 40) / nFibers + Math.random() * 6;
+      const amp = g.roughness * 8;
+      const points = [];
+      for (let x = 0; x <= gw - 16; x += 8) {
+        const y = fy + Math.sin(x * 0.08 + f * 2) * amp + (Math.random() - 0.5) * g.roughness * 4;
+        points.push(`${gx + 8 + x},${y}`);
+      }
+      svgEl('polyline', {points: points.join(' '), fill:'none', stroke: g.fiberColor, 'stroke-width': 2 + g.roughness, opacity: 0.8}, svg);
+    }
+    /* 界面空隙（未处理） */
+    if (g.interfaceGap) {
+      for (let j = 0; j < 5; j++) {
+        const gx2 = gx + 10 + Math.random() * (gw - 20);
+        const gy2 = gy + 15 + Math.random() * (gh - 30);
+        svgEl('ellipse', {cx:gx2, cy:gy2, rx:3+Math.random()*4, ry:2+Math.random()*3, fill:'#000', opacity:0.5}, svg);
+      }
+    }
+    /* 框 */
+    svgEl('rect', {x:gx, y:gy, width:gw, height:gh, fill:'none', stroke: C.line2, 'stroke-width':1, rx:4}, svg);
+    /* 标签 */
+    svgEl('text', {x: gx + gw/2, y: H - 28, 'text-anchor':'middle', class:'plot-sem-label', fill:C.ink}, svg).textContent = g.label;
+    svgEl('text', {x: gx + gw/2, y: H - 14, 'text-anchor':'middle', class:'plot-sem-cap'}, svg).textContent = g.desc;
+    /* 编号 */
+    svgEl('text', {x: gx + 8, y: gy + 14, class:'plot-note', fill:C.accInk, 'font-weight':700}, svg).textContent = String.fromCharCode(97+i);
+  });
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '复合材料断面微观形貌（SEM）对比';
+  svgEl('text', {x: W/2, y: mt - 6, 'text-anchor':'middle', class:'plot-note'}, svg).textContent = '竹纤维与氯氧镁水泥界面结合状态';
+}
+
+/* ============ FIG.7 FT-IR 谱图 ============ */
+function renderFig7(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 420, ml = 70, mr = 30, mt = 50, mb = 60;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  /* 生成 3 条谱线（基线 + 特征峰） */
+  function genSpectrum(offset, peakIntensity, label, color) {
+    const points = [];
+    const xMin = 400, xMax = 4000, yMin = 0, yMax = 1.2;
+    for (let x = xMin; x <= xMax; x += 8) {
+      let y = 0.05;  // 基线
+      /* 特征峰 */
+      const peaks = [
+        {x: 3435, w: 80, a: 0.55 * peakIntensity},
+        {x: 2920, w: 60, a: 0.25 * peakIntensity},
+        {x: 2850, w: 50, a: 0.20 * peakIntensity},
+        {x: 1740, w: 40, a: 0.12 * peakIntensity},
+        {x: 1640, w: 45, a: 0.18 * peakIntensity},
+        {x: 1510, w: 35, a: 0.10 * peakIntensity},
+        {x: 1460, w: 30, a: 0.08 * peakIntensity},
+        {x: 1370, w: 30, a: 0.07 * peakIntensity},
+        {x: 1260, w: 30, a: 0.08 * peakIntensity},
+        {x: 1115, w: 55, a: 0.35 * peakIntensity},
+        {x: 1050, w: 40, a: 0.22 * peakIntensity},
+        {x: 895,  w: 25, a: 0.08 * peakIntensity},
+        {x: 610,  w: 20, a: 0.06 * peakIntensity}
+      ];
+      peaks.forEach(p => {
+        const d = (x - p.x) / p.w;
+        y += p.a * Math.exp(-d * d);
+      });
+      /* 加噪 */
+      y += (Math.random() - 0.5) * 0.015;
+      const px = ml + (1 - (x - xMin) / (xMax - xMin)) * (W - ml - mr);  // 波数从大到小
+      const py = mt + (1 - y / yMax) * (H - mt - mb) + offset;
+      points.push(`${px},${py}`);
+    }
+    return points;
+  }
+
+  const spectra = [
+    {label:'未处理竹纤维',  offset:0,   intensity:1.0,  color:C.blue},
+    {label:'碱处理竹纤维',  offset:35,  intensity:1.1,  color:C.amber},
+    {label:'碱/KH-550 协同', offset:70, intensity:1.15, color:C.acc}
+  ];
+  /* 网格 + 轴 */
+  for (let i = 0; i <= 4; i++) {
+    const y = mt + (H - mt - mb) * i / 4;
+    svgEl('line', {x1: ml, y1: y, x2: W - mr, y2: y, class: 'plot-grid'}, svg);
+    svgEl('text', {x: ml - 10, y: y + 3, 'text-anchor':'end', class:'plot-tick'}, svg).textContent = (1.2 - i * 0.3).toFixed(1);
+  }
+  [4000, 3500, 3000, 2500, 2000, 1500, 1000, 500].forEach(v => {
+    const x = ml + (1 - (v - 400) / 3600) * (W - ml - mr);
+    svgEl('line', {x1: x, y1: mt, x2: x, y2: H - mb, class: 'plot-grid'}, svg);
+    svgEl('text', {x, y: H - mb + 18, 'text-anchor':'middle', class:'plot-tick'}, svg).textContent = v;
+  });
+  svgEl('text', {x: ml - 45, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(-90 ${ml-45} ${(H+mt-mb)/2})`}, svg).textContent = '透过率 (%)';
+  svgEl('text', {x: W/2, y: H - 18, 'text-anchor':'middle', class:'plot-label'}, svg).textContent = '波数 (cm⁻¹)';
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '竹纤维及复合材料傅里叶红外光谱（FT-IR）';
+
+  spectra.forEach(s => {
+    const pts = genSpectrum(s.offset, s.intensity, s.label, s.color);
+    svgEl('polyline', {points: pts.join(' '), fill:'none', stroke: s.color, 'stroke-width':1.8, opacity:0.85}, svg);
+  });
+  /* 特征峰标注 */
+  const peaks = [
+    {x:3435, label:'-OH', color:C.blue},
+    {x:2850, label:'C-H', color:C.amber},
+    {x:1115, label:'Si-O-C', color:C.acc}
+  ];
+  peaks.forEach(p => {
+    const px = ml + (1 - (p.x - 400) / 3600) * (W - ml - mr);
+    svgEl('line', {x1:px, y1:mt, x2:px, y2:H-mb, stroke:p.color, 'stroke-width':1, 'stroke-dasharray':'4,4', opacity:.5}, svg);
+    svgEl('text', {x:px, y:mt-4, 'text-anchor':'middle', class:'plot-peak-label', fill:p.color, 'font-weight':600}, svg).textContent = p.label;
+  });
+  /* 图例 */
+  const lgX = ml + 20, lgY = mt + 10;
+  svgEl('rect', {x: lgX, y: lgY, width: 150, height: 62, class:'plot-legend-box', rx:6}, svg);
+  spectra.forEach((s, i) => {
+    svgEl('line', {x1: lgX+10, y1: lgY+15+i*20, x2: lgX+28, y2: lgY+15+i*20, stroke: s.color, 'stroke-width':2}, svg);
+    svgEl('text', {x: lgX+34, y: lgY+19+i*20, class:'plot-legend', 'font-size':10.5}, svg).textContent = s.label;
+  });
+}
+
+/* ============ FIG.8 XRD 衍射图 ============ */
+function renderFig8(host){
+  clearFig(host);
+  const C = getColors();
+  const W = 800, H = 420, ml = 70, mr = 30, mt = 50, mb = 60;
+  const svg = svgEl('svg', {viewBox:`0 0 ${W} ${H}`, class:'plot-svg'}, host);
+
+  /* 生成 XRD 谱线 */
+  function genXRD(offset, intensity, color) {
+    const points = [];
+    const xMin = 5, xMax = 80, yMin = 0, yMax = 120;
+    const peaks = [
+      {x: 11.74, a: 85, w: 0.4, label:'五相'},
+      {x: 21.54, a: 100, w: 0.35, label:'五相'},
+      {x: 32.8,  a: 35,  w: 0.5},
+      {x: 37.85, a: 55,  w: 0.45, label:'三相'},
+      {x: 45.2,  a: 20,  w: 0.6},
+      {x: 51.6,  a: 18,  w: 0.6},
+      {x: 62.3,  a: 28,  w: 0.5},
+      {x: 68.5,  a: 15,  w: 0.7},
+      {x: 72.1,  a: 12,  w: 0.8}
+    ];
+    for (let x = xMin; x <= xMax; x += 0.15) {
+      let y = 5;
+      peaks.forEach(p => {
+        const d = (x - p.x) / p.w;
+        y += p.a * Math.exp(-d * d) * intensity;
+      });
+      y += (Math.random() - 0.5) * 2;
+      const px = ml + (x - xMin) / (xMax - xMin) * (W - ml - mr);
+      const py = mt + (1 - y / yMax) * (H - mt - mb) + offset;
+      points.push(`${px},${py}`);
+    }
+    return points;
+  }
+
+  const spectra = [
+    {label:'未处理', offset:0,  intensity:0.75, color:C.blue},
+    {label:'碱处理', offset:40, intensity:0.95, color:C.amber},
+    {label:'碱/KH-550', offset:80, intensity:1.0, color:C.acc}
+  ];
+  for (let i = 0; i <= 4; i++) {
+    const y = mt + (H - mt - mb) * i / 4;
+    svgEl('line', {x1: ml, y1: y, x2: W - mr, y2: y, class: 'plot-grid'}, svg);
+    svgEl('text', {x: ml - 10, y: y + 3, 'text-anchor':'end', class:'plot-tick'}, svg).textContent = Math.round(120 - i * 30);
+  }
+  [10, 20, 30, 40, 50, 60, 70].forEach(v => {
+    const x = ml + (v - 5) / 75 * (W - ml - mr);
+    svgEl('line', {x1: x, y1: mt, x2: x, y2: H - mb, class: 'plot-grid'}, svg);
+    svgEl('text', {x, y: H - mb + 18, 'text-anchor':'middle', class:'plot-tick'}, svg).textContent = v;
+  });
+  svgEl('text', {x: ml - 45, y: (H+mt-mb)/2, 'text-anchor':'middle', class:'plot-label', transform:`rotate(-90 ${ml-45} ${(H+mt-mb)/2})`}, svg).textContent = '强度 (a.u.)';
+  svgEl('text', {x: W/2, y: H - 18, 'text-anchor':'middle', class:'plot-label'}, svg).textContent = '2θ (°)';
+  svgEl('text', {x: W/2, y: mt - 20, 'text-anchor':'middle', class:'plot-title'}, svg).textContent = '复合材料 X 射线衍射（XRD）图谱';
+
+  spectra.forEach(s => {
+    const pts = genXRD(s.offset, s.intensity, s.color);
+    svgEl('polyline', {points: pts.join(' '), fill:'none', stroke: s.color, 'stroke-width':1.6, opacity:0.85}, svg);
+  });
+  /* 物相标注 */
+  const xrdPeaks = [
+    {x: 11.74, label: 'A', sub:'五相', color: C.acc},
+    {x: 21.54, label: 'A', sub:'五相', color: C.acc},
+    {x: 37.85, label: 'D', sub:'三相', color: C.violet},
+    {x: 32.8,  label: 'B', sub:'Mg(OH)₂', color: C.ink3},
+    {x: 45.2,  label: 'C', sub:'MgCO₃', color: C.ink3},
+    {x: 62.3,  label: 'E', sub:'MgO', color: C.ink3}
+  ];
+  xrdPeaks.forEach(p => {
+    const px = ml + (p.x - 5) / 75 * (W - ml - mr);
+    svgEl('line', {x1:px, y1:mt, x2:px, y2:H-mb, stroke:p.color, 'stroke-width':1, 'stroke-dasharray':'4,4', opacity:.5}, svg);
+    svgEl('text', {x:px, y:mt-6, 'text-anchor':'middle', class:'plot-xrd-label', fill:p.color, 'font-weight':700}, svg).textContent = p.label;
+  });
+  /* 图例 */
+  const lgX = ml + 20, lgY = mt + 10;
+  svgEl('rect', {x: lgX, y: lgY, width: 130, height: 62, class:'plot-legend-box', rx:6}, svg);
+  spectra.forEach((s, i) => {
+    svgEl('line', {x1: lgX+10, y1: lgY+15+i*20, x2: lgX+28, y2: lgY+15+i*20, stroke: s.color, 'stroke-width':2}, svg);
+    svgEl('text', {x: lgX+34, y: lgY+19+i*20, class:'plot-legend', 'font-size':10.5}, svg).textContent = s.label;
+  });
+}
+
+/* ============ 初始化所有图 ============ */
+function renderAll(){
+  renderFig1(document.getElementById('fig1'));
+  renderFig2(document.getElementById('fig2'));
+  renderFig3(document.getElementById('fig3'));
+  renderFig4(document.getElementById('fig4'));
+  renderFig5(document.getElementById('fig5'));
+  renderFig6(document.getElementById('fig6'));
+  renderFig7(document.getElementById('fig7'));
+  renderFig8(document.getElementById('fig8'));
+}
+renderAll();
+/* 主题切换后重绘 */
+new MutationObserver(()=>renderAll()).observe(html, {attributes:true, attributeFilter:['data-theme']});
+
+/* ============ 导出 PNG ============ */
+function svgToPng(svgEl, filename, scale = 2) {
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = svgEl.viewBox.baseVal.width * scale;
+    canvas.height = svgEl.viewBox.baseVal.height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, 'image/png');
+  };
+  img.src = url;
+}
+document.querySelectorAll('[data-act="download"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const fig = btn.closest('.fig');
+    const host = fig.querySelector('.fig__body');
+    const svg = host.querySelector('svg');
+    if (!svg) return;
+    const num = fig.dataset.fig.padStart(2, '0');
+    const name = fig.querySelector('.fig__title .num').textContent.replace('FIG. ','');
+    svgToPng(svg, `LATTICE-fig${num}-${name}.png`);
+  });
+});
+document.getElementById('btnExportAll').addEventListener('click', () => {
+  document.querySelectorAll('.fig').forEach((fig, i) => {
+    setTimeout(() => {
+      const host = fig.querySelector('.fig__body');
+      const svg = host.querySelector('svg');
+      if (!svg) return;
+      const num = fig.dataset.fig.padStart(2, '0');
+      const name = fig.querySelector('.fig__title .num').textContent.replace('FIG. ','');
+      svgToPng(svg, `LATTICE-fig${num}-${name}.png`);
+    }, i * 300);
+  });
+});
+
+</script>
+</body>
+</html>
