@@ -10,7 +10,18 @@ MR.views2 = {};
   function renderInto(el, build) {
     if (!el) return;
     var last = -1;
-    function go() { var w = Math.max(260, Math.round(el.clientWidth || 700)); if (Math.abs(w - last) < 2) return; last = w; el.innerHTML = build(w); }
+    /* 注意：el.clientWidth 含左右 padding，若直接作为 SVG 宽度会撑出横向滚动条并裁切。
+       这里用 getBoundingClientRect 减去 padding，得到真实"内容宽度"。 */
+    function contentWidth() {
+      var w = el.clientWidth || 700;
+      try {
+        var cs = window.getComputedStyle(el);
+        var pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0;
+        w = w - pl - pr;
+      } catch (e) { /* 保底用 clientWidth */ }
+      return Math.max(260, Math.round(w));
+    }
+    function go() { var w = contentWidth(); if (Math.abs(w - last) < 2) return; last = w; el.innerHTML = build(w); }
     go();
     if (window.ResizeObserver && !el.__ro) { el.__ro = new ResizeObserver(go); el.__ro.observe(el); }
   }
@@ -1020,13 +1031,20 @@ MR.views2 = {};
       if (el1) renderInto(el1, function (w) {
         if (!mats.length) return S.frame(w, 240) + S.T(w / 2, 120, '原文未报告可用于响应面的变量—指标关系', { anchor: 'middle', size: 10, fill: '#9AA1A8' }) + '</svg>';
         var mm = mats[0].model, lv = mm.levels.slice().sort(function (x, y) { return x - y; });
-        var n = 9, z = [];
+        var n = 15, z = [];
+        /* 单因素 f(x1) 作为主轴；第二因素用"交互项"建模：
+           以最优水平为中心、朝两侧递减（凸型响应面），与工艺参数优化的物理直觉一致，
+           避免用 sin 造出非物理的波浪面。 */
+        var lv0 = lv[0], lvN = lv[lv.length - 1], mid = (lv0 + lvN) / 2;
+        var half = Math.max(1e-6, (lvN - lv0) / 2);
         for (var i = 0; i < n; i++) {
           var row = [];
           for (var j = 0; j < n; j++) {
-            var x1 = lv[0] + (lv[lv.length - 1] - lv[0]) * i / (n - 1);
-            var v = mm.f(x1) * (0.72 + 0.28 * Math.sin(j / (n - 1) * Math.PI));
-            row.push(v);
+            var x1 = lv0 + (lvN - lv0) * i / (n - 1);
+            /* 第二因素：距中心越远衰减越大（−18% ~ 0） */
+            var x2 = (j / (n - 1) * 2 - 1);       /* −1..1 */
+            var decay = 1 - 0.18 * x2 * x2;
+            row.push(mm.f(x1) * decay);
           }
           z.push(row);
         }
@@ -1043,18 +1061,38 @@ MR.views2 = {};
       /* 三维柱状：变量水平 × 前三个指标 */
       var el2 = host.querySelector('#f3bars');
       if (el2) renderInto(el2, function (w) {
-        var inds = (pf.perf || []).slice(0, 3);
-        var v0 = (pf.variables || [])[0];
-        if (!inds.length || !v0) return S.frame(w, 260) + S.T(w / 2, 130, '原文未报告变量或指标，无法生成三维柱状', { anchor: 'middle', size: 10, fill: '#9AA1A8' }) + '</svg>';
-        var lv2 = v0.levels.slice().sort(function (x, y) { return x - y; });
-        var z2 = inds.map(function (ind) {
-          var model = pf.__model[v0.key + '|' + ind.name];
+        /* 以 matrix（变量×指标 的真实配对）为准，避免 variables/perf 与 __model key 不一致 */
+        var mkts = (pf.matrix || []);
+        var mkeys = Object.keys(pf.__model || {});
+        function modelOf(v, i) { return pf.__model[v + '|' + i] || null; }
+        /* 选第一个"有 ≥1 个可用模型"的变量 */
+        var v0 = null, indNames = [];
+        for (var vi = 0; vi < mkts.length; vi++) {
+          var vKey = mkts[vi].v, iKey = mkts[vi].i;
+          if (!modelOf(vKey, iKey)) continue;
+          if (!v0) v0 = (pf.variables || []).filter(function (q) { return q.key === vKey; })[0] || { key: vKey, levels: [1, 2, 3] };
+          if (vKey === v0.key && indNames.indexOf(iKey) < 0) indNames.push(iKey);
+          if (v0 && indNames.length >= 3) break;
+        }
+        if (!v0) {
+          /* 兜底：用 mkeys 直接解析 "变量|指标" */
+          if (mkeys.length) {
+            var parts = mkeys[0].split('|');
+            v0 = (pf.variables || []).filter(function (q) { return q.key === parts[0]; })[0] || { key: parts[0], levels: [1, 2, 3] };
+            indNames = mkeys.filter(function (k) { return k.indexOf(parts[0] + '|') === 0; })
+              .map(function (k) { return k.slice(parts[0].length + 1); }).slice(0, 3);
+          }
+        }
+        if (!v0 || !indNames.length) return S.frame(w, 260) + S.T(w / 2, 130, '原文未报告"变量—指标"配对，无法生成三维柱状', { anchor: 'middle', size: 10, fill: '#9AA1A8' }) + '</svg>';
+        var lv2 = (v0.levels || [1, 2, 3]).slice().sort(function (x, y) { return x - y; });
+        var z2 = indNames.map(function (iKey) {
+          var model = pf.__model[v0.key + '|' + iKey];
           return lv2.map(function (x) { return model ? Math.abs(model.f(x)) : 0; });
         });
         return S.bars3d(w, {
-          height: 300, rows: inds.map(function (i2) { return i2.name.slice(0, 6); }), cols: lv2.map(String), z: z2,
+          height: 300, rows: indNames.map(function (s2) { return s2.slice(0, 6); }), cols: lv2.map(String), z: z2,
           palette: MR.state.figStyle === 'glm' ? 'glm' : 'npg',
-          title: '三维柱状：' + (inds.map(function (i2) { return i2.name; }).join(' / ')) + ' × ' + MR.paper.shortVar(v0.key),
+          title: '三维柱状：' + indNames.join(' / ') + ' × ' + MR.paper.shortVar(v0.key),
           note: '柱高 = 相对变化幅度（%）'
         });
       });
@@ -1068,22 +1106,37 @@ MR.views2 = {};
         var kinds = [
           { el: 'Ti', t: 'Ti（过渡金属位）' }, { el: 'O', t: 'O（氧）' }, { el: 'Na', t: 'Na（碱金属位）' }, { el: 'P', t: 'P（骨架）' }
         ];
-        var atoms = [], bonds = [];
-        var c2 = [{ x: 0.5, y: 0.5, z: 0.5, el: 'Ti', r: 0.26, label: 'TM' }];
+        var atoms = [], bonds = [], bondSeen = {};
+        /* 通用占位结构：钙钛矿型 ABO₃ 框架（A=Na 顶点位、B=Ti 体心、O 面心），
+           四面体间隙放 P 表示骨架位。
+           键只连 Ti–O（正八面体，6 根）与 P–O（每个 P 取最近 3 个 O，共 12 根）；
+           不再做"全连接最近邻"，否则阴离子之间会连成一团线球。 */
+        var c2 = [{ x: 0.5, y: 0.5, z: 0.5, el: 'Ti', r: 0.20, label: 'TM' }];
+        /* O：6 个面心，构成 Ti 的八面体配位 */
+        [[0.5, 0.5, 0], [0.5, 0.5, 1], [0.5, 0, 0.5], [0.5, 1, 0.5], [0, 0.5, 0.5], [1, 0.5, 0.5]].forEach(function (p) {
+          c2.push({ x: p[0], y: p[1], z: p[2], el: 'O', r: 0.13 });
+        });
+        /* Na：8 个顶点（A 位） */
         [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 1, 1]].forEach(function (p) {
-          c2.push({ x: p[0] * 0.82 + 0.09, y: p[1] * 0.82 + 0.09, z: p[2] * 0.82 + 0.09, el: 'O', r: 0.15 });
+          c2.push({ x: p[0], y: p[1], z: p[2], el: 'Na', r: 0.17 });
         });
-        [[0.5, 0.5, 0.5], [0.5, 0, 0.5], [0, 0.5, 0.5], [0.5, 0.5, 0]].forEach(function (p) {
-          c2.push({ x: p[0], y: p[1], z: p[2], el: 'Na', r: 0.19 });
+        /* P：4 个四面体间隙 */
+        [[0.25, 0.25, 0.25], [0.75, 0.75, 0.25], [0.75, 0.25, 0.75], [0.25, 0.75, 0.75]].forEach(function (p) {
+          c2.push({ x: p[0], y: p[1], z: p[2], el: 'P', r: 0.14 });
         });
-        c2.forEach(function (a1) {
-          atoms.push(a1);
-          c2.forEach(function (b1) {
-            if (b1 === a1) return;
-            if (b1.el === 'O' && a1.el === 'O') return;
-            var d2 = Math.hypot(a1.x - b1.x, a1.y - b1.y, a1.z - b1.z);
-            if (d2 > 0.05 && d2 < 0.75) bonds.push([[a1.x, a1.y, a1.z], [b1.x, b1.y, b1.z], 1.2]);
-          });
+        atoms = c2.slice();
+        function link(a1, b1) {
+          var key = [a1, b1].map(function (q) { return q.x + ',' + q.y + ',' + q.z; }).sort().join('#');
+          if (bondSeen[key]) return;
+          bondSeen[key] = 1;
+          bonds.push([[a1.x, a1.y, a1.z], [b1.x, b1.y, b1.z], 1.4]);
+        }
+        var TiA = c2[0], Os = c2.slice(1, 7), Ps = c2.slice(15);
+        Os.forEach(function (o) { link(TiA, o); });            /* Ti–O：6 根，正八面体 */
+        Ps.forEach(function (pp) {                             /* P–O：每个 P 取最近 3 个 O */
+          Os.map(function (o) { return { o: o, d: Math.hypot(pp.x - o.x, pp.y - o.y, pp.z - o.z) }; })
+            .sort(function (m, n) { return m.d - n.d; }).slice(0, 3)
+            .forEach(function (it) { link(pp, it.o); });
         });
         return S.crystal(w, {
           height: 320, a: latt.a || 1.0, b: latt.a || 1.0, c: latt.c || 1.1,

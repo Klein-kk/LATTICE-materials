@@ -47,7 +47,8 @@ MR.sci = (function () {
     return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(2) + '" fill="' + (o.fill || 'none') +
       '" stroke="' + (o.c || 'none') + '" stroke-width="' + (o.w || 1) + '"' + (o.op !== undefined ? ' opacity="' + o.op + '"' : '') + '/>';
   }
-  function frame(w, h, bg) { return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">' +
+  function frame(w, h, bg) { return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h +
+    '" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">' +
     '<rect width="' + w + '" height="' + h + '" fill="' + (bg || '#FFFFFF') + '"/>'; }
   function cap(w, no, txt, sub) {
     return T(16, 20, no, { size: 10.5, weight: 700 }) + T(16 + no.length * 8, 20, txt, { size: 10, fill: '#4A535C' }) +
@@ -64,6 +65,50 @@ MR.sci = (function () {
     };
   }
 
+  /* ---- 自动适配相机：先以单位缩放投影出包围盒，再反算缩放与平移，
+       使所有采样点恰好居中并填满 [pad, w-pad] × [top, h-bottom] 区域。
+       用法：var fit = autoFit(w, h, pad, top, bottom); fit.add(x,y,z)... ;
+             var cam = fit.cam();  点位用原始世界坐标调用即可。 ---- */
+  function autoFit(w, h, opt) {
+    opt = opt || {};
+    var padX = opt.padX === undefined ? 40 : opt.padX;
+    var padTop = opt.padTop === undefined ? 46 : opt.padTop;
+    var padBot = opt.padBot === undefined ? 48 : opt.padBot;
+    var az = opt.az === undefined ? 32 : opt.az, el = opt.el === undefined ? 20 : opt.el;
+    var ca = Math.cos(az * Math.PI / 180), sa = Math.sin(az * Math.PI / 180);
+    var ce = Math.cos(el * Math.PI / 180), se = Math.sin(el * Math.PI / 180);
+    /* 单位投影：s=1, cx=cy=0 */
+    function proj(x, y, z) {
+      var x1 = x * ca - y * sa, y1 = x * sa + y * ca;
+      return { X: x1, Y: -(z * ce - y1 * se), d: y1 * ce + z * se };
+    }
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, n = 0;
+    function add(x, y, z) {
+      var p = proj(x, y, z);
+      if (p.X < minX) minX = p.X; if (p.X > maxX) maxX = p.X;
+      if (p.Y < minY) minY = p.Y; if (p.Y > maxY) maxY = p.Y;
+      n++;
+      return p;
+    }
+    function addPt(arr) { for (var i = 0; i < arr.length; i++) add(arr[i][0], arr[i][1], arr[i][2]); }
+    function cam() {
+      if (!n) return makeCam(az, el, 1, w / 2, h / 2);
+      var bw = Math.max(1e-6, maxX - minX), bh = Math.max(1e-6, maxY - minY);
+      var availW = w - padX * 2, availH = h - padTop - padBot;
+      var s = Math.min(availW / bw, availH / bh);
+      /* 以单位投影包围盒中心对齐到可用区域中心 */
+      var cXw = (minX + maxX) / 2, cYw = (minY + maxY) / 2;
+      var tgtX = padX + availW / 2, tgtY = padTop + availH / 2;
+      return makeCam(az, el, s, tgtX - cXw * s, tgtY - cYw * s);
+    }
+    function scale() {
+      if (!n) return 1;
+      var bw = Math.max(1e-6, maxX - minX), bh = Math.max(1e-6, maxY - minY);
+      return Math.min((w - padX * 2) / bw, (h - padTop - padBot) / bh);
+    }
+    return { add: add, addPt: addPt, cam: cam, scale: scale, bbox: function () { return { minX: minX, maxX: maxX, minY: minY, maxY: maxY }; } };
+  }
+
   /* ================= 3. 3D 图形 ================= */
 
   /* 3-1 晶胞 / 球棍模型 */
@@ -71,14 +116,21 @@ MR.sci = (function () {
     var h = spec.height || 340, pad = 18;
     var a = spec.a || 1, b = spec.b || a, c = spec.c || a;
     var ang = spec.gamma || 90;   /* 只支持直胞与简单斜胞，避免几何失真 */
-    var cam = makeCam(spec.az === undefined ? 32 : spec.az, spec.el === undefined ? 20 : spec.el,
-      Math.min((w - pad * 2 - 150) / (Math.max(a, b) * 1.7), (h - 84) / (c * 1.35)), pad + 116, h * 0.62);
+    var atoms = spec.atoms || [];
+    var bonds = spec.bonds || [];
+    /* 自动适配相机：纳入晶胞顶点、坐标轴端点与所有原子，使模型居中且尽量填满 */
+    var fit = autoFit(w, h, {
+      padX: Math.max(96, w * 0.14), padTop: 52, padBot: 44,
+      az: spec.az === undefined ? 32 : spec.az, el: spec.el === undefined ? 20 : spec.el
+    });
+    var axisK = 1.16;
+    fit.addPt([[0, 0, 0], [a, b, c]]);
+    fit.addPt([[a * axisK, 0, 0], [0, b * axisK, 0], [0, 0, c * axisK]]);
+    atoms.forEach(function (at) { fit.add(at.x, at.y, at.z); });
+    var cam = fit.cam();
     var s = frame(w, h, spec.bg);
     s += cap(w, '图 1', spec.title || '晶胞结构与原子占位（3D 球棍模型）', spec.note || '');
 
-    /* 原子集 */
-    var atoms = spec.atoms || [];
-    var bonds = spec.bonds || [];
     /* 晶胞顶点与棱 */
     var corners = [];
     for (var i = 0; i < 8; i++) {
@@ -124,16 +176,19 @@ MR.sci = (function () {
       var p = cam(at.x, at.y, at.z);
       draw.push({ d: p.d, kind: 'atom', p: p, at: at });
     });
+    /* 原子半径随相机缩放联动：0.5*scale 换算成屏幕像素，保证球体大小与晶胞比例一致 */
+    var fitS = fit.scale();
+    var rBase = spec.rScale || (0.5 * fitS * 0.46);
     draw.sort(function (m, n) { return n.d - m.d; });
     draw.forEach(function (it) {
       if (it.kind === 'bond') {
         s += L(it.p1.X, it.p1.Y, it.p2.X, it.p2.Y, { c: '#8A929A', w: it.w });
         s += L(it.p1.X, it.p1.Y, it.p2.X, it.p2.Y, { c: '#FFFFFF', w: it.w * 0.34, op: 0.55 });
       } else {
-        var r = (it.at.r || 0.22) * (spec.rScale || 26);
+        var r = (it.at.r || 0.22) * rBase;
         var c1 = MOL_COLOR[it.at.el] || '#88929A';
-        s += Circ(it.p.X, it.p.Y, r, { fill: c1, c: '#22262A', w: 0.6 });
-        s += Circ(it.p.X - r * 0.28, it.p.Y - r * 0.28, r * 0.3, { fill: '#FFFFFF', op: 0.42 });
+        s += Circ(it.p.X, it.p.Y, r, { fill: c1, c: 'rgba(20,24,28,0.55)', w: 0.8 });
+        s += Circ(it.p.X - r * 0.3, it.p.Y - r * 0.3, r * 0.32, { fill: '#FFFFFF', op: 0.5 });
         if (it.at.label) s += T(it.p.X, it.p.Y - r - 3, it.at.label, { size: 8.5, anchor: 'middle', fill: '#4A535C', weight: 600 });
       }
     });
@@ -154,28 +209,66 @@ MR.sci = (function () {
     var zmin = Math.min.apply(null, z.map(function (r) { return Math.min.apply(null, r); }));
     var zmax = Math.max.apply(null, z.map(function (r) { return Math.max.apply(null, r); }));
     var pal = PALETTES[spec.palette || 'okabe-ito'].c;
-    var cam = makeCam(spec.az === undefined ? -52 : spec.az, spec.el === undefined ? 26 : spec.el,
-      Math.min((w - 190) / (n * 1.35), (h - 120) / (n * 0.72)), w * 0.46, h - 74);
-    var scale = 116 / (zmax - zmin || 1);
+    /* 高度场归一化到 0..zNormZ（世界单位），与底面的 n×n 尺度同量级 */
+    var zNormZ = spec.zHeight === undefined ? Math.max(2.2, n * 0.55) : spec.zHeight;
+    var zr = (zmax - zmin) || 1;
+    function zw(v) { return (v - zmin) / zr * zNormZ; }
+    /* 自动适配相机：纳入底面四角 + 整个曲面的采样点 */
+    var fit = autoFit(w, h, {
+      padX: 62, padTop: 54, padBot: 66,
+      az: spec.az === undefined ? -52 : spec.az, el: spec.el === undefined ? 26 : spec.el
+    });
+    fit.addPt([[0, 0, 0], [n - 1, 0, 0], [0, n - 1, 0], [n - 1, n - 1, 0]]);
+    /* 轴名外推点也纳入适配，确保标签不被裁 */
+    fit.addPt([[(n - 1) * 1.36, -(n - 1) * 0.36, 0], [-(n - 1) * 0.36, (n - 1) * 1.36, 0]]);
+    var i, j;
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) fit.add(j, i, zw(z[i][j]));
+    var cam = fit.cam();
     /* 投影网格点 */
     var G = [];
-    for (var i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {
       var row = [];
-      for (var j = 0; j < n; j++) {
-        var p = cam(j, i, (z[i][j] - zmin) * scale / 26);
-        row.push(p);
-      }
+      for (j = 0; j < n; j++) row.push(cam(j, i, zw(z[i][j])));
       G.push(row);
     }
     var s = frame(w, h, spec.bg);
     s += cap(w, '图 2', spec.title || '三维响应面', spec.note || '');
-    /* 底面网格 */
+    /* 底面网格（含四周边框） */
     for (var k = 0; k < n; k++) {
       var p1 = cam(k, 0, 0), p2 = cam(k, n - 1, 0);
       s += L(p1.X, p1.Y, p2.X, p2.Y, { c: '#E4E8EC', w: 0.8 });
       var q1 = cam(0, k, 0), q2 = cam(n - 1, k, 0);
       s += L(q1.X, q1.Y, q2.X, q2.Y, { c: '#E4E8EC', w: 0.8 });
     }
+    /* 连续色标工具（在曲面绘制前定义，供曲面与色标条共用） */
+    function _hex2rgb(x2) { return [parseInt(x2.slice(1, 3), 16), parseInt(x2.slice(3, 5), 16), parseInt(x2.slice(5, 7), 16)]; }
+    function _rgb2hsl(r, g2, b2) {
+      r /= 255; g2 /= 255; b2 /= 255;
+      var mx = Math.max(r, g2, b2), mn = Math.min(r, g2, b2), h2 = 0, s2 = 0, l2 = (mx + mn) / 2;
+      if (mx !== mn) { var dd = mx - mn; s2 = l2 > 0.5 ? dd / (2 - mx - mn) : dd / (mx + mn); h2 = mx === r ? (g2 - b2) / dd + (g2 < b2 ? 6 : 0) : (mx === g2 ? (b2 - r) / dd + 2 : (r - g2) / dd + 4); h2 /= 6; }
+      return [h2, s2, l2];
+    }
+    function _hsl2hex(h2, s2, l2) {
+      function hue(p2, q2, t2) { if (t2 < 0) t2 += 1; if (t2 > 1) t2 -= 1; if (t2 < 1 / 6) return p2 + (q2 - p2) * 6 * t2; if (t2 < 1 / 2) return q2; if (t2 < 2 / 3) return p2 + (q2 - p2) * (2 / 3 - t2) * 6; return p2; }
+      var r2, g3, b3;
+      if (s2 === 0) { r2 = g3 = b3 = l2; } else {
+        var q2 = l2 < 0.5 ? l2 * (1 + s2) : l2 + s2 - l2 * s2, p2 = 2 * l2 - q2;
+        r2 = hue(p2, q2, h2 + 1 / 3); g3 = hue(p2, q2, h2); b3 = hue(p2, q2, h2 - 1 / 3);
+      }
+      function hx(v) { var s3 = Math.round(v * 255).toString(16); return s3.length < 2 ? '0' + s3 : s3; }
+      return '#' + hx(r2) + hx(g3) + hx(b3);
+    }
+    var _cLo = _hex2rgb(pal[0]), _cHi = _hex2rgb(pal[Math.min(pal.length - 1, 4)]);
+    var _hslLo = _rgb2hsl(_cLo[0], _cLo[1], _cLo[2]), _hslHi = _rgb2hsl(_cHi[0], _cHi[1], _cHi[2]);
+    function cellColor(t2) {
+      var dh = _hslHi[0] - _hslLo[0]; if (dh > 0.5) dh -= 1; if (dh < -0.5) dh += 1;
+      var h2 = (_hslLo[0] + dh * t2 + 1) % 1;
+      var s2 = _hslLo[1] + (_hslHi[1] - _hslLo[1]) * t2;
+      var l2 = 0.76 - 0.36 * t2;  /* 浅（低值）→ 深（高值） */
+      return _hsl2hex(h2, Math.max(0.26, s2), l2);
+    }
+    /* 曲面片：按格子平均 z 用连续色着色 */
+    /* 曲面片：按格子平均 z 用连续色着色（曲面网格较底面网格略内收，留出轴名与刻度空间） */
     var cells = [];
     for (i = 0; i + 1 < n; i++) {
       for (var j2 = 0; j2 + 1 < n; j2++) {
@@ -184,35 +277,57 @@ MR.sci = (function () {
       }
     }
     cells.sort(function (m1, m2) { return m2.d - m1.d; });
+    var NC = pal.length;
     cells.forEach(function (c2) {
-      var t = (c2.avg - zmin) / (zmax - zmin || 1);
-      var col = pal[Math.min(pal.length - 1, Math.floor(t * (pal.length - 1)))];
+      var t = (c2.avg - zmin) / zr;
+      var col = cellColor(t);   /* 连续色（同色系深浅），与右侧色标一致 */
       var q = [G[c2.i][c2.j], G[c2.i + 1][c2.j], G[c2.i + 1][c2.j + 1], G[c2.i][c2.j + 1]];
       s += P('M' + q.map(function (p) { return p.X.toFixed(1) + ' ' + p.Y.toFixed(1); }).join(' L') + ' Z',
-        { fill: col, op: 0.78 - 0.16 * (1 - t), c: 'rgba(255,255,255,0.5)', w: 0.4 });
+        { fill: col, op: 0.96, c: 'rgba(255,255,255,0.42)', w: 0.35 });
     });
-    /* 最优标记 */
+    /* 最优点标记：引线 + 白心圆点 */
     if (spec.opt) {
       var op = G[spec.opt.i] && G[spec.opt.i][spec.opt.j];
       if (op) {
-        s += Circ(op.X, op.Y, 5.4, { fill: '#FFFFFF', c: '#D55E00', w: 2 });
-        s += T(op.X, op.Y - 10, spec.opt.label || '最优', { size: 9, fill: '#D55E00', anchor: 'middle', weight: 600 });
+        s += L(op.X, op.Y - 6, op.X, op.Y - 20, { c: '#D55E00', w: 1.2 });
+        s += Circ(op.X, op.Y, 5.4, { fill: '#FFFFFF', c: '#D55E00', w: 2.2 });
+        s += T(op.X, op.Y - 24, spec.opt.label || '最优', { size: 9.5, fill: '#D55E00', anchor: 'middle', weight: 700 });
       }
     }
-    /* 轴标签 + 色标 */
-    var ax0 = cam(0, 0, 0), ax1 = cam(n - 1, 0, 0), ax2 = cam(0, n - 1, 0), ax3 = cam(0, 0, 116 / 26 / 26);
-    s += T(ax1.X, ax1.Y + 16, spec.xlabel || 'x₁', { size: 9.5, anchor: 'middle', fill: '#4A535C' });
-    s += T(ax2.X - 6, ax2.Y + 12, spec.ylabel || 'x₂', { size: 9.5, anchor: 'end', fill: '#4A535C' });
-    s += T(ax0.X - 24, ax0.Y - 6, spec.zlabel || '响应值', { size: 9.5, fill: '#4A535C' });
-    void ax3;
-    var bx = w - 42, by = 46, bh = h - 118;
-    for (var q2 = 0; q2 < 26; q2++) {
-      var t2 = 1 - q2 / 25;
-      s += '<rect x="' + bx + '" y="' + (by + bh * q2 / 26).toFixed(1) + '" width="11" height="' + (bh / 26 + 0.8).toFixed(2) +
-        '" fill="' + pal[Math.min(pal.length - 1, Math.floor(t2 * (pal.length - 1)))] + '" opacity="0.85"/>';
+    /* 轴标注：底面两条主边 + 竖直 Z 轴（三轴加箭头） */
+    var ax0 = cam(0, 0, 0), ax1 = cam(n - 1, 0, 0), ax2 = cam(0, n - 1, 0), axz = cam(0, 0, zNormZ);
+    /* Z 轴向上（略带偏移避免压在数据上） */
+    s += L(ax0.X, ax0.Y, axz.X, axz.Y, { c: '#6B7A88', w: 1.3 });
+    s += P('M' + (axz.X - 3.4) + ' ' + (axz.Y + 5) + ' L' + axz.X + ' ' + axz.Y + ' L' + (axz.X + 3.4) + ' ' + (axz.Y + 5) + ' Z', { fill: '#6B7A88' });
+    /* 轴名：不放在 3D 空间内（易压曲面），改为在画布底部留一条"轴说明带"，
+       用 小色块 + 变量名 的形式列出两根自变量轴，符合期刊图注习惯。 */
+    var abY = h - 14;
+    s += '<rect x="' + (pad + 2) + '" y="' + (abY - 9) + '" width="16" height="3" fill="#6B7A88"/>';
+    s += T(pad + 24, abY - 4, (spec.xlabel || 'x₁') + '（主轴）', { size: 9.5, fill: '#4A535C', weight: 600 });
+    /* 直接用原始 ylabel（如"第二因素（交互项）"），避免去括号后又补一次造成重复 */
+    var y2 = (spec.ylabel || 'x₂').trim();
+    if (y2.indexOf('（') < 0 && y2.indexOf('(') < 0) y2 += '（第二因素）';
+    s += '<rect x="' + (pad + 132) + '" y="' + (abY - 9) + '" width="16" height="3" fill="#B9C2C9"/>';
+    s += T(pad + 154, abY - 4, y2, { size: 9.5, fill: '#4A535C', weight: 600 });
+    /* Z 轴标签：竖排（旋转 -90°）贴在轴左侧，避免 anchor:end 越出左边界被裁 */
+    var zlx = Math.max(10, axz.X - 10), zly = (ax0.Y + axz.Y) / 2;
+    s += T(zlx, zly, spec.zlabel || '响应值', { size: 10, anchor: 'middle', fill: '#4A535C', weight: 600, rot: -90 });
+    /* 色标：用"单色渐变"（同色系深浅），比离散配色板更符合连续量纲惯例 */
+    var bx = w - 40, by = 48, bh = h - 168;
+    var steps = 32;
+    /* 取配色板中"感知连续"的一段：用首色→末色做 HSL 插值 */
+    /* 用连续色标绘制色标条（与曲面同一映射） */
+    for (var q2 = 0; q2 < steps; q2++) {
+      var t2 = 1 - q2 / (steps - 1);
+      s += '<rect x="' + bx + '" y="' + (by + bh * q2 / steps).toFixed(1) + '" width="12" height="' + (bh / steps + 0.8).toFixed(2) +
+        '" fill="' + cellColor(t2) + '"/>';
     }
-    s += T(bx + 15, by + 8, Math.round(zmax), { size: 8, fill: '#7A8288' });
-    s += T(bx + 15, by + bh, Math.round(zmin), { size: 8, fill: '#7A8288' });
+    s += '<rect x="' + bx + '" y="' + by + '" width="12" height="' + bh + '" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.6"/>';
+    var mid = (zmax + zmin) / 2;
+    s += T(bx + 16, by + 4, Math.round(zmax), { size: 8.5, fill: '#7A8288' });
+    s += T(bx + 16, by + bh / 2 + 3, Math.round(mid), { size: 8.5, fill: '#7A8288' });
+    s += T(bx + 16, by + bh + 1, Math.round(zmin), { size: 8.5, fill: '#7A8288' });
+    s += T(bx + 6, by - 8, spec.clabel || '响应值', { size: 8.5, fill: '#7A8288', anchor: 'middle' });
     return s + '</svg>';
   }
 
@@ -222,18 +337,34 @@ MR.sci = (function () {
     var n = spec.rows.length, m = spec.cols.length;
     var max = spec.max || Math.max.apply(null, spec.z.map(function (r) { return Math.max.apply(null, r); }));
     var pal = PALETTES[spec.palette || 'okabe-ito'].c;
-    var cam = makeCam(spec.az === undefined ? -34 : spec.az, spec.el === undefined ? 24 : spec.el,
-      Math.min((w - 170) / (n + m + 1.4) * 1.45, (h - 130) / (n + m) * 1.45, 44), w * 0.42, h - 74);
+    var BAR_H = 2.0; /* 最高柱的世界高度，与底面 n×m 同量级 */
+    var bw = 0.34;   /* 柱宽（世界单位） */
+    function hz(v) { return Math.max(0.06, (v / (max || 1)) * BAR_H); }
+    /* 自动适配：纳入底面四角 + 每根柱的四个顶角 */
+    var fit = autoFit(w, h, {
+      padX: 58, padTop: 58, padBot: 56,
+      az: spec.az === undefined ? -34 : spec.az, el: spec.el === undefined ? 26 : spec.el
+    });
+    fit.addPt([[0, 0, 0], [m, 0, 0], [0, n, 0], [m, n, 0]]);
+    var i, j;
+    for (i = 0; i < n; i++) for (j = 0; j < m; j++) {
+      var cx0 = j + 0.5, cy0 = i + 0.5, hh = hz(spec.z[i][j]);
+      fit.addPt([
+        [cx0 - bw, cy0 - bw, hh], [cx0 + bw, cy0 - bw, hh],
+        [cx0 + bw, cy0 + bw, hh], [cx0 - bw, cy0 + bw, hh],
+        [cx0 - bw, cy0 - bw, 0], [cx0 + bw, cy0 + bw, 0]
+      ]);
+    }
+    var cam = fit.cam();
     var s = frame(w, h, spec.bg);
     s += cap(w, '图 3', spec.title || '三维柱状对比', spec.note || '');
     var items = [];
-    for (var i = 0; i < n; i++) {
-      for (var j = 0; j < m; j++) {
+    for (i = 0; i < n; i++) {
+      for (j = 0; j < m; j++) {
         var v = spec.z[i][j];
-        var hh = (v / max) * 1.5;
-        var base = cam(j + 0.15, i + 0.15, 0);
-        var top = cam(j + 0.15, i + 0.15, hh);
-        items.push({ d: base.d, base: base, top: top, v: v, i: i, j: j, hh: hh });
+        var base = cam(j + 0.5, i + 0.5, 0);
+        var top = cam(j + 0.5, i + 0.5, hz(v));
+        items.push({ d: base.d, base: base, top: top, v: v, i: i, j: j });
       }
     }
     /* 底面网格 */
@@ -247,28 +378,31 @@ MR.sci = (function () {
     }
     items.sort(function (a, b) { return b.d - a.d; });
     items.forEach(function (it) {
-      var bw = 12.5;
-      var t = it.v / max;
-      var col = pal[Math.min(pal.length - 1, Math.floor(t * (pal.length - 1)))];
-      /* 柱体：顶面 + 两个侧面 */
-      var tb = cam(it.j + 0.15 + bw / 40, it.i + 0.15, it.hh);
-      var tl = cam(it.j + 0.15 - bw / 40, it.i + 0.15, it.hh);
-      var tr = cam(it.j + 0.15, it.i + 0.15 + bw / 40, it.hh);
-      var br = cam(it.j + 0.15, it.i + 0.15 + bw / 40, 0);
-      var bl = cam(it.j + 0.15 - bw / 40, it.i + 0.15, 0);
-      s += P('M' + [it.top, tl, bl, it.base].map(p => p.X.toFixed(1) + ' ' + p.Y.toFixed(1)).join(' L') + ' Z', { fill: col, op: 0.62, c: 'none' });
-      s += P('M' + [it.top, tr, br, it.base].map(p => p.X.toFixed(1) + ' ' + p.Y.toFixed(1)).join(' L') + ' Z', { fill: col, op: 0.88, c: 'none' });
-      s += P('M' + [tl, tb, tr, it.top].map(p => p.X.toFixed(1) + ' ' + p.Y.toFixed(1)).join(' L') + ' Z', { fill: '#FFFFFF', op: 0.55, c: col, w: 0.8 });
-      s += T(it.top.X, it.top.Y - 5, String(Math.round(it.v)), { size: 7.5, anchor: 'middle', fill: '#4A535C' });
+      var t = it.v / (max || 1);
+      var col = pal[Math.max(0, Math.min(pal.length - 1, Math.round(t * (pal.length - 1))))];
+      var cx0 = it.j + 0.5, cy0 = it.i + 0.5, hh = hz(it.v);
+      /* 八个顶点：底 / 顶，四角 */
+      var b0 = cam(cx0 - bw, cy0 - bw, 0), b1 = cam(cx0 + bw, cy0 - bw, 0),
+        b2 = cam(cx0 + bw, cy0 + bw, 0), b3 = cam(cx0 - bw, cy0 + bw, 0);
+      var t0 = cam(cx0 - bw, cy0 - bw, hh), t1 = cam(cx0 + bw, cy0 - bw, hh),
+        t2 = cam(cx0 + bw, cy0 + bw, hh), t3 = cam(cx0 - bw, cy0 + bw, hh);
+      function poly(pts, o) { return P('M' + pts.map(function (p) { return p.X.toFixed(1) + ' ' + p.Y.toFixed(1); }).join(' L') + ' Z', o); }
+      /* 左侧面（亮）、右侧面（中最亮）、前面（暗） */
+      s += poly([t0, t1, b1, b0], { fill: col, op: 0.62, c: 'none' });
+      s += poly([t1, t2, b2, b1], { fill: col, op: 0.72, c: 'none' });
+      s += poly([t2, t3, b3, b2], { fill: col, op: 0.52, c: 'none' });
+      /* 顶面 */
+      s += poly([t0, t1, t2, t3], { fill: '#FFFFFF', op: 0.72, c: col, w: 1 });
+      s += T(it.top.X, it.top.Y - 5, String(Math.round(it.v)), { size: 7.5, anchor: 'middle', fill: '#4A535C', weight: 600 });
     });
     /* 轴标签 */
     spec.cols.forEach(function (c, j) {
-      var p = cam(j + 0.5, -0.35, 0);
-      s += T(p.X, p.Y + 12, c, { size: 8.5, anchor: 'middle', fill: '#4A535C' });
+      var p = cam(j + 0.5, -0.45, 0);
+      s += T(p.X, p.Y + 13, c, { size: 8.5, anchor: 'middle', fill: '#4A535C', weight: 600 });
     });
     spec.rows.forEach(function (r, i) {
-      var p = cam(-0.35, i + 0.5, 0);
-      s += T(p.X, p.Y + 6, r, { size: 8.5, anchor: 'end', fill: '#4A535C' });
+      var p = cam(-0.5, i + 0.5, 0);
+      s += T(p.X, p.Y + 6, r, { size: 8.5, anchor: 'end', fill: '#4A535C', weight: 600 });
     });
     return s + '</svg>';
   }
@@ -277,14 +411,26 @@ MR.sci = (function () {
   function layered3d(w, spec) {
     var h = spec.height || 330;
     var layers = spec.layers || [];
-    var cam = makeCam(spec.az === undefined ? -42 : spec.az, spec.el === undefined ? 26 : spec.el, Math.min(w / 6.0, (h - 96) / (layers.length * 1.5), 60), w * 0.40, h * 0.66);
+    var W = 2.6, D = 2.0, TH = 0.42;
+    var totalH = layers.reduce(function (s2, ly) { return s2 + (ly.th || TH); }, 0) || TH;
+    /* 自动适配：纳入堆叠体 8 个外包角，使其居中并填满 */
+    var fit = autoFit(w, h, {
+      padX: 152, padTop: 48, padBot: 44,
+      az: spec.az === undefined ? -42 : spec.az, el: spec.el === undefined ? 26 : spec.el
+    });
+    fit.addPt([[0, 0, 0], [W, 0, 0], [0, D, 0], [W, D, 0], [0, 0, totalH], [W, 0, totalH], [0, D, totalH], [W, D, totalH]]);
+    var cam = fit.cam();
     var s = frame(w, h, spec.bg);
     s += cap(w, '图 4', spec.title || '层状 / 界面结构 3D 示意', spec.note || '');
-    var W = 2.6, D = 2.0, TH = 0.42;
     var z = 0;
-    layers.forEach(function (ly) {
-      var z0 = z, z1 = z + (ly.th || TH);
-      z = z1;
+    /* 层序：数组给出的是"从表层到本体"的语义顺序；绘制时从顶到底，
+       因此按 z 递减堆叠（最高层 = 表层）。 */
+    var ordered = layers.slice();
+    var totalTh = ordered.reduce(function (s2, ly) { return s2 + (ly.th || TH); }, 0);
+    var zTop = totalTh;
+    ordered.forEach(function (ly) {
+      var z1 = zTop, z0 = zTop - (ly.th || TH);
+      zTop = z0;
       var col = ly.color || '#B9C2C9';
       /* 六个面：顶面、前面、右面 */
       var c = function (x, y, zz) { return cam(x, y, zz); };
@@ -317,9 +463,10 @@ MR.sci = (function () {
           s += L(d1.X, d1.Y, d2.X, d2.Y, { c: '#FFFFFF', w: 0.9, op: 0.6 });
         }
       }
-      /* 层标注 */
-      var lp = c(0, D, z1);
-      s += T(lp.X - 6, lp.Y + 4, ly.t, { size: 8.5, anchor: 'end', fill: '#4A535C', weight: 600 });
+      /* 层标注：从该层前面的左缘引出短引线，文字贴在左侧（不互相叠压） */
+      var lp = c(0, D, (z0 + z1) / 2);
+      s += L(lp.X - 12, lp.Y, lp.X - 4, lp.Y, { c: col, w: 1.2 });
+      s += T(lp.X - 16, lp.Y + 4, ly.t, { size: 9, anchor: 'end', fill: '#4A535C', weight: 600 });
     });
     if (spec.caption) s += T(16, h - 6, spec.caption, { size: 8.5, fill: '#7A8288' });
     return s + '</svg>';
@@ -405,6 +552,6 @@ MR.sci = (function () {
   return {
     PALETTES: PALETTES, MOL_COLOR: MOL_COLOR, MOL_GUIDE: MOL_GUIDE, PLAYBOOK: PLAYBOOK,
     crystal: crystal, surface3d: surface3d, bars3d: bars3d, layered3d: layered3d, molecule: molecule,
-    makeCam: makeCam, T: T, L: L, P: P, Circ: Circ, frame: frame, cap: cap
+    makeCam: makeCam, autoFit: autoFit, T: T, L: L, P: P, Circ: Circ, frame: frame, cap: cap
   };
 })();
